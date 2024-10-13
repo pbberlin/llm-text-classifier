@@ -1,0 +1,12 @@
+{
+    "index_key": "HNSW32",
+    "index_param": "efSearch=5701",
+    "index_path": "./idx-800k-maxq200",
+    "size in bytes": 10067290302,
+    "avg_search_speed_ms": 206.7573948630265,
+    "99p_search_speed_ms": 314.5440362393855,
+    "reconstruction error %": 0.0,
+    "nb vectors": 799999,
+    "vectors dimension": 3078,
+    "compression ratio": 0.9783752521811405
+}

@@ -1,0 +1,12 @@
+{
+    "index_key": "IVF4096,Flat",
+    "index_param": "nprobe=2",
+    "index_path": "./idx-800k-maxq015.index",
+    "size in bytes": 9912862859,
+    "avg_search_speed_ms": 13.748430099948072,
+    "99p_search_speed_ms": 20.440174415707588,
+    "reconstruction error %": 0.0,
+    "nb vectors": 800000,
+    "vectors dimension": 3078,
+    "compression ratio": 0.9936181040835682
+}

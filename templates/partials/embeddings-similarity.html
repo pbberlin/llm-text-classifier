@@ -1,0 +1,109 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // everything relative to the headline that is clicked at
+    let clickHandler = (evt) => {
+        const headline = evt.target;
+        const toggler  = evt.target.getElementsByClassName('toggle-indicator')[0];
+
+        // immediate next sibling is a "text node"
+        const bdy      = headline.nextSibling.nextSibling;
+        console.log(bdy)
+
+        bdy.classList.toggle('open');
+        toggler.textContent = bdy.classList.contains('open') ? '-' : '+';
+    };
+
+
+    var elements = document.getElementsByClassName("toggle-head");
+    for (var i = 0; i < elements.length; i++) {
+        elements[i].addEventListener('click', clickHandler, false);
+        console.log("assigned");
+    }
+
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<h3> Contexts        </h3>
+{{ ctxUI  |safe }}
+
+<h3> Benchmarks      </h3>
+<p class="small"> Freely definable goal posts / benchmark statements, for instance:      </p>
+{{ bmrkUI  |safe }}
+<div class="toggle-container" >
+    <p class="toggle-head">Benchmarks...
+        <span class="toggle-indicator">+</span>
+    </p>
+    <div class="toggle-body">
+        {{ cnt1  |safe }}
+    </div>
+</div>
+
+
+
+
+<h3> Sample      </h3>
+<div class="toggle-container">
+    <p class="toggle-head">Analyze any speech or text against above statements
+        <span class="toggle-indicator">+</span>
+    </p>
+    <div class="toggle-body">
+        <ul>
+            <li>Take any Lagarde speech or any other text and benchmark it against your statements above.</li>
+            <li>Input speech is benchmarked sentence by sentence.</li>
+            <li>Investigate: Larger chunks. Larger context.</li>
+            <li>Investigate: Thin    corpus data leading to hallucinations.</li>
+            <li>Investigate: Slanted corpus data leading to hallucinations.</li>
+        </ul>
+    </div>
+</div>
+{{ smplUI  |safe }}
+<div class="toggle-container" >
+    <p class="toggle-head">Samples...
+        <span class="toggle-indicator">+</span>
+    </p>
+    <div class="toggle-body">
+        {{ cnt2  |safe }}
+    </div>
+</div>
+
+
+
+
+<br>
+
+
+<h3>
+    Sample relevance/similarity against benchmarks
+</h3>
+<p class="small">Comparable to "PCA" factor loadings</p>
+
+<p style="font-size:90%;margin-top: 0.3rem">
+    <div style="display: inline-block; margin-left: 3%">
+        memo key
+    </div>
+    <div style="display: inline-block; margin-left: 20%">
+        sentence
+    </div>
+</p>
+
+<form action="" method="post">
+    {{ cntTable    |safe }}
+
+    <!-- <button accesskey="s" autofocus><u>S</u>ubmit</button> -->
+</form>
+
+
+
+
+

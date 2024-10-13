@@ -1,0 +1,10 @@
+# Flask web application
+
+```sh
+pip install -r requirements.txt
+cls && python web-app.py
+```
+
+Open your browser http://localhost:8001
+
+More on [embeddings](./doc/README.md) 

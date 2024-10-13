@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+    <title>{{ HTMLTitle    |safe }}</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link  href="../static/css/app.css" rel="stylesheet">
+    <script src="../static/js/app.js"></script>
+    
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+
+
+<body>
+
+    <div class="header">
+        <ul>
+            <li  >
+                <a href="/" accesskey="h" > <u>H</u>ome</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+
+    {{ cntBefore    |safe }}
+
+
+    {% if username is defined %}
+        {% if username != "": %}
+        <!--
+            {% include "partials/login.html" %}
+        -->
+        {% endif %}
+    {% else %}
+    {% endif %}
+
+
+    {% if contentTpl is defined %}
+
+        <!-- <div>contentTpl is defined {{contentTpl}}</div> -->
+
+        {% if contentTpl!="" %}
+            {% include "partials/" ~ contentTpl ~ ".html" %}
+
+        {% else %}
+ 
+            {% if contentTpl=="contexts" %}
+                {% include "partials/contexts.html" %}
+            {% endif %}
+
+        {% endif %}
+
+
+ 
+    {% else %}
+
+
+    {% endif %}
+
+    {{ cntAfter    |safe }}
+
+
+    </div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,800 @@
+"""
+embeddings.py
+
+This module extends the OpenAI API
+
+
+"""
+
+
+import os
+import sys
+import re
+import pickle
+import json
+
+import hashlib
+
+from datetime import datetime
+
+from   copy     import deepcopy
+
+
+from pprint import pprint, pformat
+
+
+import requests
+
+import pandas as pd
+import numpy  as np
+np.set_printoptions(threshold=sys.maxsize)
+
+import matplotlib.pyplot as plt
+
+from lib.util import cleanFileName
+
+
+import openai
+
+
+
+if False:
+    # API key is now entered by user and stored into as session variable
+    client = None
+    #
+    # os.environ["OPENAI_API_KEY"] = "secret"
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    if OPENAI_API_KEY is None or  len(OPENAI_API_KEY) < 2:
+        print("set Open AI key via 'OPENAI_API_KEY'")
+        os._exit(0)
+
+    client = openai.OpenAI(
+        api_key=OPENAI_API_KEY # defaults os.environ.get("OPENAI_API_KEY")
+    )
+
+
+# https://platform.openai.com/docs/models/embeddings
+modelName = "text-embedding-3-large"
+vectSize = 3078
+
+
+# pip install py_markdown_table
+from py_markdown_table.markdown_table import markdown_table
+
+
+# every function called by a flask handler
+# gets the request and the session passed on automtically.
+# But we have to import the module from flask for this to work
+#
+from   flask import request, session
+
+# usage from other module:
+#       lib_openai.passingOnRequestAndSession("dummy")
+def passingOnRequestAndSession(dummy1, dummy2=4):
+    user_agent = request.headers.get('User-Agent')
+    print( f"-- user agent: {user_agent}")
+    print( f"-- session[api_key]: {session['api_key']}")
+
+
+def restore_broken_words(text):
+    # Remove line breaks that break words
+    restored_text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', text)
+    # Replace remaining line breaks with space
+    restored_text = restored_text.replace('\n', ' ')
+    return restored_text
+
+def removeNewlines(txt):
+    # flat = re.sub(r'\n+', r' ', txt)
+    flat = txt
+    flat = flat.replace("\n", ' ')
+    flat = flat.replace("  ", ' ')
+    flat = flat.replace("  ", ' ')
+    return flat
+
+# ellipsis of a long string
+def ell(s, x=16):
+    s = removeNewlines(s)
+    s.strip()
+    if len(s) < 2*x:
+        return s
+    return f"{s[:x]} … {s[-x:]}"
+
+def strHash(s):
+    hashObject = hashlib.md5(s.encode())
+    hsh = hashObject.hexdigest()
+    return hsh
+
+
+# print list of floats
+def pfl(lst, x=3, digits=3, showLength=True):
+    # ret = f"{lst[:x]} {lst[-x:]}"
+    fstr = f"+{digits+2}.{digits}f"
+
+    ret = ""
+    for i in range(x):
+        ret += f"{lst[i]:{fstr}}  "
+    ret += " …   "
+    for i in range(x):
+        ret += f"{lst[-i]:{fstr}}  "
+
+    if showLength:
+        ret += f"-   {len(lst)} els"
+
+    return ret
+
+# cache
+c_embeddings = {}
+cacheDirty = False
+
+
+# for from the max/min of embed values - within this distance - the points are plotted
+# significantBand = 0.08
+significantBand = 0.025
+# globNeighbors=48
+# globNeighbors= 2
+globNeighbors= 4
+
+
+
+# significant data points of a single embedding
+# values being close to min or max
+# returns min and max and delta a display string - rng
+# returns mn and max
+# return strsNegPos - list of significant key-val - each element formatted as string
+# returns list of value and indexes as string
+# returns list of dicts, sorted by index and sorted by value
+def significants(embd, idx1=-1, band=significantBand, neighbors=globNeighbors):
+
+    strsNeg = [] # strings negative    - els < 0; list, each element is a formatted string
+    strsPos = [] # strings positive    - els > 0; list, each element is a formatted string
+    ksVsNeg = [] # key-values negative - els < 0; list, each element is sublist [index, value]
+    ksVsPos = [] # key-values positive - els > 0; list, each element is sublist [index, value]
+
+    mx = max(embd)
+    mn = min(embd)
+
+    rng = f"min {mn:6.3f}   max {mx:6.3f}   Δ {(mx-mn):4.2f}"
+    if idx1 > -1:
+        rng = f"idx {idx1:2}   {rng}"
+    # print(rng)
+
+
+    if False:
+        mxT = (mx - band)
+        mnT = (mn + band)
+        neighborsCutOff = 0.025
+        for idx2, v in enumerate(embd):
+            try:
+                if v > mxT:
+                    for idx3 in range(-neighbors, neighbors+1):
+                        displ = idx2+idx3
+                        if embd[displ] > (mxT - neighborsCutOff):
+                            strsPos.append( f"{round(embd[displ],5):6.3f} {displ:4}"  )
+                            ksVsPos.append( [displ,embd[displ]] )
+                if v < mnT:
+                    for idx3 in range(-neighbors, neighbors+1):
+                        displ = idx2+idx3
+                        if embd[displ] < (mnT + neighborsCutOff):
+                            strsNeg.append( f"{round(embd[displ],5):6.3f} {displ:4}"  )
+                            ksVsNeg.append( [displ,embd[displ]] )
+                else:
+                    pass
+            except IndexError:
+                print(f"significant neighbor index out of bounds")
+
+
+        # sort and combine neg and pos strings
+        strsNeg.sort(reverse=True)
+        strsPos.sort()
+        strsNegPos = deepcopy(strsNeg)
+        strsNegPos.extend(strsPos)
+
+        # combine neg and pos key-values
+        kvsNegPos = deepcopy(ksVsNeg)
+        kvsNegPos.extend(ksVsPos)
+
+
+        kvsNegPosByKey = sorted(kvsNegPos, key=lambda el: el[0])
+        kvsNegPosByVal = sorted(kvsNegPos, key=lambda el: el[1])
+
+    # different approach
+    # ---------------------------
+
+    kvRaw = []
+    for idx2, v in enumerate(embd):
+        kvRaw.append( [idx2, v] )
+    kvSorted = sorted(kvRaw, key=lambda el: el[1])
+
+
+    strsNeg = []
+    strsPos = []
+    ksVsNeg = []
+    ksVsPos = []
+
+    lengthTail = 8
+    lengthTail = 16
+    lengthTail = 32
+    # first x elements
+    for idx2, kv in enumerate(kvSorted[:lengthTail]):
+        strsNeg.append( f"{round(kv[1],5):6.3f} {kv[0]:4}"  )
+        ksVsNeg.append( [kv[0],kv[1]] )
+    # last  x elements
+    for idx2, kv in enumerate(kvSorted[-lengthTail:]):
+        strsPos.append( f"{round(kv[1],5):6.3f} {kv[0]:4}"  )
+        ksVsPos.append( [kv[0],kv[1]] )
+
+
+    # combine neg and pos key-values - 1
+    strsNegPos = deepcopy(strsNeg)
+    strsNegPos.extend(strsPos)
+
+    # combine neg and pos key-values - 2
+    kvsNegPos = deepcopy(ksVsNeg)
+    kvsNegPos.extend(ksVsPos)
+
+    kvsNegPosByKey = sorted(kvsNegPos, key=lambda el: el[0])
+    kvsNegPosByVal = sorted(kvsNegPos, key=lambda el: el[1])
+
+
+    return (
+        rng,
+        mn, mx,
+        strsNegPos,
+        kvsNegPos,
+        kvsNegPosByKey,
+        kvsNegPosByVal,
+    )
+
+
+
+def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
+
+    allIdxs = []
+    allVals = []
+
+    mn = -0.0000001
+    mx = +0.0000001
+
+
+    for idx1, embd in enumerate(embds):
+
+        idxs = []  # significant indizes for single embedding
+        vals = []  # significant values  for single embedding
+
+
+        mnS = min(embd)
+        if mnS < mn:
+            mn = mnS
+        mxS = max(embd)
+        if mxS > mx:
+            mx = mxS
+
+        plotNeighbors = globNeighbors
+        plotNeighbors = 8
+        plotNeighbors = 16
+        rng, mn, mx, sign2, kvsNegPos ,  _ , _ = significants(embd, idx1, neighbors=plotNeighbors )
+
+        for idx2, kv in enumerate(kvsNegPos):
+            idxs.append(kv[0])
+            vals.append(kv[1])
+
+        allIdxs.append(idxs)
+        allVals.append(vals)
+
+    print(f"  {len(allVals):4} significant embed values for {len(embds)} computed")
+
+
+    return (allIdxs, allVals, mn, mx)
+
+
+
+
+# compute significant data points for a embeddings in the module
+def significantsList():
+    rng, lStr, lIdxVal, idxValByIdx, idxValByVal = {},{},{},{},{}
+    for idx, k in enumerate(c_embeddings):
+        rng[k], mn, mx , lStr[k], lIdxVal[k], idxValByIdx[k], idxValByVal[k] = significants(c_embeddings[k], idx, neighbors=0)
+    return (rng, lStr, lIdxVal, idxValByIdx, idxValByVal)
+
+
+
+
+
+prop_cycle = plt.rcParams['axes.prop_cycle']
+plotColors = prop_cycle.by_key()['color']
+
+plotColors2 = [
+    'blue',
+    'green',
+    'red',
+    'cyan',
+    'magenta',
+    '#aabbcc',
+    '#ffbb11',
+    '#c2a',
+    '#aac',
+]
+plotColors.extend(plotColors2)
+
+
+# creating scatter plot of data points as a JPG file
+def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
+
+    if not multiSeries:
+        return
+
+    # markerSize = 10
+    markerSize = 1
+    markerSize = 2
+    markerSize = 4
+
+    plt.figure(figsize=(16, 5))
+
+    try:
+
+        if multiSeries:
+            for idx1, seriesIdxs in enumerate(idxs):
+
+                # print(f" multi series {idx1} {len(idxs)}  {len(vals)}")
+                seriesVals = vals[idx1]
+
+                # s=10 is the markers size
+
+                # shift x-coords to see overlapp
+                seriesIdxsCX = []
+                dx = int(idx1*(1.8*markerSize))
+                for idx2, idxOld in enumerate(seriesIdxs):
+                    idxNew = idxOld + dx
+                    if idxNew < vectSize:
+                        seriesIdxsCX.append(idxNew)
+                    else:
+                        seriesIdxsCX.append(idxOld)
+
+
+
+                plt.scatter(seriesIdxsCX, seriesVals, color=plotColors[idx1+1], s=markerSize )
+        else:
+            plt.scatter(idxs, vals, color='blue', s=markerSize )
+
+        plt.axhline(0, color='gray', linestyle='--', linewidth=1)
+
+
+        plt.xlim([    0, 3072])
+
+        plt.ylim([ -0.2,  0.2])
+        plt.ylim([ -0.12,  0.12])
+
+        floorDY = 0.12 # min height of chart Y-area - upwards and downwards
+        if mnVls > -floorDY:
+            mnVls = -floorDY
+        if mxVls < +floorDY:
+            mxVls = floorDY
+
+        plt.ylim([ mnVls-0.02, mxVls+0.02])
+
+        # plt.ylabel('PCA')
+        # plt.xlabel('Idx')
+
+        # minimize horizontal margins
+        plt.subplots_adjust(left=0.04, right=0.99)
+
+        # vertical margins - *ATTENTION*  bottom up
+        plt.subplots_adjust( top=0.91,bottom=0.05)
+
+        lblShrt = (lbl[:44] + " … " + lbl[-44:]) if len(lbl) > (2*44) else lbl
+        plt.title(f"Significant embeddings for \n-{lblShrt}-")
+
+    except Exception as error:
+        print(f"ERROR plotting: {str(error)}")
+
+    # fn = cleanFileName(lbl)
+
+    lblHash =  strHash(lbl)
+    fn = lblHash
+
+    plt.savefig(f'./static/img/dynamic/{lblHash}.jpg', format='jpg')
+    print(f"        plot saved for lbl {lbl[:44]}")
+
+    # Show plot for review
+    # plt.show()
+    plt.close()
+
+
+
+
+
+#  scatter plot of data points as a JPG file
+def significantsAsPlots(lbls, embds):
+
+    allIdxs, allVals, mn, mx = significantsForPlot(embds)
+
+    for idx1, embd in enumerate(embds):
+        lbl = lbls[idx1]
+        scatterPlot(lbl, allIdxs[idx1], allVals[idx1], min(allVals[idx1]), max(allVals[idx1]) )
+
+    scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, multiSeries=True)
+
+
+
+
+# save embeddings
+def save():
+
+    # dump a subset of the embeddings as JSON
+    timestampSuffix = f"{datetime.now():%Y-%m-%d-%H-%M-%S-%z}"
+    timestampSuffix = timestampSuffix.strip("-")
+    fn = f"./data/embeddings-significant-{timestampSuffix}.json"
+    with open(fn, "w", encoding='utf-8') as outFile:
+        rng, lStr, _ ,  _ , _ = significantsList()
+        # lStr.insert(0, rng)
+        lStr["ranges"] = rng
+        json.dump(  lStr , outFile,ensure_ascii=False, indent=4)
+        print(f"saving JSON   file 'embeddings' {len(c_embeddings):3} entries")
+
+
+    global cacheDirty
+    if not cacheDirty:
+        print(f"embeddings are unchanged ({len(c_embeddings)} entries). ")
+        return
+
+
+    # global c_embeddings
+    with open(r"./data/embeddings.pickle", "wb+") as outFile:
+        pickle.dump(c_embeddings, outFile)
+        print(f"saving pickle file 'embeddings' {len(c_embeddings):3} entries")
+
+
+
+
+
+
+
+def load():
+    global c_embeddings  # in order to _write_ to module variable
+    try:
+        with open(r"./data/embeddings.pickle", "rb") as inpFile:
+            c_embeddings = pickle.load(inpFile)
+        print(f"loading pickle file 'embeddings' - size {len(c_embeddings):2} - type {type(c_embeddings)}   ")
+
+        if False:
+        # if True:
+            keysToDelete = []
+            for idx,k in enumerate(c_embeddings):
+                # if k.startswith("How "):
+                #     keysToDelete.append(k)
+                # if k.startswith("What "):
+                #     keysToDelete.append(k)
+                if "price" in k or "Price" in k :
+                    keysToDelete.append(k)
+            for k in keysToDelete:
+                del( c_embeddings[k] )
+                print(f"deleting {k[:20]}")
+
+            global cacheDirty
+            cacheDirty = True
+
+
+        for idx,k in enumerate(c_embeddings):
+            print(f"  {ell(k,x=24) :>51} - embds { pfl(c_embeddings[k],showLength=False) }")
+            if idx > 4:
+                break
+
+    except Exception as error:
+        print(f"loading pickle file 'embeddings' caused error: {str(error)} \n\n")
+        c_embeddings = {}
+
+
+# is newKey valid
+def checkAPIKey(newKey):
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {newKey}",
+        }
+        response = requests.get("https://api.openai.com/v1/models", headers=headers)
+        if response.status_code == 200:
+
+            return (True, "API key is valid.")
+        else:
+            return (False,  f"API key is invalid. Status code: {response.status_code}, Response: {response.text}" )
+
+
+
+    except Exception as error:
+            errStr = str(error)
+            pos = errStr.find("Failed to establish a new connection")
+            if pos != -1:
+                return (True,  f"API key could not be validated - proceeding anyway" )
+
+            return (False,  f"API key could not be validated: \n\t{error}" )
+
+
+# lst python list of statements or sentences,
+# for example ['inflation will be high', 'inflation will be low']
+# We get "loadings" for a principal components analysis (PCA).
+# There are 3072 'components' in ChatGPT-O.
+# Embeddings for a sequence of tokens (i.e. a sentence) is created by weighing the embeddings of each token.
+# Weights are dynamically derived by the LLM using the context and using "attention".
+#
+# Usage
+#   e1,s = lib_openai.getEmbeddings(words1, ctx, ctxs)
+#
+#   https://blog.teclado.com/destructuring-in-python/
+#
+# returns a List of np.arrays - containing embeddings as
+defaultContext = {"short": "", "long": ""}
+def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
+
+    global c_embeddings  # in order to access module variable
+
+    missInps = []
+
+
+
+    # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
+
+    # append context to requested input sentences
+    if len(ctxs) == 0:
+        if ctxScalar["long"].strip() != "":
+            for idx2, inp in enumerate(lstInps):
+                lstInps[idx2] = f"Context: { ctxScalar['long'].strip() } \nSentence: {inp}"
+    else:
+        lstInps2 =  []
+        for idx1, inp in enumerate(lstInps):
+            for idx2, ctxL in enumerate(ctxs):
+                if ctxL["long"].strip() != "":
+                    tmp = f"Context: { ctxL['long'].strip() } \nSentence: {inp}"
+                    lstInps2.append(tmp)
+                else:
+                    # tmp = ctxL['long'].strip()
+                    # tmp = f"Context:                          \nSentence: {inp}"
+                    lstInps2.append(inp)
+        lstInps = lstInps2
+
+        if False:
+            pprint(lstInps)
+            print("-----")
+            for idx, val in enumerate(lstInps2):
+                print(f"{idx+1} {ell(val, x=48)}")
+            print("====")
+            print(" ")
+
+
+    all = [] # cached and newly retrieved
+    for idx2, inp in enumerate(lstInps):
+        if inp in c_embeddings:
+            all.append(c_embeddings[inp])
+            print(f"     ffor-a {ell(inp,x=32)}")
+            print(f"     embs from cache  {pfl( c_embeddings[inp], x=5)}")
+        else:
+            # print(f"     embeddings for {inp} not in cache")
+            missInps.append(inp)
+
+    print(f"   {len(lstInps)} embs requested - {len(missInps)} not in cache")
+
+    # not yet in cache
+    #       => retrieve from OpenAI
+    #       => add to cache
+    if len(missInps)>0:
+
+        print( f"")
+        print( f"  API key is -{session['api_key']}-.")
+
+        try:
+            clientNew = openai.OpenAI(
+                api_key = session['api_key'],
+                timeout=10,
+            )
+            print( f"  client created \n")
+
+        except requests.exceptions.Timeout:
+            errStr = "request to openAI timed out."
+            print(errStr)
+            return ([], errStr)
+        except Exception as e:
+            errStr = f"error during client creation: {e}"
+            print(errStr)
+            return ([], errStr)
+
+        try:
+            response = clientNew.embeddings.create(
+                input=missInps,
+                model=modelName,
+            )
+        except Exception as e:
+            errStr = f"error during embeddings retrieval: {e}"
+            print(errStr)
+            return ([], errStr)
+
+
+        for idx2, record in enumerate(response.data):
+            all.append(record.embedding)
+            print(f"     ffor-b {ell(missInps[idx2],x=32)}")
+            print(f"     embs from openai {pfl( record.embedding,x=5) }")
+            # arr.append( np.array(record.embedding) )
+
+
+        # add to cache
+        for idx2, inp in enumerate(missInps):
+            c_embeddings[inp] = all[idx2]
+            global cacheDirty
+            cacheDirty = True
+
+        # save()
+        print(f"   {len(missInps):2} new embs saved ")
+
+
+
+    # if False:
+    if True:
+        significantsAsPlots(lstInps, all)
+        # significantPlots( lstInps[idx2], all[idx2]  )
+
+
+
+    # display as HTML
+    # ========================
+    s  = ""
+    # s += "Vector embeddings for:  \n"
+    prev = "-1"  # previous statement
+    for idx2, inp in enumerate(lstInps):
+
+        col = plotColors[idx2+1]
+
+        if len(ctxs) == 0:
+            disIdx = idx2+1
+        else:
+            disIdx = int(idx2 / len(ctxs) + 1)
+
+        if inp.__contains__("\nSentence:"):
+            inps = inp.split("\nSentence:",1)
+            if len(inps)== 2:
+                lCtx = inps[0]
+                lCtx = lCtx[9:]
+                if inps[1] != prev:
+                    s += f'''<p class='inp' style='color:{col}'> {disIdx:2}: {inps[1]}
+                                <span class='context1'> {ell(lCtx,x=64)}  </span>
+                            </p>\n'''
+                else:
+                    s += f'''<p class='inp' style='color:{col}'>
+                                <span class='context1'> {ell(lCtx,x=64)}  </span>
+                            </p>\n'''
+                prev = inps[1]
+                # print(f"1 prev now -{prev}-")
+
+            else:
+                if inp != prev:
+                    s += f'''<p class='inp' style='color:{col}'> {disIdx:2}: {inp}
+                                <span class='context1'> None  </span>
+                            </p>\n'''
+                else:
+                    pass
+                prev = inp
+                # print(f"2 prev now -{prev}-")
+        else:
+            if inp != prev:
+                s += f'''<p class='inp' style='color:{col}'>    {disIdx:2}: {inp}
+                                <span class='context1'> None  </span>
+                        </p>\n'''
+            else:
+                pass
+
+            prev = " "+inp
+            # print(f"3 prev now -{prev}-")
+
+
+
+        s += f" <p class='embeds'> <span class='embed-pre'>vect embed's</span>  {pfl(all[idx2], x=5)} </p>\n"
+
+        numEls = 3
+        if strFormat == "extended":
+            rng, mn, mx , sign2,  _ ,  _ , _ = significants(all[idx2], neighbors=0)
+            frst3 = ", ".join(sign2[:numEls])
+            last3 = ", ".join(sign2[-numEls:])
+            s += f"<p class='embeds'> <span class='embed-pre'>significant</span>  {frst3}    …   {last3} </p> \n"
+            s += f"<p class='embeds'> <span class='embed-pre'>range </span>  {rng}  </p> \n"
+            # s += f"<p class='embeds'>  {pfl(sign2, x=5)} </p> \n"
+
+        if False:
+            s += f" <img  width='90%' height='220px' width='100%'  src='../static/img/dynamic/{strHash(inp)}.jpg' />     \n"
+
+
+
+    hLbl = strHash( ", ".join(lstInps) )
+    s += f" <img  width='90%' height='400px' width='100%'  src='../static/img/dynamic/{hLbl}.jpg' />     \n"
+
+    s += "\n"
+
+
+
+    # following operations expect a list of a numpy arrays
+    arrNp = []
+    for row in all:
+        arrNp.append(  np.array(row) )
+    print(f"   {len(arrNp)} return vals converted {len(lstInps)}")
+    print("  --")
+
+
+    return (arrNp,s)
+
+
+
+
+def getEmbeddingCached(s):
+    pass
+
+
+
+
+def helperCosineSimilarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def distance(a, b):
+    return 1 - helperCosineSimilarity(a, b)
+
+
+# unused
+def view_correlations(table, texts):
+    df = pd.DataFrame(table)
+    index = {i: name for i,name in enumerate(texts)}
+    df.rename(columns=index, inplace = True)
+
+    data = df.to_dict(orient='records')
+
+    markdown = markdown_table(data).get_markdown()
+    # print(markdown)
+    return markdown
+
+# unused
+def correlationsAsMarkdown(texts, embeddings):
+
+    table = []
+    for idx1, x in enumerate(embeddings):
+        table.append([])
+        for idx2, y in enumerate(embeddings):
+            if idx1 != idx2:
+                table[-1].append(f'{helperCosineSimilarity(x,y):.02f}')
+            else:
+                table[-1].append('--')
+
+    df = pd.DataFrame(table)
+    index = {i: name for i,name in enumerate(texts)}
+    df.rename(columns=index, inplace = True)
+
+    data = df.to_dict(orient='records')
+    markdown = markdown_table(data).get_markdown()
+    return (table, markdown)
+
+
+
+# x-axis
+def correlationsXY(
+        tX, # texts x axis
+        embsX,
+        tY, # texts y axis
+        embsY,
+):
+
+    if len(tX) != len(embsX):
+        msg = f"  x-axis len(tX) != len(embsX) - {len(tX)} != {len(embsX)} "
+        print(msg)
+        return ( [[],[]], msg)
+
+    if len(tY) != len(embsY):
+        msg = f"  y-axis len(tY) != len(embsY) - {len(tY)} != {len(embsY)} "
+        print(msg)
+        return ( [[],[]], msg)
+
+
+    coeffsMatr = []
+    for idx1, y in enumerate(embsY):
+        coeffsMatr.append([])
+        for idx2, x in enumerate(embsX):
+            if tY[idx1] != tX[idx2]:
+                coeffsMatr[-1].append(f'{helperCosineSimilarity(x,y):.03f}')
+            else:
+                coeffsMatr[-1].append('--')
+
+    return (coeffsMatr,"  ")
+
+

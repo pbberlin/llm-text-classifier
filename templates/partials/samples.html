@@ -1,0 +1,79 @@
+<h3>
+    Text samples to measure against benchmarks
+</h3>
+
+
+<form action="" method="post">
+
+    {% for    item in listSamples %}
+
+        <div style="margin-bottom: 1rem;">
+
+            <span style="vertical-align: middle;font-weight: bold;">
+                {{ loop.index }}. &nbsp;
+            </span>
+
+            <input    name="sample{{loop.index}}_descr"   size="60"  type="text"
+                value="{{ item.descr}}"   >
+                <br>
+                <!-- {{ item.statements }} -->
+            {% set index1 = loop.index %}
+            {% for    item2 in item.statements %}
+
+
+                {% set sShrt = item2.short %}
+                {% set sLong = item2.long  %}
+
+                {% set rows = 1 %}
+                {% if sLong|length > 80 %}
+                    {% set rows = 2 %}
+                {% endif %}
+                {% if sLong|length > 110 %}
+                    {% set rows = 3 %}
+                {% endif %}
+
+                {% if sLong|length > 220 %}
+                    {% set rows = (sLong|length / 110) + 1 %}
+                {% endif %}
+
+                <!-- 
+                    -{{  sLong|length  }}-
+                 -->
+
+                <div style="margin-left: 1.85rem">
+                    <span style="font-size: 90%; vertical-align: top;">
+                        {{ loop.index }}.
+                    </span>
+
+
+                    <input type="text"
+                        name="sample{{index1}}_st{{loop.index}}_shrt"
+                        size="50"
+                        value="{{ sShrt }}"
+                    >
+                    <br>
+
+
+                    <textarea name="sample{{index1}}_st{{loop.index}}_long"
+                        rows="{{ rows }}"  cols="110"
+                        style="margin-left: 1.4rem;"
+                    >{{ sLong }}</textarea>
+
+                </div>
+
+            {% endfor %}
+
+
+
+            <input    name="sample{{loop.index}}_del" type="checkbox"   title="delete"
+                style="margin-left: 2.85rem"  >
+
+        </div>
+
+
+    {% endfor %}
+
+
+    <button accesskey="s" autofocus><u>S</u>ubmit</button>
+</form>
+

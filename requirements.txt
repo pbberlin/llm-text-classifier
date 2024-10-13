@@ -1,0 +1,11 @@
+Flask
+markdown
+requests
+PyPDF
+pymupdf
+
+nltk
+pandas
+openai
+py_markdown_table
+matplotlib
