@@ -1,0 +1,97 @@
+{
+    "central bank": "centralxxxbank",
+
+
+    "united states": "UnitedxxxSt",
+
+    "gross domestic product": "GDP",
+
+    "interest rate": "interestxxxrates",
+
+
+    "single market":   "singlexxxmarkets",
+    "global market":   "globalxxxmarkets",
+    "labor market":    "laborxxxmarkets",
+    "capital market":  "capitalxxxmarkets",
+
+    "monetary policy": "monxxxpolicy",
+    "monetary union":  "monxxxunion",
+    "European policy": "monxxxpolicy",
+    
+    "singly currency": "singlexxxcurrency",
+
+    "public investment": "publicxxxinvestment",
+
+    "medium-term":   "mediumxxxterm",
+    "medium term":   "mediumxxxterm",
+    "long-term":     "longxxxterm",
+    "longer-term":   "longxxxterm",
+    "long term":     "longxxxterm",
+    "short-term":    "shortxxxterm",
+    "short term":    "shortxxxterm",
+    "near-term":     "shortxxxterm",
+    "near term":     "shortxxxterm",
+
+    "european parliament":  "EUxxxparl",
+    "parliament":           "EUxxxparl",
+    "plenary":           "EUxxxparl",
+    "debate":           "EUxxxparl",
+
+
+    "speech":  "publication",
+    "working paper series":  "publication",
+    "working papers":        "publication",
+    "discussion papers":     "publication",
+    "journal":               "publication",
+    "report":                "publication",
+    "draft":                 "publication",
+
+    "slide":             "publication",
+    "left-hand side":    "publication",
+    "right-hand side":   "publication",
+    
+
+
+
+    "european firms":       "EUxxxcomp",
+    "european firm":        "EUxxxcomp",
+
+    "european integration": "EUxxxintegr",
+
+    "geopolitical landscape":   "geopolxxxsit",
+    "geopolitical environment": "geopolxxxsit",
+    "geopolitical upheaval":    "geopolxxxsit",
+    
+    "Open Strategic Autonomy": "openxxxstrategicxxxautonomy",
+    
+    "energy price": "energyxxxprices",
+    "food price":   "foodxxxprices",
+
+    "energy independence": "energyxxxindependence",
+
+
+
+    "growth rate":         "growthxxxrate",
+    "GDP growth":          "GDDxxxgrowth",
+    "wage growth":         "wagexxxgrowth",
+    "productivity growth": "prodxxxgrowth",
+    "annual growth":       "annualxxxgrowth",
+
+    "digital transition":  "digitxxxtrans",
+    "digital euro":        "digitxxxeuro",
+    "digital technology":        "digitxxxtech",
+    "digital technologies":        "digitxxxtech",
+    "digitalisation":        "digitxxxtech",
+
+    "digital payment":   "digitalxxxpayment",
+    "digital privacy":   "digitalxxxprivacy",
+
+    "green transition":      "greenxxxtrans",
+    "green technologies":    "greenxxxtechs",
+    "green technology":      "greenxxxtechs",
+    "climate change":        "climatexxxchg",
+
+
+
+    "dummy":        "dummy"
+}
