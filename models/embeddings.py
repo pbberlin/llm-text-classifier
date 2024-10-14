@@ -318,7 +318,8 @@ plotColors.extend(plotColors2)
 
 
 # creating scatter plot of data points as a JPG file
-def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
+#  groupSize - color n rows in similar color
+def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False, groupSize=1):
 
     if not multiSeries:
         return
@@ -342,7 +343,7 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
 
                 # shift x-coords to see overlapp
                 seriesIdxsCX = []
-                dx = int(idx1*(0.8*markerSize)) # variable could be cx 
+                dx = int(idx1*(0.8*markerSize)) # variable could be cx
                 for idx2, idxOld in enumerate(seriesIdxs):
                     idxNew = idxOld + dx
                     if idxNew < vectSize:
@@ -350,9 +351,12 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
                     else:
                         seriesIdxsCX.append(idxOld)
 
+                colr = plotColors[idx1+1]
+                if groupSize > 1:
+                    colr = plotColors[int(idx1/groupSize)+1]
 
 
-                plt.scatter(seriesIdxsCX, seriesVals, color=plotColors[idx1+1], s=markerSize )
+                plt.scatter(seriesIdxsCX, seriesVals, color=colr, s=markerSize )
         else:
             plt.scatter(idxs, vals, color='blue', s=markerSize )
 
@@ -404,7 +408,7 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
 
 
 #  scatter plot of data points as a JPG file
-def significantsAsPlots(lbls, embds):
+def significantsAsPlots(lbls, embds, numCtxs):
 
     allIdxs, allVals, mn, mx = significantsForPlot(embds)
 
@@ -412,7 +416,7 @@ def significantsAsPlots(lbls, embds):
         lbl = lbls[idx1]
         scatterPlot(lbl, allIdxs[idx1], allVals[idx1], min(allVals[idx1]), max(allVals[idx1]) )
 
-    scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, multiSeries=True)
+    scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, groupSize=numCtxs, multiSeries=True)
 
 
 def load():
@@ -603,7 +607,7 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
 
     # if False:
     if True:
-        significantsAsPlots(stmts, embds)
+        significantsAsPlots(stmts, embds, len(ctxs))
 
 
 
@@ -614,12 +618,16 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
     prev = "-1"  # previous statement
     for idx2, stmt in enumerate(stmts):
 
-        col = plotColors[idx2+1]
 
         if len(ctxs) == 0:
             disIdx = idx2+1
         else:
             disIdx = int(idx2 / len(ctxs) + 1)
+
+        colr = plotColors[idx2+1]
+        if len(ctxs) > 1:
+            colr = plotColors[int(idx2/len(ctxs))+1]
+
 
         if stmt.__contains__("\nSentence:"):
             inps = stmt.split("\nSentence:",1)
@@ -627,11 +635,11 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
                 lCtx = inps[0]
                 lCtx = lCtx[9:]
                 if inps[1] != prev:
-                    s += f'''<p class='inp' style='color:{col}'> {disIdx:2}: {inps[1]}
+                    s += f'''<p class='inp' style='color:{colr}'> {disIdx:2}: {inps[1]}
                                 <span class='context1'> {ell(lCtx,x=64)}  </span>
                             </p>\n'''
                 else:
-                    s += f'''<p class='inp' style='color:{col}'>
+                    s += f'''<p class='inp' style='color:{colr}'>
                                 <span class='context1'> {ell(lCtx,x=64)}  </span>
                             </p>\n'''
                 prev = inps[1]
@@ -639,7 +647,7 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
 
             else:
                 if stmt != prev:
-                    s += f'''<p class='inp' style='color:{col}'> {disIdx:2}: {stmt}
+                    s += f'''<p class='inp' style='color:{colr}'> {disIdx:2}: {stmt}
                                 <span class='context1'> None  </span>
                             </p>\n'''
                 else:
@@ -648,7 +656,7 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
                 # print(f"2 prev now -{prev}-")
         else:
             if stmt != prev:
-                s += f'''<p class='inp' style='color:{col}'>    {disIdx:2}: {stmt}
+                s += f'''<p class='inp' style='color:{colr}'>    {disIdx:2}: {stmt}
                                 <span class='context1'> None  </span>
                         </p>\n'''
             else:
