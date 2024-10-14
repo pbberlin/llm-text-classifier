@@ -122,7 +122,7 @@ generic loading from JSON.
     :param str subset :       subdir under data
     :rtype: []
 '''
-def loadJson(name, subset="misc"):
+def loadJson(name, subset="misc", onEmpty="list"):
 
     try:
         dr = os.path.join(".", "data", subset)
@@ -138,6 +138,8 @@ def loadJson(name, subset="misc"):
     except Exception as exc:
         print(str(exc))
         # print( stackTrace(exc) )
+        if onEmpty=="dict":
+            return {}
         return []
 
 

@@ -113,19 +113,6 @@
         ]
     },
     {
-        "descr": "EU monetary policy - nat. bond purchases",
-        "statements": [
-            {
-                "short": "gvt bond purchases pro",
-                "long": "The European Central Bank (ECB) did take a strongly active position in recent years by purchasing sovereign bonds of euro countries. This strongly active position of the ECB should continue."
-            },
-            {
-                "short": "gvt bond purchases con",
-                "long": "The European Central Bank (ECB) purchase programmes for sovereign bonds of euro countries will increase money supply and eventually increase expectations of the price level."
-            }
-        ]
-    },
-    {
         "descr": "EU monetary policy - euro bonds",
         "statements": [
             {
@@ -137,5 +124,18 @@
                 "long": "EU political unity is too weak. EU political institutions are not developed enough to restrain debt expansion."
             }
         ]
-    }
+    },
+    {
+        "descr": "EU monetary policy - gvt. bond purchases",
+        "statements": [
+            {
+                "short": "gvt bond purchases pro",
+                "long": "The European Central Bank (ECB) did take a strongly active position in recent years by purchasing sovereign bonds of euro countries. This strongly active position of the ECB should continue."
+            },
+            {
+                "short": "gvt bond purchases con",
+                "long": "The European Central Bank (ECB) purchase programmes for sovereign bonds of euro countries will increase money supply and eventually increase expectations of the price level."
+            }
+        ]
+    }     
 ]

@@ -31,8 +31,9 @@ np.set_printoptions(threshold=sys.maxsize)
 
 import matplotlib.pyplot as plt
 
-from lib.util import cleanFileName
-from lib.util import saveJson
+
+from lib.util   import saveJson, loadJson 
+from lib.config import get, set
 
 
 import openai
@@ -416,65 +417,49 @@ def significantsAsPlots(lbls, embds):
     scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, multiSeries=True)
 
 
+def load():
+    global c_embeddings  # in order to _write_ to module variable
+
+    c_embeddings = loadJson("embeddings", subset=get("set"), onEmpty="dict")
+
+
+    if False:
+    # if True:
+        keysToDelete = []
+        for idx,k in enumerate(c_embeddings):
+            if "price" in k or "Price" in k :
+                keysToDelete.append(k)
+        for k in keysToDelete:
+            del( c_embeddings[k] )
+            print(f"deleting {k[:20]}")
+        global cacheDirty
+        cacheDirty = True
+
+
+    for idx,k in enumerate(c_embeddings):
+        print(f"  {ell(k,x=24) :>51} - embds { pfl(c_embeddings[k],showLength=False) }")
+        if idx > 4:
+            break
+
 
 
 # save embeddings
 def save():
-
-    rng, lStr, _ ,  _ , _ = significantsList()
-    lStr["ranges"] = rng # add as additional info
-    saveJson(lStr, "embeddings-significant", tsGran=1)
-
 
     global cacheDirty
     if not cacheDirty:
         print(f"embeddings are unchanged ({len(c_embeddings)} entries). ")
         return
 
-    # global c_embeddings
-    with open(r"./data/embeddings.pickle", "wb+") as outFile:
-        pickle.dump(c_embeddings, outFile)
-        print(f"saving pickle file 'embeddings' {len(c_embeddings):3} entries")
+
+    rng, lStr, _ ,  _ , _ = significantsList()
+    lStr["ranges"] = rng # add as additional info
+    saveJson(lStr, "embeddings-significant", subset=get("set"), tsGran=1)
 
 
+    saveJson(c_embeddings, "embeddings", subset=get("set"))
 
 
-
-
-
-def load():
-    global c_embeddings  # in order to _write_ to module variable
-    try:
-        with open(r"./data/embeddings.pickle", "rb") as inpFile:
-            c_embeddings = pickle.load(inpFile)
-        print(f"loading pickle file 'embeddings' - size {len(c_embeddings):2} - type {type(c_embeddings)}   ")
-
-        if False:
-        # if True:
-            keysToDelete = []
-            for idx,k in enumerate(c_embeddings):
-                # if k.startswith("How "):
-                #     keysToDelete.append(k)
-                # if k.startswith("What "):
-                #     keysToDelete.append(k)
-                if "price" in k or "Price" in k :
-                    keysToDelete.append(k)
-            for k in keysToDelete:
-                del( c_embeddings[k] )
-                print(f"deleting {k[:20]}")
-
-            global cacheDirty
-            cacheDirty = True
-
-
-        for idx,k in enumerate(c_embeddings):
-            print(f"  {ell(k,x=24) :>51} - embds { pfl(c_embeddings[k],showLength=False) }")
-            if idx > 4:
-                break
-
-    except Exception as error:
-        print(f"loading pickle file 'embeddings' caused error: {str(error)} \n\n")
-        c_embeddings = {}
 
 
 # is newKey valid

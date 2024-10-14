@@ -4,8 +4,8 @@ from   pprint import pprint, pformat
 
 from   copy     import deepcopy
 
-from lib.util import saveJson
-from lib.util import loadJson
+from lib.util   import saveJson, loadJson 
+from lib.config import get, set
 
 
 c_benchmarks = []
@@ -88,7 +88,7 @@ def save():
         return
 
 
-    saveJson(c_benchmarks, "benchmarks", tsGran=1)
+    saveJson(c_benchmarks, "benchmarks", subset=get("set"), tsGran=1)
 
     with open(r"./data/benchmarks.pickle", "wb+") as outFile:
         pickle.dump(c_benchmarks, outFile)

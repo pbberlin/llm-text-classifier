@@ -23,9 +23,9 @@ from   flask import render_template
 
 
 # modules with model
-import models.contexts as contexts
+import models.contexts   as contexts
 import models.benchmarks as benchmarks
-import models.samples as samples
+import models.samples    as samples
 import routes.embeddings_basics as embeddings_basics
 import routes.embeddings_similarity as embeddings_similarity
 
@@ -33,9 +33,9 @@ import routes.embeddings_similarity as embeddings_similarity
 from lib.util import loadEnglishStopwords
 from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
-from lib.util import loadJson
 from lib.util import stackTrace
 
+import  lib.config          as config
 
 from lib.ecb_csv2pickle import ecbSpeechesCSV2Pickle
 from lib.uploaded2samples import uploadedToSamplesInPickleFile
@@ -661,7 +661,7 @@ if __name__ == '__main__':
     t1 = datetime.now()
     print(f"webserver main() start")
 
-    embeddings.load()
+    config.load()
 
     if False:
         # only if new CSV file
@@ -673,8 +673,7 @@ if __name__ == '__main__':
     benchmarks.load()
     samples.load()
 
-    sanmplesJson   = loadJson("samples", "init")
-
+    embeddings.load()
 
 
     t2 = datetime.now()
@@ -690,6 +689,8 @@ if __name__ == '__main__':
     )
 
     print("  ")
+
+    config.save()
 
     embeddings.save()
     contexts.save()
