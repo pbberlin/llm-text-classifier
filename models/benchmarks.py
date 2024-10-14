@@ -4,149 +4,8 @@ from   pprint import pprint, pformat
 
 from   copy     import deepcopy
 
-
-defaults = [
-    {
-        "descr": "Embeddings for concepts - multilingual - sentence structure",
-        "statements": [
-            {"long": "employment"},
-            {"long": "inflation"},
-            {"long": "stocks"},
-            {"long": "bubbles"},
-        ],
-    },
-
-
-    {
-         "descr": "Multi-Lingual - different tokens, similar vector scope",
-         "statements": [
-            {"long": "Price"},
-            {"long": "price"},
-            {"long": "prezzo"},
-            {"long": "Preis"},
-        ],
-    },
-
-    {
-         "descr": "Weights are dynamically derived by the LLM using the context and using 'attention'",
-         "statements": [
-            {"long": "I am giving up  drinking until this is over."},
-            {"long": "I am giving up. Drinking until this is over."},
-        ],
-    },
-
-    {
-         "descr": "Domain specific statements",
-         "statements": [
-            {
-                "short": "falling inflation 1",
-                "long":  "Deflationary trends are setting in",
-            },
-            {
-                "short": "falling inflation 2",
-                "long":  "Inflation rates are moderating",
-            },
-            {
-                "short": "rising inflation 1",
-                "long":  "Unexpected inflation is an ongoing concern",
-            },
-            {
-                "short": "rising inflation 2",
-                "long":  "Price stability is uncertain",
-            },
-            {
-                "short": "falling inflation 3",
-                "long":  "Inflationary pressures are easing",
-            },
-            {
-                "short": "rising inflation 3",
-                "long":  "Price levels surged unexpectedly",
-            },
-        ],
-    },
-
-    {
-         "descr": "Dimensions of EU cohesion policy - border",
-         "statements": [
-            # "The EU should get a stronger role in immigration policy (e.g. decisions over admission standards or allocation of refugees).",
-            {
-                "short": "immigration",
-                "long":  "The EU should get a stronger role in immigration policy.",
-            },
-
-            {
-                "short": "defence",
-                "long":  "A European army under the command of the EU and financed from its budget should take over duties from national armies regarding international conflict deployments.",
-            },
-        ],
-    },
-
-    {
-         "descr": "Dimensions of EU cohesion policy - industry",
-         "statements": [
-            {
-                "short": "industrial policy",
-                "long":  "For higher economic growth of the EMU it is essential that its member states increase their investment expenditures.",
-            },
-            {
-                "short": "agricultural policy",
-                "long":  "The common agricultural policy remains the central cohesive instrument.",
-            },
-
-
-        ],
-    },
-
-
-    {
-         "descr": "EU fiscal rules",
-         "statements": [
-            {
-                "short": "fiscal rules 1",
-                "long":  "The EU Stability and Growth Pact (SGP) defines deficit and debt limits for EU member states. The SGP inappropriately constrains fiscal policy in member states, and should be relaxed.",
-            },
-            {
-                "short": "fiscal rules 2",
-                "long":  "Fical rules are essential to maintain long term economic stability.",
-            },
-        ],
-    },
-
-    {
-         "descr": "EU monetary policy - nat. bond purchases",
-         "statements": [
-            {
-                "short": "gvt bond purchases pro",
-                "long":  "The European Central Bank (ECB) did take a strongly active position in recent years by purchasing sovereign bonds of euro countries. This strongly active position of the ECB should continue.",
-            },
-            {
-                "short": "gvt bond purchases con",
-                "long":  "The European Central Bank (ECB) purchase programmes for sovereign bonds of euro countries will increase money supply and eventually increase expectations of the price level.",
-            },
-
-        ],
-    },
-
-
-    {
-         "descr": "EU monetary policy - euro bonds",
-         "statements": [
-            {
-                "short": "Eurobonds pro",
-                "long":  "All euro countries are jointly liable for Eurobonds and all euro countries pay the same interest. The EMU should issue Eurobonds.",
-            },
-            {
-                "short": "Eurobonds con",
-                "long":  "EU political unity is too weak. EU political institutions are not developed enough to restrain debt expansion.",
-            },
-        ],
-    },
-
-
-
-
-
-]
+from lib.util import saveJson
+from lib.util import loadJson
 
 
 c_benchmarks = []
@@ -224,6 +83,13 @@ def load():
 
 
 def save():
+
+    if len(c_benchmarks) < 1:
+        return
+
+
+    saveJson(c_benchmarks, "benchmarks", tsGran=1)
+
     with open(r"./data/benchmarks.pickle", "wb+") as outFile:
         pickle.dump(c_benchmarks, outFile)
         print(f"saving pickle file 'benchmarks' {len(c_benchmarks):3} entries")
@@ -241,7 +107,8 @@ def update(updated):
         # saving to disk is done on stop-application
     else:
         if len(c_benchmarks)<1:
-            c_benchmarks = defaults
+            initBenchmarks    = loadJson("benchmarks", "init")
+            c_benchmarks = initBenchmarks
 
     if False:
         # avoiding to expose c_benchmarks as global variable

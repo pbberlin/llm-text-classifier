@@ -32,6 +32,7 @@ np.set_printoptions(threshold=sys.maxsize)
 import matplotlib.pyplot as plt
 
 from lib.util import cleanFileName
+from lib.util import saveJson
 
 
 import openai
@@ -393,7 +394,7 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
     fn = lblHash
 
     plt.savefig(f'./static/img/dynamic/{lblHash}.jpg', format='jpg')
-    print(f"        plot saved for lbl {lbl[:44]}")
+    print(f"        plot saved for lbl '{lbl[:44]}'")
 
     # Show plot for review
     # plt.show()
@@ -420,23 +421,15 @@ def significantsAsPlots(lbls, embds):
 # save embeddings
 def save():
 
-    # dump a subset of the embeddings as JSON
-    timestampSuffix = f"{datetime.now():%Y-%m-%d-%H-%M-%S-%z}"
-    timestampSuffix = timestampSuffix.strip("-")
-    fn = f"./data/embeddings-significant-{timestampSuffix}.json"
-    with open(fn, "w", encoding='utf-8') as outFile:
-        rng, lStr, _ ,  _ , _ = significantsList()
-        # lStr.insert(0, rng)
-        lStr["ranges"] = rng
-        json.dump(  lStr , outFile,ensure_ascii=False, indent=4)
-        print(f"saving JSON   file 'embeddings' {len(c_embeddings):3} entries")
+    rng, lStr, _ ,  _ , _ = significantsList()
+    lStr["ranges"] = rng # add as additional info
+    saveJson(lStr, "embeddings-significant", tsGran=1)
 
 
     global cacheDirty
     if not cacheDirty:
         print(f"embeddings are unchanged ({len(c_embeddings)} entries). ")
         return
-
 
     # global c_embeddings
     with open(r"./data/embeddings.pickle", "wb+") as outFile:

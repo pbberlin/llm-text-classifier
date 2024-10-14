@@ -4,124 +4,9 @@ from   pprint import pprint, pformat
 
 from   copy     import deepcopy
 
+from lib.util import saveJson
+from lib.util import loadJson
 
-defaults = [
-
-    {
-         "descr": "EU agriculture",
-         "statements": [
-            {
-                "short": "CAP adjustment",
-                "long":  "The common agricultural policy (CAP) should be readjusted from a compensation for cheap imports towards a green subsidy.",
-            },
-            {
-                "short": "contradiction + nonsensical robustness",
-                "long":  "If you sugar rhubarb, it gets sour. Pollution has vitamins.",
-            },
-        ],
-    },
-
-
-
-    {
-         "descr": "EU foreign policy - border",
-         "statements": [
-            {
-                "short": "joint borders pro",
-                "long":  "Germany should give bilateral help to Greece for border security and humanitarian relief.",
-            },
-            {
-                "short": "joint borders con",
-                "long":  "Countries should enforce their national borders even in breach of EU agreements.",
-            },
-        ],
-    },
-
-
-    {
-         "descr": "EU foreign policy - economic sanctions",
-         "statements": [
-            {
-                "short": "joint sanctions pro",
-                "long":  "Violation of economic sanctions should be penalized by withholding EU subsidies",
-            },
-            {
-                "short": "joint sanctions con",
-                "long":  "EU countries should not be subjected to a common regime of economic sanctiions.",
-            },
-        ],
-    },
-
-
-    {
-         "descr": "EU foreign policy - joint military",
-         "statements": [
-            {
-                "short": "joint military pro",
-                "long":  "Germany and France should revive their joint maneuvers.",
-            },
-            {
-                "short": "joint military con",
-                "long":  "All military operations should exclusively supervised by NATO. No role for the EU policy makers.",
-            },
-        ],
-    },
-
-
-
-    {
-         "descr": "EU fiscal policy - taxation",
-         "statements": [
-            {
-                "short": "taxation authority pro",
-                "long":  "Import taxes and custom duties should be collected directly and retained by the EU.",
-            },
-            {
-                "short": "taxation authority pro ultra",
-                "long":  "The EU should be authorized to collect taxes. A surplus charge to national income taxes.",
-            },
-            {
-                "short": "taxation authority con",
-                "long":  "EU contributions by member states are too large. They are unfairly redistributed.",
-            },
-        ],
-    },
-
-
-    {
-         "descr": "EU monetary policy - bond",
-         "statements": [
-            {
-                "short": "bond issuance pro",
-                "long":  "The EU should issue bonds. All member states should be liable.",
-            },
-            {
-                "short": "bond issuance pro ultra",
-                "long":  "The issuance of bonds, jointly underwritten by all EU member countries, would unleash growth, quickly amortizing.",
-            },
-            {
-                "short": "bond issuance neutral",
-                "long":  "The issuance of bonds, jointly underwritten by all EU member countries, would result in fiscal expansion.",
-            },
-            {
-                "short": "bond issuance detail - pro",
-                "long":  "Tranches of high, medium and low risk should be issued and auctioned separately.",
-            },
-            {
-                "short": "bond issuance - implicit - con",
-                "long":  "Once an euro bond facility is established, the political economy of Europe will inevitably lead to excessive use of it. The price of money will fall. Supply of money will outstrip demand.",
-            },
-            {
-                "short": "bond issuance explicit - con",
-                "long":  "EU debt will be ruinous. It will destroy the currency. Making imports impossible. Impoverish wage earners. Benefitting asset owners. Decline and fall of Rome will ensue.",
-            },
-
-        ],
-    },
-
-
-
-]
 
 
 c_samples = []
@@ -214,6 +99,12 @@ def loadAndAppendImported():
 
 
 def save():
+
+    if len(c_samples) < 1:
+        return
+    
+    saveJson(c_samples, "samples", tsGran=1)
+
     with open(r"./data/samples.pickle", "wb+") as outFile:
         pickle.dump(c_samples, outFile)
         print(f"saving pickle file 'samples'    {len(c_samples):3} entries")
@@ -231,7 +122,8 @@ def update(updated):
         # saving to disk is done on stop-application
     else:
         if len(c_samples)<1:
-            c_samples = defaults
+            initSamples    = loadJson("samples", "init")
+            c_samples = initSamples
 
     if False:
         # avoiding to expose c_samples as global variable

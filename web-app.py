@@ -2,13 +2,14 @@ import os
 from   pathlib import Path
 
 import json
-import re
-import signal
+import pickle
 
-import traceback, sys
+import sys
 from   datetime import datetime, timedelta
 from   pprint   import pprint, pformat
-import pickle
+
+import re
+import signal
 
 
 
@@ -32,6 +33,9 @@ import routes.embeddings_similarity as embeddings_similarity
 from lib.util import loadEnglishStopwords
 from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
+from lib.util import loadJson
+from lib.util import stackTrace
+
 
 from lib.ecb_csv2pickle import ecbSpeechesCSV2Pickle
 from lib.uploaded2samples import uploadedToSamplesInPickleFile
@@ -41,32 +45,6 @@ import models.embeddings as embeddings
 
 
 
-def stackTrace(e):
-
-    cwd = os.getcwd()
-
-    l = []
-
-    fls = traceback.format_exc().splitlines()
-    fls = fls[1:] # remove constant Traceback (most recent call last):
-
-    for idx, line in enumerate(fls):
-        # line = line.replace("\"C:\python3\lib", "...")
-        line = line.replace("File \"", "")
-        line = line.replace("\",", "\t\t")
-        line = line.replace( cwd , "...")
-
-        l.extend( f"{idx:2d} {line} \n")
-
-    l.extend( "---\n")
-
-    l.extend(traceback.format_exception_only(sys.exc_info()[0], sys.exc_info()[1]) )
-
-    s = ""
-    s += "".join(l)
-    s.strip()
-
-    return s
 
 
 # https://dev.to/fullstackstorm/working-with-sessions-in-flask-a-comprehensive-guide-525k
@@ -81,6 +59,7 @@ os.makedirs(  os.path.join(app.root_path, "data"), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static" ), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static", "img"), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static", "img", "dynamic"), exist_ok=True )
+
 
 
 def signalHandler(signal, frame):
@@ -116,10 +95,10 @@ def indexH():
             contentTpl="main-body",
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -194,10 +173,10 @@ def uploadFileH():
             cntAfter=content,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -281,10 +260,10 @@ def samplesImportH():
             listSamples=effectiveSmpls,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -345,10 +324,10 @@ def apiKeyH():
             cntBefore=content,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -404,10 +383,10 @@ def contextsEditH():
             listContexts=ctxs,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 @app.route('/benchmarks-edit', methods=['post','get'])
@@ -499,10 +478,10 @@ def benchmarksEditH():
             listBenchmarks=bmrks,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -600,10 +579,10 @@ def samplesEditH():
             listSamples=newSmpls,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -623,9 +602,9 @@ def embeddingsBasicsH():
         )
 
 
-    except Exception as error:
-        print( stackTrace(error) )
-        return app.response_class(response=json.dumps( str(error) ), status=500, mimetype='application/json')
+    except Exception as exc:
+        print( stackTrace(exc) )
+        return app.response_class(response=json.dumps( str(exc) ), status=500, mimetype='application/json')
 
 
 
@@ -669,10 +648,10 @@ def embeddingsSimilarityH():
             cntTable=sTable,
         )
 
-    except Exception as error:
-        # print(str(error))
-        print( stackTrace(error) )
-        return app.response_class(response=str(error), status=500, mimetype='text/plain')
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -693,6 +672,10 @@ if __name__ == '__main__':
     contexts.load()
     benchmarks.load()
     samples.load()
+
+    sanmplesJson   = loadJson("samples", "init")
+
+
 
     t2 = datetime.now()
     duration = t2 - t1
