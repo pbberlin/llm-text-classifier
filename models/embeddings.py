@@ -30,7 +30,7 @@ np.set_printoptions(threshold=sys.maxsize)
 import matplotlib.pyplot as plt
 
 
-from lib.util   import saveJson, loadJson 
+from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
 
@@ -342,7 +342,7 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False):
 
                 # shift x-coords to see overlapp
                 seriesIdxsCX = []
-                dx = int(idx1*(1.8*markerSize))
+                dx = int(idx1*(0.8*markerSize)) # variable could be cx 
                 for idx2, idxOld in enumerate(seriesIdxs):
                     idxNew = idxOld + dx
                     if idxNew < vectSize:
@@ -490,65 +490,62 @@ def checkAPIKey(newKey):
 # Weights are dynamically derived by the LLM using the context and using "attention".
 #
 # Usage
-#   e1,s = lib_openai.getEmbeddings(words1, ctx, ctxs)
+#   e1,s = lib_openai.getEmbeddings(statements, contexts)
 #
 #   https://blog.teclado.com/destructuring-in-python/
 #
 # returns a List of np.arrays - containing embeddings as
 defaultContext = {"short": "", "long": ""}
-def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
+def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
 
     global c_embeddings  # in order to access module variable
-
-    missInps = []
-
-
-
     # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
 
     # append context to requested input sentences
     if len(ctxs) == 0:
         if ctxScalar["long"].strip() != "":
-            for idx2, inp in enumerate(lstInps):
-                lstInps[idx2] = f"Context: { ctxScalar['long'].strip() } \nSentence: {inp}"
+            for idx2, stmt in enumerate(stmts):
+                stmts[idx2] = f"Context: { ctxScalar['long'].strip() } \nSentence: {stmt}"
     else:
-        lstInps2 =  []
-        for idx1, inp in enumerate(lstInps):
+        stmtsWCtx =  []
+        for idx1, stmt in enumerate(stmts):
             for idx2, ctxL in enumerate(ctxs):
                 if ctxL["long"].strip() != "":
-                    tmp = f"Context: { ctxL['long'].strip() } \nSentence: {inp}"
-                    lstInps2.append(tmp)
+                    tmp = f"Context: { ctxL['long'].strip() } \nSentence: {stmt}"
+                    stmtsWCtx.append(tmp)
                 else:
                     # tmp = ctxL['long'].strip()
                     # tmp = f"Context:                          \nSentence: {inp}"
-                    lstInps2.append(inp)
-        lstInps = lstInps2
+                    stmtsWCtx.append(stmt)
+        stmts = stmtsWCtx
 
         if False:
-            pprint(lstInps)
+            pprint(stmts)
             print("-----")
-            for idx, val in enumerate(lstInps2):
+            for idx, val in enumerate(stmtsWCtx):
                 print(f"{idx+1} {ell(val, x=48)}")
             print("====")
             print(" ")
 
 
-    all = [] # cached and newly retrieved
-    for idx2, inp in enumerate(lstInps):
-        if inp in c_embeddings:
-            all.append(c_embeddings[inp])
-            print(f"     ffor-a {ell(inp,x=32)}")
-            print(f"     embs from cache  {pfl( c_embeddings[inp], x=5)}")
-        else:
-            # print(f"     embeddings for {inp} not in cache")
-            missInps.append(inp)
+    stmtsNotInC = [] # statements not in cache
+    embdsByK    = {} # requested embeddings by statement - cached and newly retrieved
 
-    print(f"   {len(lstInps)} embs requested - {len(missInps)} not in cache")
+    for idx2, stmt in enumerate(stmts):
+        if stmt in c_embeddings:
+            embdsByK[stmt] = c_embeddings[stmt]  # take from cache
+            print(f"     ffor-a {ell(stmt,x=32)}")
+            print(f"     embs from cache  {pfl( c_embeddings[stmt], x=5)}")
+        else:
+            # print(f"     embeddings for {stmt} not in cache")
+            stmtsNotInC.append(stmt)
+
+    print(f"   {len(stmts)} embs requested - {len(stmtsNotInC)} not in cache")
 
     # not yet in cache
     #       => retrieve from OpenAI
     #       => add to cache
-    if len(missInps)>0:
+    if len(stmtsNotInC)>0:
 
         print( f"")
         print( f"  API key is -{session['api_key']}-.")
@@ -564,44 +561,49 @@ def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext
             errStr = "request to openAI timed out."
             print(errStr)
             return ([], errStr)
-        except Exception as e:
-            errStr = f"error during client creation: {e}"
+        except Exception as exc:
+            errStr = f"error during client creation: {exc}"
             print(errStr)
             return ([], errStr)
 
         try:
             response = clientNew.embeddings.create(
-                input=missInps,
+                input=stmtsNotInC,
                 model=modelName,
             )
-        except Exception as e:
-            errStr = f"error during embeddings retrieval: {e}"
+        except Exception as exc:
+            errStr = f"error during embeddings retrieval: {exc}"
             print(errStr)
             return ([], errStr)
 
-
+        # add newly retrieved to return and cache
         for idx2, record in enumerate(response.data):
-            all.append(record.embedding)
-            print(f"     ffor-b {ell(missInps[idx2],x=32)}")
+            stmt = stmtsNotInC[idx2]
+            embdsByK[stmt] = record.embedding
+            print(f"     ffor-b {ell(stmt,x=32)}")
             print(f"     embs from openai {pfl( record.embedding,x=5) }")
             # arr.append( np.array(record.embedding) )
 
-
-        # add to cache
-        for idx2, inp in enumerate(missInps):
-            c_embeddings[inp] = all[idx2]
+            # add to cache
+            c_embeddings[stmt] = record.embedding
             global cacheDirty
             cacheDirty = True
 
         # save()
-        print(f"   {len(missInps):2} new embs saved ")
+        print(f"   {len(stmtsNotInC):2} new embs saved ")
 
+
+    # ---- retrieval stop
+
+    # embdsByK *may* be ordered differently from stmts
+    embds = []
+    for stmt in stmts:
+        embds.append( embdsByK[stmt] )
 
 
     # if False:
     if True:
-        significantsAsPlots(lstInps, all)
-        # significantPlots( lstInps[idx2], all[idx2]  )
+        significantsAsPlots(stmts, embds)
 
 
 
@@ -610,7 +612,7 @@ def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext
     s  = ""
     # s += "Vector embeddings for:  \n"
     prev = "-1"  # previous statement
-    for idx2, inp in enumerate(lstInps):
+    for idx2, stmt in enumerate(stmts):
 
         col = plotColors[idx2+1]
 
@@ -619,8 +621,8 @@ def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext
         else:
             disIdx = int(idx2 / len(ctxs) + 1)
 
-        if inp.__contains__("\nSentence:"):
-            inps = inp.split("\nSentence:",1)
+        if stmt.__contains__("\nSentence:"):
+            inps = stmt.split("\nSentence:",1)
             if len(inps)== 2:
                 lCtx = inps[0]
                 lCtx = lCtx[9:]
@@ -636,32 +638,32 @@ def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext
                 # print(f"1 prev now -{prev}-")
 
             else:
-                if inp != prev:
-                    s += f'''<p class='inp' style='color:{col}'> {disIdx:2}: {inp}
+                if stmt != prev:
+                    s += f'''<p class='inp' style='color:{col}'> {disIdx:2}: {stmt}
                                 <span class='context1'> None  </span>
                             </p>\n'''
                 else:
                     pass
-                prev = inp
+                prev = stmt
                 # print(f"2 prev now -{prev}-")
         else:
-            if inp != prev:
-                s += f'''<p class='inp' style='color:{col}'>    {disIdx:2}: {inp}
+            if stmt != prev:
+                s += f'''<p class='inp' style='color:{col}'>    {disIdx:2}: {stmt}
                                 <span class='context1'> None  </span>
                         </p>\n'''
             else:
                 pass
 
-            prev = " "+inp
+            prev = " "+stmt
             # print(f"3 prev now -{prev}-")
 
 
 
-        s += f" <p class='embeds'> <span class='embed-pre'>vect embed's</span>  {pfl(all[idx2], x=5)} </p>\n"
+        s += f" <p class='embeds'> <span class='embed-pre'>vect embed's</span>  {pfl(embds[idx2], x=5)} </p>\n"
 
         numEls = 3
         if strFormat == "extended":
-            rng, mn, mx , sign2,  _ ,  _ , _ = significants(all[idx2], neighbors=0)
+            rng, mn, mx , sign2,  _ ,  _ , _ = significants(embds[idx2], neighbors=0)
             frst3 = ", ".join(sign2[:numEls])
             last3 = ", ".join(sign2[-numEls:])
             s += f"<p class='embeds'> <span class='embed-pre'>significant</span>  {frst3}    …   {last3} </p> \n"
@@ -669,11 +671,11 @@ def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext
             # s += f"<p class='embeds'>  {pfl(sign2, x=5)} </p> \n"
 
         if False:
-            s += f" <img  width='90%' height='220px' width='100%'  src='../static/img/dynamic/{strHash(inp)}.jpg' />     \n"
+            s += f" <img  width='90%' height='220px' width='100%'  src='../static/img/dynamic/{strHash(stmt)}.jpg' />     \n"
 
 
 
-    hLbl = strHash( ", ".join(lstInps) )
+    hLbl = strHash( ", ".join(stmts) )
     s += f" <img  width='90%' height='400px' width='100%'  src='../static/img/dynamic/{hLbl}.jpg' />     \n"
 
     s += "\n"
@@ -682,9 +684,9 @@ def getEmbeddings(lstInps, ctxs=[], strFormat="simple", ctxScalar=defaultContext
 
     # following operations expect a list of a numpy arrays
     arrNp = []
-    for row in all:
+    for row in embds:
         arrNp.append(  np.array(row) )
-    print(f"   {len(arrNp)} return vals converted {len(lstInps)}")
+    print(f"   {len(arrNp)} return vals converted {len(stmts)}")
     print("  --")
 
 

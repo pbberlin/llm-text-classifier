@@ -26,7 +26,7 @@ def model(req,session):
         for s in bmrk["statements"]:
             statementsLong.append(s["long"])
 
-        embeds, s = embeddings.getEmbeddings(statementsLong, strFormat="extended", ctxs=ctxs)
+        embeds, s = embeddings.getEmbeddings(statementsLong, ctxs=ctxs, strFormat="extended")
         res += f"{s}"
 
 
