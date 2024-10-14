@@ -9,6 +9,7 @@ from lib.config import get, set
 
 
 c_benchmarks = []
+cacheDirty = False
 
 # new statement - part of new benchmark
 def newSt():
@@ -70,30 +71,19 @@ def toHTML(bmrk):
 
 
 
-# load from disk
 def load():
     global c_benchmarks  # in order to _write_ to module variable
-    try:
-        with open(r"./data/benchmarks.pickle", "rb") as inpFile:
-            c_benchmarks = pickle.load(inpFile)
-        print(f"loading pickle file 'benchmarks'  - size {len(c_benchmarks):2} - type {type(c_benchmarks)}   ")
-    except Exception as error:
-        print(f"loading pickle file 'benchmarks' caused error: {str(error)}")
-        c_benchmarks = []
-
+    c_benchmarks = loadJson("benchmarks", subset=get("set"))
+    if len(c_benchmarks)== 0:
+        c_benchmarks = loadJson("benchmarks", "init")
+    # pprint(c_benchmarks)
 
 def save():
-
-    if len(c_benchmarks) < 1:
+    if not cacheDirty:
+        print(f"  benchmarks are unchanged ({len(c_benchmarks):3} entries). ")
         return
+    saveJson(c_benchmarks, "benchmarks", subset=get("set"))
 
-
-    saveJson(c_benchmarks, "benchmarks", subset=get("set"), tsGran=1)
-
-    with open(r"./data/benchmarks.pickle", "wb+") as outFile:
-        pickle.dump(c_benchmarks, outFile)
-        print(f"saving pickle file 'benchmarks' {len(c_benchmarks):3} entries")
-        # print(f"  last entry is' {benchmarks.c_benchmarks[-1]}")
 
 
 
@@ -104,19 +94,9 @@ def update(updated):
 
     if len(updated) > 0:
         c_benchmarks = updated
+        global cacheDirty  
+        cacheDirty = True
         # saving to disk is done on stop-application
-    else:
-        if len(c_benchmarks)<1:
-            initBenchmarks    = loadJson("benchmarks", "init")
-            c_benchmarks = initBenchmarks
-
-    if False:
-        # avoiding to expose c_benchmarks as global variable
-        ret1 = c_benchmarks[:]
-        # and doing copy of level one key "statments"
-        #   but statements can still be changed by caller funcs :-(
-        for idx, bm in enumerate(ret1):
-            ret1[idx]["statements"] = ret1[idx]["statements"][:]
 
     # only the built in deepcopy function really isolates
     return deepcopy(c_benchmarks)

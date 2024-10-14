@@ -4,11 +4,12 @@ from pprint import pprint, pformat
 
 from   copy     import deepcopy
 
-from lib.util import saveJson
-from lib.util import loadJson
+from lib.util   import saveJson, loadJson 
+from lib.config import get, set
 
 
 c_contexts = []
+cacheDirty = False
 
 def new():
     nw = {
@@ -26,30 +27,20 @@ def dummy():
     return dumm
 
 
-# load from disk
 def load():
     global c_contexts  # in order to _write_ to module variable
-    try:
-        with open(r"./data/contexts.pickle", "rb") as inpFile:
-            c_contexts = pickle.load(inpFile)
-        print(f"loading pickle file 'contexts'    - size {len(c_contexts):2} - type {type(c_contexts)}   ")
-
-    except Exception as error:
-        print(f"loading pickle file 'contexts' caused error: {str(error)}")
-        c_contexts = []
-
+    c_contexts = loadJson("contexts", subset=get("set"))
+    if len(c_contexts)== 0:
+        c_contexts = loadJson("contexts", "init")
+    # pprint(c_contexts)
 
 def save():
-
-    if len(c_contexts) < 1:
+    if not cacheDirty:
+        print(f"  contexts   are unchanged ({len(c_contexts):3} entries). ")
         return
+    saveJson(c_contexts, "contexts", subset=get("set"))
 
-    saveJson(c_contexts, "contexts", tsGran=1)
 
-    # global c_contexts
-    with open(r"./data/contexts.pickle", "wb+") as outFile:
-        pickle.dump(c_contexts, outFile)
-        print(f"saving pickle file 'contexts'   {len(c_contexts):3} entries")
 
 
 # extension to handler
@@ -59,14 +50,8 @@ def update(updated):
 
     if len(updated) > 0:
         c_contexts = updated 
-        # saving to disk is done on stop-application
-    else: 
-        if len(c_contexts)<1:
-            initContexts    = loadJson("contexts", "init")
-            c_contexts = initContexts
-
-    if False:
-        ret=c_contexts[:]  # a shallow copy, avoiding to expose c_contexts as global variable
+        global cacheDirty  
+        cacheDirty = True
 
     # only the built in deepcopy function really isolates 
     return deepcopy(c_contexts)

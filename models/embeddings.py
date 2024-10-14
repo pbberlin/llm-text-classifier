@@ -10,8 +10,6 @@ This module extends the OpenAI API
 import os
 import sys
 import re
-import pickle
-import json
 
 import hashlib
 
@@ -445,12 +443,9 @@ def load():
 
 # save embeddings
 def save():
-
-    global cacheDirty
     if not cacheDirty:
-        print(f"embeddings are unchanged ({len(c_embeddings)} entries). ")
+        print(f"  embeddings are unchanged ({len(c_embeddings):3} entries). ")
         return
-
 
     rng, lStr, _ ,  _ , _ = significantsList()
     lStr["ranges"] = rng # add as additional info

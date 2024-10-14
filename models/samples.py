@@ -4,12 +4,12 @@ from   pprint import pprint, pformat
 
 from   copy     import deepcopy
 
-from lib.util import saveJson
-from lib.util import loadJson
-
+from lib.util   import saveJson, loadJson 
+from lib.config import get, set
 
 
 c_samples = []
+cacheDirty = False
 
 # new statement - part of new sample
 def newSt():
@@ -72,17 +72,6 @@ def toHTML(smpl):
 
 
 
-# load from disk
-def load():
-    global c_samples  # in order to _write_ to module variable
-
-    try:
-        with open(r"./data/samples.pickle", "rb") as inpFile:
-            c_samples = pickle.load(inpFile)
-        print(f"loading pickle file 'samples'     - size {len(c_samples):2} - type {type(c_samples)}   ")
-    except Exception as error:
-        print(f"loading pickle file 'samples' caused error: {str(error)}")
-        c_samples = []
 
 
 
@@ -98,17 +87,21 @@ def loadAndAppendImported():
 
 
 
+def load():
+    global c_samples  # in order to _write_ to module variable
+    c_samples = loadJson("samples", subset=get("set"))
+    if len(c_samples)== 0:
+        c_samples = loadJson("samples", "init")
+    # pprint(c_samples)
+
 def save():
-
-    if len(c_samples) < 1:
+    if not cacheDirty:
+        print(f"  samples    are unchanged ({len(c_samples):3} entries). ")
         return
-    
-    saveJson(c_samples, "samples", tsGran=1)
+    saveJson(c_samples, "samples", subset=get("set"))
 
-    with open(r"./data/samples.pickle", "wb+") as outFile:
-        pickle.dump(c_samples, outFile)
-        print(f"saving pickle file 'samples'    {len(c_samples):3} entries")
-        # print(f"  last entry is' {samples.c_samples[-1]}")
+
+
 
 
 
@@ -119,19 +112,8 @@ def update(updated):
 
     if len(updated) > 0:
         c_samples = updated
-        # saving to disk is done on stop-application
-    else:
-        if len(c_samples)<1:
-            initSamples    = loadJson("samples", "init")
-            c_samples = initSamples
-
-    if False:
-        # avoiding to expose c_samples as global variable
-        ret1 = c_samples[:]
-        # and doing copy of level one key "statments"
-        #   but statements can still be changed by caller funcs :-(
-        for idx, bm in enumerate(ret1):
-            ret1[idx]["statements"] = ret1[idx]["statements"][:]
+        global cacheDirty  
+        cacheDirty = True
 
     # only the built in deepcopy function really isolates
     return deepcopy(c_samples)
