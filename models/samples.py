@@ -89,7 +89,7 @@ def loadAndAppendImported():
 
 def load():
     global c_samples  # in order to _write_ to module variable
-    c_samples = loadJson("samples", subset=get("set"))
+    c_samples = loadJson("samples", subset=get("dataset"))
     if len(c_samples)== 0:
         c_samples = loadJson("samples", "init")
     # pprint(c_samples)
@@ -98,7 +98,7 @@ def save():
     if not cacheDirty:
         print(f"  samples    are unchanged ({len(c_samples):3} entries). ")
         return
-    saveJson(c_samples, "samples", subset=get("set"))
+    saveJson(c_samples, "samples", subset=get("dataset"))
 
 
 

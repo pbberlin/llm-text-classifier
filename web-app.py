@@ -83,7 +83,7 @@ def indexH():
     session.permanent = True
 
     if 'api_key' not in session:
-        return redirect( url_for("apiKeyH") )
+        return redirect( url_for("configH") )
     else:
         pass
 
@@ -267,55 +267,118 @@ def samplesImportH():
 
 
 
-@app.route('/api-key',methods=['post','get'])
-def apiKeyH():
+# list of subdirectories in ./data as HTMLselect
+def listBoxDataset():
+
+    base_path = './data'
+    dirs = []
+
+    exclude = {
+        "cfg": True,
+        "init":True,
+        "old-obsolete":True,
+     }
+
+    for item in os.listdir(base_path):
+        if os.path.isdir(os.path.join(base_path, item)) and item not in exclude:
+            dirs.append(item)
+    
+    selected = config.get("dataset")
+    
+    s  = '<label for="dataset">Choose a dataset:</label> '
+    s += '<select name="dataset" id="dataset">'
+    
+    for dir in dirs:
+        sel = ""
+        if dir == selected:
+            sel = ' selected'  
+        s += f'<option value="{dir}" {sel} >{dir}  </option>'
+    s += '</select>'
+    return s
 
 
-   # POST params
+@app.route('/config-edit',methods=['post','get'])
+def configH():
+
+
+    apiKey       =  None
+    apiKeyValid  = True
     invalidMsg = ""
-    newKey = ""
+    successMsg = ""
 
     kvPost = request.form.to_dict()
     if 'api_key' in kvPost:
-        newKey = kvPost['api_key']
-        # SET OPENAI_API_KEY=sk-iliEn...YVfODh5
-        valid = True
-        if not newKey.startswith("sk-"):
-            valid = False
-            invalidMsg += "must start with 'sh-'    <br>\n"
-        if len(newKey) < 50:
-            valid = False
-            invalidMsg += "must be 50 chars or more <br>\n"
-
-
-        if not valid:
-            pass
+        apiKey = kvPost['api_key']
+    else: 
+        if 'api_key' in session:
+            apiKey = session['api_key']
         else:
-            valid1, msg = embeddings.checkAPIKey(newKey)
-            if not valid1:
-                valid = False
-                invalidMsg += msg + "<br>\n"
-            else:
-                session['api_key'] = newKey
+            apiKey = config.get("OpenAIKey")
 
 
-    content = ""
-    if 'api_key' in session:
-        content = f'''API key is set to '{session['api_key']}' <br>
-            <a href="/" autofocus >   Home        </a>
-            '''
+
+    # SET OPENAI_API_KEY=sk-iliEn...YVfODh5
+    if apiKey.startswith("your secret"):
+        apiKeyValid = False
+        invalidMsg += "replace init placeholder 'your secret'<br>\n"
+    elif (apiKey is None) or not apiKey.startswith("sk-"):
+        apiKeyValid = False
+        invalidMsg += "must start with 'sh-'    <br>\n"
+    elif len(apiKey) < 50:
+        apiKeyValid = False
+        invalidMsg += "must be 50 chars or more <br>\n"
+
+    if not apiKeyValid:
+        pass
     else:
-        content = f'''
-        API key not set <br>
-        API key looks like this <span style='font-size:85%'>sk-iliEnLtScLqauJejcpuDT4BlbkFJNTOc16c7E8R0NYVfODh5</span> <br>
-        {invalidMsg}
+        liveCheck, msg = embeddings.checkAPIKey(apiKey)
+        if not liveCheck:
+            apiKeyValid = False
+            invalidMsg += msg + "<br>\n"
+        else:
+            successMsg += "connection to OpenAI API succeeded<br>\n"
+            session['api_key'] = apiKey
+            config.set("OpenAIKey", apiKey)
 
-        <form action="" method="post">
-            <input    name="api_key" type="input" size="64" value="{newKey}" autofocus >
+
+    invalidMsgExt = ""
+    if not apiKeyValid:
+        invalidMsgExt = '''
+            {invalidMsg}
             <br>
-            <button accesskey="s" ><u>S</u>ubmit</button>
-        </form>
+            API key looks like <span style='font-size:85%'>sk-iliEnLtScLqauJejcpuDT4BlbkFJNTOc16c7E8R0NYVfODh5</span> <br>
+            <br>
         '''
+
+
+    dataset = None
+    if 'dataset' in kvPost:
+        dataset = kvPost['dataset']
+        config.set("dataset",dataset)
+
+
+
+
+    content = f'''
+
+    <form action="" method="post">
+
+        {invalidMsgExt}
+        {successMsg}
+
+        <label for="dataset">Open AI API Key</label> 
+        <input    name="api_key" type="input" size="64" value="{apiKey}"  >
+        <br>
+
+        {listBoxDataset()}
+        <br>
+
+        <button accesskey="s" ><u>S</u>ubmit</button>
+    </form>
+
+    <a href="/" {"autofocus" if apiKeyValid else ""}  >   Home        </a>
+    
+    '''
 
     try:
         return render_template(

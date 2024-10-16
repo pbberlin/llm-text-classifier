@@ -73,7 +73,7 @@ def toHTML(bmrk):
 
 def load():
     global c_benchmarks  # in order to _write_ to module variable
-    c_benchmarks = loadJson("benchmarks", subset=get("set"))
+    c_benchmarks = loadJson("benchmarks", subset=get("dataset"))
     if len(c_benchmarks)== 0:
         c_benchmarks = loadJson("benchmarks", "init")
     # pprint(c_benchmarks)
@@ -82,7 +82,7 @@ def save():
     if not cacheDirty:
         print(f"  benchmarks are unchanged ({len(c_benchmarks):3} entries). ")
         return
-    saveJson(c_benchmarks, "benchmarks", subset=get("set"))
+    saveJson(c_benchmarks, "benchmarks", subset=get("dataset"))
 
 
 

@@ -422,7 +422,7 @@ def significantsAsPlots(lbls, embds, numCtxs):
 def load():
     global c_embeddings  # in order to _write_ to module variable
 
-    c_embeddings = loadJson("embeddings", subset=get("set"), onEmpty="dict")
+    c_embeddings = loadJson("embeddings", subset=get("dataset"), onEmpty="dict")
 
 
     if False:
@@ -453,10 +453,10 @@ def save():
 
     rng, lStr, _ ,  _ , _ = significantsList()
     lStr["ranges"] = rng # add as additional info
-    saveJson(lStr, "embeddings-significant", subset=get("set"), tsGran=1)
+    saveJson(lStr, "embeddings-significant", subset=get("dataset"), tsGran=1)
 
 
-    saveJson(c_embeddings, "embeddings", subset=get("set"))
+    saveJson(c_embeddings, "embeddings", subset=get("dataset"))
 
 
 

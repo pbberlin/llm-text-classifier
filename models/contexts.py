@@ -29,7 +29,7 @@ def dummy():
 
 def load():
     global c_contexts  # in order to _write_ to module variable
-    c_contexts = loadJson("contexts", subset=get("set"))
+    c_contexts = loadJson("contexts", subset=get("dataset"))
     if len(c_contexts)== 0:
         c_contexts = loadJson("contexts", "init")
     # pprint(c_contexts)
@@ -38,7 +38,7 @@ def save():
     if not cacheDirty:
         print(f"  contexts   are unchanged ({len(c_contexts):3} entries). ")
         return
-    saveJson(c_contexts, "contexts", subset=get("set"))
+    saveJson(c_contexts, "contexts", subset=get("dataset"))
 
 
 
