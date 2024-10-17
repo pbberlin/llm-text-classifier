@@ -82,10 +82,16 @@ def indexH():
 
     session.permanent = True
 
-    if 'api_key' not in session:
-        return redirect( url_for("configH") )
+    apiKey = None
+    if 'api_key' in session:
+        apiKey = session['api_key']
     else:
-        pass
+        apiKey = config.get('OpenAIKey')
+
+
+    apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+    if not apiKeyValid:
+        return redirect( url_for("configH") )
 
 
     try:
@@ -93,6 +99,7 @@ def indexH():
             'main.html',
             HTMLTitle="Main page",
             contentTpl="main-body",
+            cntBefore=f"<p>{successMsg}</p>",
         )
 
     except Exception as exc:
@@ -282,16 +289,16 @@ def listBoxDataset():
     for item in os.listdir(base_path):
         if os.path.isdir(os.path.join(base_path, item)) and item not in exclude:
             dirs.append(item)
-    
+
     selected = config.get("dataset")
-    
+
     s  = '<label for="dataset">Choose a dataset:</label> '
     s += '<select name="dataset" id="dataset">'
-    
+
     for dir in dirs:
         sel = ""
         if dir == selected:
-            sel = ' selected'  
+            sel = ' selected'
         s += f'<option value="{dir}" {sel} >{dir}  </option>'
     s += '</select>'
     return s
@@ -300,50 +307,22 @@ def listBoxDataset():
 @app.route('/config-edit',methods=['post','get'])
 def configH():
 
-
-    apiKey       =  None
-    apiKeyValid  = True
-    invalidMsg = ""
-    successMsg = ""
-
     kvPost = request.form.to_dict()
+
+    apiKey =  None
     if 'api_key' in kvPost:
         apiKey = kvPost['api_key']
-    else: 
+    else:
         if 'api_key' in session:
             apiKey = session['api_key']
         else:
             apiKey = config.get("OpenAIKey")
 
-
-
-    # SET OPENAI_API_KEY=sk-iliEn...YVfODh5
-    if apiKey.startswith("your secret"):
-        apiKeyValid = False
-        invalidMsg += "replace init placeholder 'your secret'<br>\n"
-    elif (apiKey is None) or not apiKey.startswith("sk-"):
-        apiKeyValid = False
-        invalidMsg += "must start with 'sh-'    <br>\n"
-    elif len(apiKey) < 50:
-        apiKeyValid = False
-        invalidMsg += "must be 50 chars or more <br>\n"
-
-    if not apiKeyValid:
-        pass
-    else:
-        liveCheck, msg = embeddings.checkAPIKey(apiKey)
-        if not liveCheck:
-            apiKeyValid = False
-            invalidMsg += msg + "<br>\n"
-        else:
-            successMsg += "connection to OpenAI API succeeded<br>\n"
-            session['api_key'] = apiKey
-            config.set("OpenAIKey", apiKey)
-
+    apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
 
     invalidMsgExt = ""
     if not apiKeyValid:
-        invalidMsgExt = '''
+        invalidMsgExt = f'''
             {invalidMsg}
             <br>
             API key looks like <span style='font-size:85%'>sk-iliEnLtScLqauJejcpuDT4BlbkFJNTOc16c7E8R0NYVfODh5</span> <br>
@@ -351,12 +330,18 @@ def configH():
         '''
 
 
-    dataset = None
+    datasetNew = None
     if 'dataset' in kvPost:
-        dataset = kvPost['dataset']
-        config.set("dataset",dataset)
+        datasetNew = kvPost['dataset']
+        old = config.get("dataset")
 
+        if datasetNew != old:
+            embeddings.cacheDirty = True
+            contexts.cacheDirty = True
+            benchmarks.cacheDirty = True
+            samples.cacheDirty = True
 
+            config.set("dataset", datasetNew)
 
 
     content = f'''
@@ -366,7 +351,7 @@ def configH():
         {invalidMsgExt}
         {successMsg}
 
-        <label for="dataset">Open AI API Key</label> 
+        <label for="dataset">Open AI API Key</label>
         <input    name="api_key" type="input" size="64" value="{apiKey}"  >
         <br>
 
@@ -377,7 +362,7 @@ def configH():
     </form>
 
     <a href="/" {"autofocus" if apiKeyValid else ""}  >   Home        </a>
-    
+
     '''
 
     try:

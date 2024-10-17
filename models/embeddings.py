@@ -281,10 +281,44 @@ def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
         allIdxs.append(idxs)
         allVals.append(vals)
 
-    print(f"  {len(allVals):4} significant embed values for {len(embds)} computed")
+        print(f"  {len(allVals[idx1]):4} significant embed values for {len(embd)} computed")
+        dmp = deepcopy( allIdxs[idx1] )
+        dmp.sort()
+        print(f"    {dmp[:20]}...")
 
 
-    return (allIdxs, allVals, mn, mx)
+    permutes = {}
+    numSeries = len(allIdxs)
+    for idx1, series in enumerate(allIdxs):
+        for xcoord in series:
+            occurrences = 0
+            for idx3 in range(numSeries):
+                if xcoord in allIdxs[idx3]:
+                    occurrences +=1
+            if xcoord in permutes:
+                permutes[xcoord]  += occurrences
+            else:
+                permutes[xcoord]   = occurrences
+
+
+
+    overlaps = []
+    for k in permutes:
+        if permutes[k] > 1:
+            overlaps.append(k)
+
+    print(f"  {len(overlaps):4} overlaps")
+    overlaps.sort()
+    print(f"    ", end="")
+    for idx, k in enumerate(overlaps):
+        # print(f"{k:3}-{permutes[k]} ", end="")
+        print(f"{k:3} ", end="")
+        if idx > 20:
+            break
+    print("")
+
+
+    return (allIdxs, allVals, mn, mx, overlaps)
 
 
 
@@ -319,10 +353,7 @@ plotColors.extend(plotColors2)
 
 # creating scatter plot of data points as a JPG file
 #  groupSize - color n rows in similar color
-def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False, groupSize=1):
-
-    if not multiSeries:
-        return
+def scatterPlot(lbl, idxs, vals, mnVls, mxVls, overlaps=[], groupSize=1):
 
     # markerSize = 10
     markerSize = 1
@@ -333,35 +364,32 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False, groupSize=1):
 
     try:
 
-        if multiSeries:
-            for idx1, seriesIdxs in enumerate(idxs):
+        for idx1, seriesIdxs in enumerate(idxs):
 
-                # print(f" multi series {idx1} {len(idxs)}  {len(vals)}")
-                seriesVals = vals[idx1]
+            # print(f" multi series {idx1} {len(idxs)}  {len(vals)}")
+            seriesVals = vals[idx1]
 
-                # s=10 is the markers size
+            # s=10 is the markers size
 
-                # shift x-coords to see overlapp
-                seriesIdxsCX = []
-                dx = int(idx1*(0.8*markerSize)) # variable could be cx
-                for idx2, idxOld in enumerate(seriesIdxs):
-                    idxNew = idxOld + dx
-                    if idxNew < vectSize:
-                        seriesIdxsCX.append(idxNew)
-                    else:
-                        seriesIdxsCX.append(idxOld)
+            # shift x-coords to see overlapp
+            seriesIdxsCX = []
+            dx = int(idx1*(0.8*markerSize)) # variable could be cx
+            for idx2, idxOld in enumerate(seriesIdxs):
+                idxNew = idxOld + dx
+                if idxNew < vectSize:
+                    seriesIdxsCX.append(idxNew)
+                else:
+                    seriesIdxsCX.append(idxOld)
 
-                colr = plotColors[idx1+1]
-                if groupSize > 1:
-                    colr = plotColors[int(idx1/groupSize)+1]
+            colr = plotColors[idx1+1]
+            if groupSize > 1:
+                colr = plotColors[int(idx1/groupSize)+1]
 
 
-                plt.scatter(seriesIdxsCX, seriesVals, color=colr, s=markerSize )
-        else:
-            plt.scatter(idxs, vals, color='blue', s=markerSize )
+            plt.scatter(seriesIdxsCX, seriesVals, color=colr, s=markerSize )
+
 
         plt.axhline(0, color='gray', linestyle='--', linewidth=1)
-
 
         plt.xlim([    0, 3072])
 
@@ -376,6 +404,11 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False, groupSize=1):
 
         plt.ylim([ mnVls-0.02, mxVls+0.02])
 
+        vertHalf =    -(mnVls-0.02) / ( (mxVls+0.02) -  (mnVls-0.02))
+        for xcoord in overlaps:
+            plt.axvline(x=xcoord, ymin=(vertHalf-0.03), ymax=(vertHalf+0.03), color='lightgrey',)
+
+
         # plt.ylabel('PCA')
         # plt.xlabel('Idx')
 
@@ -386,7 +419,11 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False, groupSize=1):
         plt.subplots_adjust( top=0.91,bottom=0.05)
 
         lblShrt = (lbl[:44] + " … " + lbl[-44:]) if len(lbl) > (2*44) else lbl
-        plt.title(f"Significant embeddings for \n-{lblShrt}-")
+        lblShrt = lblShrt.replace("\n"," ")
+
+        overlapDensity = float(len(overlaps) / len(idxs[0])) * 100
+
+        plt.title(f"Significant embeds - {overlapDensity:5.0f}% overlaps \n-{lblShrt}- ")
 
     except Exception as error:
         print(f"ERROR plotting: {str(error)}")
@@ -410,13 +447,50 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, multiSeries=False, groupSize=1):
 #  scatter plot of data points as a JPG file
 def significantsAsPlots(lbls, embds, numCtxs):
 
-    allIdxs, allVals, mn, mx = significantsForPlot(embds)
+    allIdxs, allVals, mn, mx, overlaps = significantsForPlot(embds)
 
     for idx1, embd in enumerate(embds):
         lbl = lbls[idx1]
-        scatterPlot(lbl, allIdxs[idx1], allVals[idx1], min(allVals[idx1]), max(allVals[idx1]) )
+        scatterPlot(lbl,  [allIdxs[idx1]] , [allVals[idx1]], min(allVals[idx1]), max(allVals[idx1]) )
 
-    scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, groupSize=numCtxs, multiSeries=True)
+    scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, groupSize=numCtxs, overlaps=overlaps)
+
+
+def checkAPIKeyOuter(apiKey):
+
+    apiKeyValid = True
+    invalidMsg = ""
+    successMsg = ""
+
+    # SET OPENAI_API_KEY=sk-iliEn...YVfODh5
+    if apiKey.startswith("your secret"):
+        apiKeyValid = False
+        invalidMsg += "replace init placeholder 'your secret'<br>\n"
+    elif (apiKey is None) or not apiKey.startswith("sk-"):
+        apiKeyValid = False
+        invalidMsg += "must start with 'sh-'    <br>\n"
+    elif len(apiKey) < 50:
+        apiKeyValid = False
+        invalidMsg += "must be 50 chars or more <br>\n"
+
+    if not apiKeyValid:
+        pass
+    else:
+        liveCheck, msg = checkAPIKeyInner(apiKey)
+        if not liveCheck:
+            apiKeyValid = False
+            invalidMsg += msg + "<br>\n"
+        else:
+            successMsg += "connection to OpenAI API succeeded<br>\n"
+            session['api_key'] = apiKey
+            set("OpenAIKey", apiKey)
+
+    return (
+        apiKeyValid,
+        successMsg,
+        invalidMsg,
+    )
+
 
 
 def load():
@@ -462,7 +536,7 @@ def save():
 
 
 # is newKey valid
-def checkAPIKey(newKey):
+def checkAPIKeyInner(newKey):
 
     try:
         headers = {
