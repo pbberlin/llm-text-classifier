@@ -11,7 +11,7 @@ import fitz  # PyMuPDF
 import pandas as pd
 
 
-from nltk import sent_tokenize
+from lib.util import txtsIntoSample
 
 
 # copy from lib_openai
@@ -204,19 +204,6 @@ def iterateLocalDir(dir):
 
     return texts
 
-# we use the nltk tokenizer,
-# because it should ignore the first dot in "Mr. Smith goes to Washington."
-debugLines=4
-def sentences(txt):
-    sntcs = sent_tokenize(txt, language="english")
-    print( f"  { len(sntcs)} sentences found")
-    for idx, sntc in enumerate(sntcs):
-        if idx < debugLines or idx >= len(sntcs) - debugLines:
-            # print( f"    {idx+1:3}  {len(sntc):3}  {ell(sntc, x=48)}")
-            print( f"    {idx+1:3}  {len(sntc):3}  {sntc[:124]}")
-    return sntcs
-
-
 # uploaded file contents into single CSV file
 def toCSV(txts, columns= ['fname', 'text'], csvFilePath = os.path.join("data","extracted-pdf-texts.csv")):
 
@@ -240,67 +227,13 @@ def toCSV(txts, columns= ['fname', 'text'], csvFilePath = os.path.join("data","e
 
     return cleansedTxts
 
-# uploaded file contents as samples into pickle file
-def saveNewSamples(newSamples, append=False):
-
-    smpls = []
-
-    if append:
-        try:
-            with open(r"./data/samples-newly-imported.pickle", "rb") as inpFile:
-                smpls = pickle.load(inpFile)
-                print(f"appending 'samples' - loading - size {len(smpls):2}")
-        except Exception as error:
-            print(f"appending 'samples' - loading - error: {str(error)}")
-            smpls = []
-
-
-    # we could use extend
-    for newSpl in newSamples:
-        smpls.append(newSpl)
-
-    with open(r"./data/samples-newly-imported.pickle", "wb+") as outFile:
-        pickle.dump(smpls, outFile)
-        print(f"appending 'samples' - saving  - size {len(smpls):2}")
-
 
 # takes a list of texts and converts them into samples
 #   each element of txts[...][0] should contain title
 #   each element of txts[...][1] should contain a longer text
 #           txts[...][1] is split into sample statements
 #   numSntc - the number of sentences in one statement
-def txtsIntoSample(txts, numSntc=5 ):
-
-    smpls = []  # newly created samples
-
-    for i1, row in enumerate(txts):
-
-        smpl = {}
-        smpl["descr"] = txts[i1][0] 
-        smpl["statements"] = [] 
-
-        body =  txts[i1][1]
-        sntcs = sentences(body)
-        
-        numBatches = int(len(sntcs) / numSntc)
-
-        for i2 in range(numBatches):
-            i3 = numSntc*i2
-            btch = " ".join(sntcs[i3:i3+numSntc]) # ||
-            stmt = {}
-            stmt["short"] = sntcs[i3]
-            if len(stmt["short"]) > 48:
-                stmt["short"] = stmt["short"][:48]
-            stmt["long"]  = btch
-            smpl["statements"].append(stmt)
-            
-
-        smpls.append(smpl)
-
-    return smpls
-
-
-def uploadedToSamplesInPickleFile():
+def uploadedToSamples():
 
     textsFromFiles = iterateLocalDir("uploaded-files")
     if len(textsFromFiles) < 1:
@@ -317,6 +250,8 @@ def uploadedToSamplesInPickleFile():
     return newSamples
 
 
+
 if __name__ == '__main__':
-    newSamples = uploadedToSamplesInPickleFile()
-    saveNewSamples(newSamples)
+    # does not work from this directory and upper directory
+    #   due to import paths (lib.util or just utils)
+    newSamples = uploadedToSamples()

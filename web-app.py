@@ -11,7 +11,7 @@ from   pprint   import pprint, pformat
 import re
 import signal
 
-
+import argparse
 
 import flask
 from   flask import Flask, request
@@ -37,8 +37,9 @@ from lib.util import stackTrace
 
 import  lib.config          as config
 
-from lib.ecb_csv2pickle   import ecbSpeechesCSV2Pickle
-from lib.uploaded2samples import uploadedToSamplesInPickleFile
+
+from lib.uploaded2samples import uploadedToSamples
+from lib.ecb2samples      import ecbSpeechesCSV2Json
 
 
 import models.embeddings as embeddings
@@ -88,10 +89,13 @@ def indexH():
     else:
         apiKey = config.get('OpenAIKey')
 
-
-    apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
-    if not apiKeyValid:
-        return redirect( url_for("configH") )
+    referrer = request.referrer
+    # print(f"referrer {referrer}")
+    successMsg = ""
+    if referrer is None:
+        apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+        if not apiKeyValid:
+            return redirect( url_for("configH") )
 
 
     try:
@@ -211,10 +215,10 @@ def samplesImportH():
 
             filterBy = kvPost["filter"]
 
-            tmp = uploadedToSamplesInPickleFile()
+            tmp = uploadedToSamples()
             importedSmpls.extend(tmp)
 
-            print(f"samples imported new samples: {len(importedSmpls) } ")
+            print(f"samples imported new samples: {len(importedSmpls) } (not filterd yet) ")
 
 
     else:
@@ -287,7 +291,7 @@ def listBoxDataset():
      }
 
     for item in os.listdir(base_path):
-        if os.path.isdir(os.path.join(base_path, item)) and item not in exclude:
+        if os.path.isdir(os.path.join(base_path, item)) and item not in exclude and not item.startswith("tmp-"):
             dirs.append(item)
 
     selected = config.get("dataset")
@@ -302,6 +306,13 @@ def listBoxDataset():
         s += f'<option value="{dir}" {sel} >{dir}  </option>'
     s += '</select>'
     return s
+
+
+@app.route('/save-all',methods=['post','get'])
+def saveAllH():
+    saveAll(force=True)
+    return "OK"
+
 
 
 @app.route('/config-edit',methods=['post','get'])
@@ -336,12 +347,8 @@ def configH():
         old = config.get("dataset")
 
         if datasetNew != old:
-            embeddings.cacheDirty = True
-            contexts.cacheDirty = True
-            benchmarks.cacheDirty = True
-            samples.cacheDirty = True
-
             config.set("dataset", datasetNew)
+            saveAll(force=True)
 
 
     content = f'''
@@ -702,32 +709,93 @@ def embeddingsSimilarityH():
         return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
+lastLogTime = None
+
+# start: reset
+def logTimeSince(msg, startNew=False):
+
+    global lastLogTime
+    
+    tNow = datetime.now()
+
+    if startNew or lastLogTime is None:
+        print(f"{msg}")
+    else:
+        duration = tNow - lastLogTime
+        print(f"{msg} - took {duration.total_seconds()}s")
 
 
-if __name__ == '__main__':
+    lastLogTime = tNow
 
-    t1 = datetime.now()
-    print(f"webserver main() start")
+
+
+def loadAll(args):
+
+    logTimeSince(f"loading data start", startNew=True)
 
     config.load()
 
-    if False:
-        # only if new CSV file
-        ecbSpeechesCSV2Pickle()
+    if args.ecb:
+        # smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=10, filterBy="Asset purchase")
+        smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=3, filterBy="Asset purchase")
+        samples.update(smplsNew)
+        samples.save()
+        quit()
+
+    if args.upl:
+        smplsNew = uploadedToSamples()
+        samples.update(smplsNew)
+        samples.save()
+        quit()
+
+
     loadEnglishStopwords()
     loadDomainSpecificWords()
 
+    embeddings.load()
     contexts.load()
     benchmarks.load()
     samples.load()
 
-    embeddings.load()
+    logTimeSince(f"loading data stop")
 
 
-    t2 = datetime.now()
-    duration = t2 - t1
-    print(f"loading data took {duration.total_seconds()}s")
 
+def saveAll(force=False):
+
+    logTimeSince(f"saving  data start", startNew=True)
+
+    if force:
+        embeddings.cacheDirty = True
+        contexts.cacheDirty = True
+        benchmarks.cacheDirty = True
+        samples.cacheDirty = True
+
+    config.save()
+
+    embeddings.save()
+    contexts.save()
+    benchmarks.save()
+    samples.save()
+
+    logTimeSince(f"saving  data stop")
+
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser("LLM classifier args")
+    parser.add_argument("-cntr", "--counter", help="help for command line arg", default=0      , type=int)
+    parser.add_argument("-ecb" , "--ecb",     help="import ECB stuff",          default=False  , type=bool)
+    parser.add_argument("-upl" , "--upl",     help="import uploaded stuff",     default=False  , type=bool)
+
+    args = parser.parse_args()
+
+    dummy = args.counter + 1
+
+
+
+    loadAll(args)
 
     app.run(
         host='0.0.0.0',
@@ -736,12 +804,6 @@ if __name__ == '__main__':
         use_reloader=False,
     )
 
-    print("  ")
 
-    config.save()
-
-    embeddings.save()
-    contexts.save()
-    benchmarks.save()
-    samples.save()
+    saveAll()
 

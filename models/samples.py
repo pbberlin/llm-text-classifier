@@ -75,18 +75,6 @@ def toHTML(smpl):
 
 
 
-def loadAndAppendImported():
-    global c_samples  # in order to _write_ to module variable
-    try:
-        with open(r"./data/samples-newly-imported.pickle", "rb") as inpFile:
-            uploaded = pickle.load(inpFile)
-            c_samples.extend(uploaded) # not append
-        print(f"loading pickle file 'samples upl' - size {len(c_samples):2} - type {type(c_samples)}   ")
-    except Exception as error:
-        print(f"loading pickle file 'samples uploaded' caused error: {str(error)}")
-
-
-
 def load():
     global c_samples  # in order to _write_ to module variable
     c_samples = loadJson("samples", subset=get("dataset"))

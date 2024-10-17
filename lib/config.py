@@ -1,7 +1,6 @@
 
 
-from lib.util import loadJson
-from lib.util import saveJson
+from lib.util import loadJson, saveJson
 
 from   copy     import deepcopy
 

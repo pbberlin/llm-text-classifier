@@ -347,6 +347,17 @@ plotColors2 = [
     '#ffbb11',
     '#c2a',
     '#aac',
+
+# repeat - to avoid index out of bounds
+    'blue',
+    'green',
+    'red',
+    'cyan',
+    'magenta',
+    '#aabbcc',
+    '#ffbb11',
+    '#c2a',
+    '#aac',
 ]
 plotColors.extend(plotColors2)
 

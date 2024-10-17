@@ -1,5 +1,4 @@
 import os
-import pickle
 from pprint import pprint
 
 # pip install nltk
@@ -18,6 +17,10 @@ from nltk.text import Text # for concordance
 
 from nltk.stem import WordNetLemmatizer
 wnLem = WordNetLemmatizer()
+
+from lib.util import txtsIntoSample
+from lib.util import loadJson, saveJson
+
 
 
 
@@ -59,33 +62,24 @@ def headerCols(lineCntr, colByIdx, cols):
 speeches = []
 
 # 
-def ecbSpeechesCSV2Pickle():
+def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, tokenizeWords=False):
 
-    try:
-        with open(r"./data/ecb_speeches.pickle", "rb") as inpFile:
-            speeches = pickle.load(inpFile)
-    except Exception as error:
-        print(f"loading pickle file 'ecb_speeches' caused error: {str(error)}")
-
-    if len(speeches) > 5:
-        print(f"loading pickle file 'ecb_speeches' - {len(speeches)} rows ")
-        return
-    
-
+    speeches = []
 
     with open('./data/ECB_speeches.csv', mode='r', encoding='UTF8') as file2:
         lineCntr = 0
+        impoCntr = 0   # not filtered
         idxByCol = {}
         colByIdx = []
         try:
-            print(f"\treading ECB speeches start")
+            print(f"\treading ECB speeches start - filter by {filterBy}")
             while True:
-                lineCntr += 1
 
-                if lineCntr > 10:
-                    print(f"\treading ECB speeches - early break")
+                if impoCntr > earlyBreakAt:
+                    print(f"\treading ECB speeches - early break at {earlyBreakAt}")
                     break
 
+                lineCntr += 1
 
                 line = file2.readline()
 
@@ -127,6 +121,20 @@ def ecbSpeechesCSV2Pickle():
                 if raw == "":
                     continue
 
+                if filterBy != "":
+                    contains1 = (filterBy in raw)
+                    contains2 = (filterBy.title() in raw)
+                    contains3 = (filterBy.lower() in raw)
+
+                    if contains1 or contains2 or contains3:
+                        pass
+                    else:
+                        print(f"\t  filtered out '{filterBy}' - ")
+                        continue
+
+
+                impoCntr += 1
+
 
                 sts = sent_tokenize(raw) 
                 for idx, st in enumerate(sts):
@@ -140,16 +148,30 @@ def ecbSpeechesCSV2Pickle():
                     print(f"\t  \tst {idx:2d} - {st[:53]} ...  {st[len(st)-53:]}")
 
 
-                words = word_tokenize(raw) # words
+                if tokenizeWords:
+                    words = word_tokenize(raw) # words
+                    speeches.append([metaData,raw,sts,words])
 
-                speeches.append([metaData,raw,sts,words])
+                speeches.append([metaData,raw,sts])
 
             print(f"\treading ECB speeches stop")
 
-            with open(r"./data/ecb_speeches.pickle", "wb+") as outFile:
-                pickle.dump(speeches, outFile)
+            saveJson(speeches, f"ecb-speeches-{filterBy}", "tmp-import")
+
+
+            newSamples = txtsIntoSample(speeches)
+            # saveJson(newSamples, f"ecb-speeches-{filterBy}-smpls", "tmp-import")
+
+            return newSamples
+
 
         except Exception as e:
             file2.close()
             print(f"exception {e}")
+            return []
 
+
+if __name__ == '__main__':
+    # does not work from this directory and upper directory
+    #   due to import paths (lib.util or just utils)
+    ecbSpeechesCSV2Json(earlyBreakAt=10, filterBy="Asset purchase")

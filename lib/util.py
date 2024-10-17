@@ -6,6 +6,11 @@ import traceback, sys
 
 import re
 
+
+from nltk import sent_tokenize
+
+
+
 def stackTrace(e):
 
     cwd = os.getcwd()
@@ -128,7 +133,7 @@ def loadJson(name, subset="misc", onEmpty="list"):
         dr = os.path.join(".", "data", subset)
         fn = os.path.join(dr, f"{name}.json" )
 
-        with open(fn) as inFile:
+        with open(fn, encoding="utf-8") as inFile:
             strContents = inFile.read()
             dta = json.loads(strContents)
             print(f"loaded  '{name:12}' as json {type(dta)} - {len(dta):3} entries - {dr}")
@@ -141,6 +146,52 @@ def loadJson(name, subset="misc", onEmpty="list"):
         if onEmpty=="dict":
             return {}
         return []
+
+
+# we use the nltk tokenizer,
+# because it should ignore the first dot in "Mr. Smith goes to Washington."
+debugLines=4
+
+
+def sentences(txt):
+    sntcs = sent_tokenize(txt, language="english")
+    print( f"  { len(sntcs)} sentences found")
+    for idx, sntc in enumerate(sntcs):
+        if idx < debugLines or idx >= len(sntcs) - debugLines:
+            # print( f"    {idx+1:3}  {len(sntc):3}  {ell(sntc, x=48)}")
+            print( f"    {idx+1:3}  {len(sntc):3}  {sntc[:124]}")
+    return sntcs
+
+
+def txtsIntoSample(txts, numSntc=5 ):
+
+    smpls = []  # newly created samples
+
+    for i1, row in enumerate(txts):
+
+        smpl = {}
+        smpl["descr"] = txts[i1][0].strip()
+        smpl["statements"] = []
+
+        body =  txts[i1][1]
+        sntcs = sentences(body)
+
+        numBatches = int(len(sntcs) / numSntc)
+
+        for i2 in range(numBatches):
+            i3 = numSntc*i2
+            btch = " ".join(sntcs[i3:i3+numSntc]) # ||
+            stmt = {}
+            stmt["short"] = sntcs[i3].strip()
+            if len(stmt["short"]) > 48:
+                stmt["short"] = stmt["short"][:48]
+            stmt["long"]  = btch.strip()
+            smpl["statements"].append(stmt)
+
+
+        smpls.append(smpl)
+
+    return smpls
 
 
 

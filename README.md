@@ -8,3 +8,10 @@ cls && python web-app.py
 Open your browser http://localhost:8001
 
 More on [embeddings](./doc/README.md) 
+
+
+Import ECB speeches
+
+```sh
+cls && python web-app.py --ecb=True
+```
