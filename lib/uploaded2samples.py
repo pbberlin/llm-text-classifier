@@ -11,7 +11,7 @@ import fitz  # PyMuPDF
 import pandas as pd
 
 
-from lib.util import txtsIntoSample
+from lib.util import cleanBodyText, txtsIntoSample
 
 
 # copy from lib_openai
@@ -35,71 +35,7 @@ def ell(s, x=16):
 
 
 
-def flagSpecial(s):
-    np = {}
-    for char in s:
-        if ord(char) not in range(16,127):
-            if char in np:
-                np[char] += 1
-            else:
-                np[char] = 1
 
-    if len(np) > 0:
-        pprint(np)
-
-    return np
-
-
-RE_CONDENSE_SP = re.compile(r' +')   # condense spaces
-RE_CONDENSE_NL = re.compile(r"\s+")  # also newlines and tabs
-
-# menu labels from PDF extractions - from the economist...
-RE_GESPERRT    = re.compile(r"( \w){8,}")  # gesperrte Worte "O t t o v o n B i s m a r c k"
-
-
-# RE_ONLY_ASCII = re.compile(r'[^\x00-\x7F]')
-RE_PRINTABLE = re.compile(r'[^\x20-\x7F]')
-
-# RE_URLs = re.compile(r'http\S+')
-# RE_URLs = re.compile(r'^https?:\/\/.*[\r\n]*')
-RE_URLs = re.compile(r'(http[s]?://\S+)')
-
-
-
-def cleanBodyText(s, compare=False):
-
-
-    s = s.replace("\x00",  " ") # replace CTRL
-    s = s.replace("£",  " Pound ")
-    s = s.replace("€",  " Euro ")
-    s = s.replace("©",  "  (C) ")
-    s = s.replace("→",  "  => ")
-
-    s = s.replace('’',  "'")
-    s = s.replace('“',  '"')
-    s = s.replace('”',  '"')
-    s = s.replace('—',  " - ")
-
-    # ligatures
-
-    # https://www.compart.com/en/unicode/U+FB00
-    s = s.replace('ﬀ',  "ff")
-
-    # https://www.compart.com/en/unicode/U+FB02
-    s = s.replace('ﬂ',  "fl")
-
-    s = RE_URLs.sub(" ", s)
-
-    s = RE_CONDENSE_NL.sub(" ", s).strip()
-
-    # s = RE_PRINTABLE.sub(' __ ', s)
-    flagSpecial(s)
-
-    s = RE_GESPERRT.sub(' ', s)
-
-    s = RE_CONDENSE_SP.sub(' ', s)
-
-    return s
 
 # PDF extraction shortcomings:
 #   https://pypdf.readthedocs.io/en/stable/user/extract-text.html#example-1-ignore-header-and-footer

@@ -224,10 +224,12 @@ The web application can be downloaded from [ZEW git](https://git.zew.de/ub-publi
 
 It can be executed on your notebooks.
 
-The web application works for ChatGPT 4.  
-It requires an API key from this company.
+The web application connects to OpenAI ChatGPT 4.  
+It requires an API key from OpenAI inc.  
 
-Embeddings are stored locally; openAI is only asked once per text-element.
+If you request many embeddings, OpenAI may require money for it.
+
+At least, embeddings are stored locally; openAI is only asked _once_ per text-element.
 
 The web application allows for uploading and arranging various elements of text classification
 
@@ -239,6 +241,7 @@ Some default data is loaded.
 You can change according to your reserch.
 
 It displays embeddings and similarity as charts.
+
 
 ### Indexing (purely technical)
 

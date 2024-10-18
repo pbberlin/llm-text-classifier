@@ -281,10 +281,11 @@ def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
         allIdxs.append(idxs)
         allVals.append(vals)
 
-        print(f"  {len(allVals[idx1]):4} significant embed values for {len(embd)} computed")
-        dmp = deepcopy( allIdxs[idx1] )
-        dmp.sort()
-        print(f"    {dmp[:20]}...")
+        if False:
+            print(f"  {len(allVals[idx1]):4} significant embed values for {len(embd)} computed")
+            dmp = deepcopy( allIdxs[idx1] )
+            dmp.sort()
+            print(f"    {dmp[:20]}...")
 
 
     permutes = {}
@@ -307,15 +308,17 @@ def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
         if permutes[k] > 1:
             overlaps.append(k)
 
-    print(f"  {len(overlaps):4} overlaps")
+    # print(f"  {len(overlaps):4} overlaps")
     overlaps.sort()
     print(f"    ", end="")
-    for idx, k in enumerate(overlaps):
-        # print(f"{k:3}-{permutes[k]} ", end="")
-        print(f"{k:3} ", end="")
-        if idx > 20:
-            break
-    print("")
+
+    if False:
+        for idx, k in enumerate(overlaps):
+            # print(f"{k:3}-{permutes[k]} ", end="")
+            print(f"{k:3} ", end="")
+            if idx > 20:
+                break
+        print("")
 
 
     return (allIdxs, allVals, mn, mx, overlaps)
@@ -585,7 +588,7 @@ def checkAPIKeyInner(newKey):
 #
 # returns a List of np.arrays - containing embeddings as
 defaultContext = {"short": "", "long": ""}
-def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
+def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
 
     global c_embeddings  # in order to access module variable
     # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
@@ -690,11 +693,18 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
         embds.append( embdsByK[stmt] )
 
 
-    # if False:
-    if True:
-        significantsAsPlots(stmts, embds, len(ctxs))
+    # following operations expect a list of a numpy arrays
+    arrNp = []
+    for row in embds:
+        arrNp.append(  np.array(row) )
+    print(f"   {len(arrNp)} return vals converted {len(stmts)}")
+    print("  --")
 
 
+    return arrNp
+
+
+def getEmbeddingsHTML(stmts, embds, ctxs, strFormat="simple", ):
 
     # display as HTML
     # ========================
@@ -774,17 +784,11 @@ def getEmbeddings(stmts, ctxs=[], strFormat="simple", ctxScalar=defaultContext):
     s += "\n"
 
 
-
-    # following operations expect a list of a numpy arrays
-    arrNp = []
-    for row in embds:
-        arrNp.append(  np.array(row) )
-    print(f"   {len(arrNp)} return vals converted {len(stmts)}")
-    print("  --")
+    return s
 
 
-    return (arrNp,s)
-
+def getEmbeddingsPlot(stmts, embds, ctxs):
+    significantsAsPlots(stmts, embds, len(ctxs))
 
 
 

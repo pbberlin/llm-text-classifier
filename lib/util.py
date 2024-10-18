@@ -5,9 +5,12 @@ from datetime import datetime
 import traceback, sys
 
 import re
+from pprint import pprint
 
 
 from nltk import sent_tokenize
+from nltk import word_tokenize
+
 
 
 
@@ -148,10 +151,93 @@ def loadJson(name, subset="misc", onEmpty="list"):
         return []
 
 
+
+def flagSpecial(s):
+    np = {}
+    for char in s:
+        if ord(char) not in range(16,127):
+            if char in np:
+                np[char] += 1
+            else:
+                np[char] = 1
+
+    if len(np) > 0:
+        pprint(np)
+
+    return np
+
+
+
+
+RE_CONDENSE_SP = re.compile(r' +')   # condense spaces
+RE_CONDENSE_NL = re.compile(r"\s+")  # also newlines and tabs
+
+# menu labels from PDF extractions - from the economist...
+RE_GESPERRT    = re.compile(r"( \w){8,}")  # gesperrte Worte "O t t o v o n B i s m a r c k"
+
+
+# RE_ONLY_ASCII = re.compile(r'[^\x00-\x7F]')
+RE_PRINTABLE = re.compile(r'[^\x20-\x7F]')
+
+# RE_URLs = re.compile(r'http\S+')
+# RE_URLs = re.compile(r'^https?:\/\/.*[\r\n]*')
+RE_URLs = re.compile(r'(http[s]?://\S+)')
+
+# [34]
+RE_BRACK1 = re.compile(r'\[\d+\]')
+# (2020)  189-222
+RE_BRACK2 = re.compile(r'\(\d+\)')
+# 189-222
+
+
+def cleanBodyText(s, compare=False):
+
+
+    s = s.replace("\x00",  " ") # replace CTRL
+    s = s.replace("£",  " Pound ")
+    s = s.replace("€",  " Euro ")
+    s = s.replace("©",  "  (C) ")
+    s = s.replace("→",  "  => ")
+
+    s = s.replace('’',  "'")
+    s = s.replace('“',  '"')
+    s = s.replace('”',  '"')
+    s = s.replace('—',  " - ")
+    s = s.replace('–',  " - ")
+
+    # ligatures
+
+    # https://www.compart.com/en/unicode/U+FB00
+    s = s.replace('ﬀ',  "ff")
+
+    # https://www.compart.com/en/unicode/U+FB02
+    s = s.replace('ﬂ',  "fl")
+
+    s = RE_URLs.sub(" ", s)
+
+    s = RE_CONDENSE_NL.sub(" ", s)
+    
+    s = RE_BRACK1.sub(" ", s)
+    s = RE_BRACK2.sub(" ", s)
+
+    # s = RE_PRINTABLE.sub(' __ ', s)
+    flagSpecial(s)
+
+    s = RE_GESPERRT.sub(' ', s)
+
+    s = RE_CONDENSE_SP.sub(' ', s)
+
+    s = s.strip()
+
+    return s
+
+
+
+
+
 # we use the nltk tokenizer,
 # because it should ignore the first dot in "Mr. Smith goes to Washington."
 debugLines=4
-
 
 def sentences(txt):
     sntcs = sent_tokenize(txt, language="english")
@@ -162,6 +248,35 @@ def sentences(txt):
             print( f"    {idx+1:3}  {len(sntc):3}  {sntc[:124]}")
     return sntcs
 
+
+def longWords(s, greaterThan=7, maxLen=64):
+
+    s = s.strip()
+    words = word_tokenize(s)
+    lng = []
+    for w in words:
+        if len(w) > greaterThan:
+            if not lng.count(w) > 0:  # dont add twice
+                lng.append(w)
+   
+
+    lng.sort(key=len)
+    lng.reverse()
+
+
+
+    # cut off after maxLen
+    sz = 0
+    idxCutoff = 2
+    for idx, w in enumerate(lng):
+        sz += len(w)
+        if sz > maxLen:
+            idxCutoff = idx
+            break
+
+    lng = lng[:idxCutoff]
+
+    return " ".join(lng)
 
 def txtsIntoSample(txts, numSntc=5 ):
 
@@ -174,6 +289,7 @@ def txtsIntoSample(txts, numSntc=5 ):
         smpl["statements"] = []
 
         body =  txts[i1][1]
+
         sntcs = sentences(body)
 
         numBatches = int(len(sntcs) / numSntc)
@@ -181,10 +297,9 @@ def txtsIntoSample(txts, numSntc=5 ):
         for i2 in range(numBatches):
             i3 = numSntc*i2
             btch = " ".join(sntcs[i3:i3+numSntc]) # ||
+            shrt = longWords(btch) 
             stmt = {}
-            stmt["short"] = sntcs[i3].strip()
-            if len(stmt["short"]) > 48:
-                stmt["short"] = stmt["short"][:48]
+            stmt["short"] = shrt
             stmt["long"]  = btch.strip()
             smpl["statements"].append(stmt)
 
@@ -192,6 +307,5 @@ def txtsIntoSample(txts, numSntc=5 ):
         smpls.append(smpl)
 
     return smpls
-
 
 

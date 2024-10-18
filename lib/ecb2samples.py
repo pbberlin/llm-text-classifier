@@ -18,9 +18,8 @@ from nltk.text import Text # for concordance
 from nltk.stem import WordNetLemmatizer
 wnLem = WordNetLemmatizer()
 
-from lib.util import txtsIntoSample
+from lib.util import cleanBodyText, txtsIntoSample
 from lib.util import loadJson, saveJson
-
 
 
 
@@ -49,7 +48,7 @@ def headerCols(lineCntr, colByIdx, cols):
     ret = ret.replace("speakers:", "sp:")
     ret = ret.replace("title:"   , "ti:")
 
-    ret = f"line {lineCntr:3d}  {ret}"
+    ret = f"{ret}  csv-line {lineCntr:3d}  "
 
     return ret
 
@@ -116,6 +115,9 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, tokenizeWords=False):
                 raw = cols[ idxByCol["contents"] ]
                 raw.strip()
 
+                raw = cleanBodyText(raw)
+
+
                 print(f"\t    line {lineCntr:3d} - content size {len(raw)} ")
 
                 if raw == "":
@@ -152,15 +154,18 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, tokenizeWords=False):
                     words = word_tokenize(raw) # words
                     speeches.append([metaData,raw,sts,words])
 
-                speeches.append([metaData,raw,sts])
+                else:
+                    speeches.append([metaData,raw,sts])
+
 
             print(f"\treading ECB speeches stop")
 
-            saveJson(speeches, f"ecb-speeches-{filterBy}", "tmp-import")
-
-
             newSamples = txtsIntoSample(speeches)
             # saveJson(newSamples, f"ecb-speeches-{filterBy}-smpls", "tmp-import")
+
+            saveJson(speeches,   f"ecb-speeches-{filterBy}", "tmp-import")
+            saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}", "tmp-import")
+
 
             return newSamples
 

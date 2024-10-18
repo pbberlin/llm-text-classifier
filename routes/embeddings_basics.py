@@ -26,7 +26,10 @@ def model(req,session):
         for s in bmrk["statements"]:
             statementsLong.append(s["long"])
 
-        embeds, s = embeddings.getEmbeddings(statementsLong, ctxs=ctxs, strFormat="extended")
+        embeds = embeddings.getEmbeddings(statementsLong, ctxs=ctxs)
+        embeddings.getEmbeddingsPlot(statementsLong, embeds, ctxs)
+
+        s = embeddings.getEmbeddingsHTML(statementsLong, embeds, ctxs, strFormat="extended")
         res += f"{s}"
 
 

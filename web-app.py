@@ -1,3 +1,25 @@
+from   datetime import datetime, timedelta
+lastLogTime = None
+
+# start: reset
+def logTimeSince(msg, startNew=False):
+
+    global lastLogTime
+    
+    tNow = datetime.now()
+
+    if startNew or lastLogTime is None:
+        print(f"{msg}")
+    else:
+        duration = tNow - lastLogTime
+        print(f"{msg} - took {duration.total_seconds()}s")
+
+
+    lastLogTime = tNow
+
+logTimeSince(f"python script - imports start", startNew=True)
+
+
 import os
 from   pathlib import Path
 
@@ -5,7 +27,6 @@ import json
 import pickle
 
 import sys
-from   datetime import datetime, timedelta
 from   pprint   import pprint, pformat
 
 import re
@@ -45,7 +66,7 @@ from lib.ecb2samples      import ecbSpeechesCSV2Json
 import models.embeddings as embeddings
 
 
-
+logTimeSince(f"python script - imports stop")
 
 
 # https://dev.to/fullstackstorm/working-with-sessions-in-flask-a-comprehensive-guide-525k
@@ -709,23 +730,6 @@ def embeddingsSimilarityH():
         return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
-lastLogTime = None
-
-# start: reset
-def logTimeSince(msg, startNew=False):
-
-    global lastLogTime
-    
-    tNow = datetime.now()
-
-    if startNew or lastLogTime is None:
-        print(f"{msg}")
-    else:
-        duration = tNow - lastLogTime
-        print(f"{msg} - took {duration.total_seconds()}s")
-
-
-    lastLogTime = tNow
 
 
 

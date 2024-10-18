@@ -163,11 +163,11 @@ def model(ctxs, bmrk, smpl ):
     bmrkSh = bmShTmp
 
 
-    embsBm, s = embeddings.getEmbeddings(bmrkLg, ctxs=ctxs)
+    embsBm = embeddings.getEmbeddings(bmrkLg, ctxs=ctxs)
     # res += s
 
     # NO CONTEXT here
-    embsSp, s = embeddings.getEmbeddings(smplLg)
+    embsSp = embeddings.getEmbeddings(smplLg)
     # res += s
 
 
