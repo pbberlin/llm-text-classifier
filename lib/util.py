@@ -251,6 +251,34 @@ def cleanBodyText(s, compare=False):
     return s
 
 
+# 189-222.
+RE_numberRange = re.compile(r'[\d\-\.]+')
+
+# 96, pp.
+RE_pagecite1 = re.compile(r'[\d]+, pp.')
+
+# 129, No
+RE_pagecite2 = re.compile(r'[\d]+, No')
+
+
+RE_pagecite3 = re.compile(r'[\d]+, Issue')
+
+def trivial(s):
+    lBef = len(s)
+    bef = s
+    s = RE_BRACK1.sub(" ", s)
+    s = s.strip()
+    s = RE_pagecite1.sub(" ", s)
+    s = s.strip()
+    s = RE_pagecite2.sub(" ", s)
+    s = s.strip()
+    s = RE_pagecite3.sub(" ", s)
+    s = s.strip()
+    if lBef != len(s) and len(s) > 0:
+        print(f"\t len bef after {lBef:2} - {len(s):2} - {type(s)}")
+        print(f"\t  -{bef}-")
+        print(f"\t  -{s}-")
+    return s
 
 
 
@@ -271,13 +299,21 @@ def sentences(txt):
 def longWordsNLTK(s, maxLen=64):
     sts = sent_tokenize(s) 
     cores = []
-    for st in sts:
+    for idx, st in enumerate(sts):
         core = coreOfSentence(st)
         cores.append(core)
 
     s = ". ".join(cores)
+
+    # inefficient
     if len(s) > maxLen:
-        s = s[:maxLen]
+        ws = s.split(" ")
+        s = ""
+        for w in ws:
+            if len(s) < maxLen:
+                s += w + " "
+        s = s.strip()
+
     return s
 
 
@@ -326,6 +362,16 @@ def txtsIntoSample(txts, numSntc=5 ):
         body =  txts[i1][1]
 
         sntcs = sentences(body)
+
+        for i2, st in enumerate(sntcs):
+            sntcs[i2] = trivial(sntcs[i2])
+        # remove empty
+        lnBef = len(sntcs)
+        sntcs[:] = [x for x in sntcs if x]
+        sntcs[:] = [x for x in sntcs if len(x) > 5]
+        lnAft = len(sntcs)
+        if lnBef != lnAft:
+            print(f"\tremoved {lnBef-lnAft} trivial sentences")
 
         numBatches = int(len(sntcs) / numSntc)
 
