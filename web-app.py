@@ -1,22 +1,4 @@
-from   datetime import datetime, timedelta
-lastLogTime = None
-
-# start: reset
-def logTimeSince(msg, startNew=False):
-
-    global lastLogTime
-    
-    tNow = datetime.now()
-
-    if startNew or lastLogTime is None:
-        print(f"{msg}")
-    else:
-        duration = tNow - lastLogTime
-        print(f"{msg} - took {duration.total_seconds()}s")
-
-
-    lastLogTime = tNow
-
+from lib.init import logTimeSince
 logTimeSince(f"python script - imports start", startNew=True)
 
 
@@ -27,6 +9,9 @@ import json
 import pickle
 
 import sys
+
+from   datetime import datetime, timedelta
+
 from   pprint   import pprint, pformat
 
 import re

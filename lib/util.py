@@ -8,10 +8,24 @@ import re
 from pprint import pprint
 
 
+import nltk
 from nltk import sent_tokenize
 from nltk import word_tokenize
+from nltk import word_tokenize
+from nltk import pos_tag, ne_chunk
+
+# for SPO
+from nltk.tree import Tree
+if False:
+    nltk.download('punkt')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('maxent_ne_chunker_tab')
+    nltk.download('words')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('averaged_perceptron_tagger_eng')
 
 
+from lib.init import logTimeSince
 
 
 def stackTrace(e):
@@ -152,18 +166,15 @@ def loadJson(name, subset="misc", onEmpty="list"):
 
 
 
-def flagSpecial(s):
+letPass = ["ä","ö","ü","Ä","Ö","Ü",]
+def flagSpecialChars(s):
     np = {}
     for char in s:
-        if ord(char) not in range(16,127):
+        if ord(char) not in range(16,127)   and   (not char in letPass):
             if char in np:
                 np[char] += 1
             else:
                 np[char] = 1
-
-    if len(np) > 0:
-        pprint(np)
-
     return np
 
 
@@ -200,10 +211,13 @@ def cleanBodyText(s, compare=False):
     s = s.replace("→",  "  => ")
 
     s = s.replace('’',  "'")
+    s = s.replace('‘',  "'")
     s = s.replace('“',  '"')
     s = s.replace('”',  '"')
     s = s.replace('—',  " - ")
     s = s.replace('–',  " - ")
+    s = s.replace('−',  " - ")  # different char from previous line !
+
 
     # ligatures
 
@@ -221,7 +235,12 @@ def cleanBodyText(s, compare=False):
     s = RE_BRACK2.sub(" ", s)
 
     # s = RE_PRINTABLE.sub(' __ ', s)
-    flagSpecial(s)
+    specialChars = flagSpecialChars(s)
+    if len(specialChars)>0:
+        print(f"\t\tspecial chars: ", end=" ")
+        for ch in specialChars:
+            print(f"{ch} {specialChars[ch]} ", end=" ")
+        print("")
 
     s = RE_GESPERRT.sub(' ', s)
 
@@ -249,7 +268,20 @@ def sentences(txt):
     return sntcs
 
 
-def longWords(s, greaterThan=7, maxLen=64):
+def longWordsNLTK(s, maxLen=64):
+    sts = sent_tokenize(s) 
+    cores = []
+    for st in sts:
+        core = coreOfSentence(st)
+        cores.append(core)
+
+    s = ". ".join(cores)
+    if len(s) > maxLen:
+        s = s[:maxLen]
+    return s
+
+
+def longWordsByLen(s, greaterThan=7, maxLen=64):
 
     s = s.strip()
     words = word_tokenize(s)
@@ -278,7 +310,10 @@ def longWords(s, greaterThan=7, maxLen=64):
 
     return " ".join(lng)
 
+
 def txtsIntoSample(txts, numSntc=5 ):
+
+    logTimeSince(f"txtsIntoSample start", startNew=True)
 
     smpls = []  # newly created samples
 
@@ -297,15 +332,161 @@ def txtsIntoSample(txts, numSntc=5 ):
         for i2 in range(numBatches):
             i3 = numSntc*i2
             btch = " ".join(sntcs[i3:i3+numSntc]) # ||
-            shrt = longWords(btch) 
+            # shrt = longWordsByLen(btch) 
+            shrt = longWordsNLTK(btch) 
             stmt = {}
             stmt["short"] = shrt
             stmt["long"]  = btch.strip()
             smpl["statements"].append(stmt)
 
+            print(".", end="", flush=True)
+        
+        print("|")
+
 
         smpls.append(smpl)
 
+
+    logTimeSince(f"txtsIntoSample stop")
+
+
     return smpls
 
+
+
+
+
+
+def components(st):
+
+    words     = word_tokenize(st)
+    tagPoss   = pos_tag(words)
+    namedEnts = ne_chunk(tagPoss)
+
+    subject    = []
+    predicate  = []
+    obj        = []
+    adverbs    = []
+    adjectives = []
+    prepos     = [] #  prepositional phrases
+    indirectOs = [] # indirect objects
+
+    inPrepoPhrase = False  # in prepositional phrase
+    currPrepPhrase = []    # current prepositional  phrase
+
+    # for ne in namedEnts:
+    #     pprint(ne)
+
+    for idx, subtree in enumerate(namedEnts):
+
+        try:
+
+            if isinstance(subtree, Tree):
+                entLbl = subtree.label()
+                entNme = " ".join([token for token, pos in subtree.leaves()])
+                if entLbl in ('PERSON', 'ORGANIZATION', 'GPE'):  # Typical subjects or objects
+                    if not subject:
+                        subject.append(entNme)
+                    else:
+                        obj.append(entNme)
+            else:
+                word, pos = subtree
+
+                # Subject - often first named entity or noun
+                if pos.startswith('NN') and not predicate:
+                    if not subject:
+                        subject.append(word)
+                    else:
+                        obj.append(word)
+
+                # Predicate - first verb
+                elif pos.startswith('VB') and not predicate:
+                    predicate.append(word)
+
+                # Object - nouns after predicate
+                elif predicate and pos.startswith('NN'):
+                    obj.append(word)
+
+                # Adverbs - RB tag
+                if pos == 'RB':
+                    adverbs.append(word)
+
+                # Adjectives - JJ tag
+                if pos == 'JJ':
+                    adjectives.append(word)
+
+                # Prepositional phrases extraction - IN tag
+                if pos == 'IN':
+                    inPrepoPhrase = True
+                    currPrepPhrase = [word]
+                elif inPrepoPhrase:
+                    if pos.startswith('NN'):
+                        currPrepPhrase.append(word)
+                    else:
+                        prepos.append(' '.join(currPrepPhrase))
+                        inPrepoPhrase = False
+                        currPrepPhrase = []
+
+                # Indirect object detection (nouns following 'to' or 'for')
+                if (word.lower() in ['to', 'for']) and ((idx + 1) < len(namedEnts)):
+                    nextNE = namedEnts[idx + 1]
+                    if len(nextNE) < 2:
+                        pass
+                        # print(f"next named entity has len {len(nextNE)}: {nextNE}")
+                    else:
+                        nextWord, nextPos = nextNE
+                        if not type(nextPos) is str:
+                            pass
+                            # print(f"next named entity has type {type(nextPos)} - {nextPos}")
+                        else:
+                            if nextPos.startswith('NN'):
+                                indirectOs.append(nextWord)
+
+        except Exception as exc:
+            print(f"components - NLTK(): exception {exc}")
+            print(stackTrace(exc))
+
+
+
+    return {
+        'subject':     ' '.join(subject),
+        'predicate':   ' '.join(predicate),
+        'object':      ' '.join(obj),
+        'adverbs':    ', '.join(adverbs),
+        'adjectives': ', '.join(adjectives),
+        'prepos':     ', '.join(prepos),
+        'indir_objs': ', '.join(indirectOs)
+    }
+
+
+def coreOfSentence(st):
+    comps = components(st)
+    # print(f"{"Sentence":12}: {st}")
+    core = f"{comps["subject"]} {comps["object"]} {comps["indir_objs"]}"
+    core = core.strip()
+    # print(f"{"Components":12}: {compsSubset}")
+    for k in comps:
+        continue
+        cmp = comps[k]
+        if k in ["subject", "predicate", "object"]:
+            print(f"{k.capitalize():12}: {cmp}")
+        else:
+            if cmp != "":
+                print(f"{k.capitalize():12}: {cmp}")
+    # print("-" * 40)
+    return core
+
+
+
+if __name__ == '__main__':
+
+    sts = [
+        "John works at Google.",
+        "The cat chased the mouse.",
+        "She gave him a book."
+    ]
+    for st in sts:
+        core = coreOfSentence(st)
+        print(f"{"core components":12}: {core}")
+        print("-" * 40)
 

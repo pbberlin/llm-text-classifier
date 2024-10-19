@@ -20,6 +20,7 @@ wnLem = WordNetLemmatizer()
 
 from lib.util import cleanBodyText, txtsIntoSample
 from lib.util import loadJson, saveJson
+from lib.util import stackTrace
 
 
 
@@ -137,7 +138,6 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, tokenizeWords=False):
 
                 impoCntr += 1
 
-
                 sts = sent_tokenize(raw) 
                 for idx, st in enumerate(sts):
                     if idx < 7:
@@ -158,21 +158,21 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, tokenizeWords=False):
                     speeches.append([metaData,raw,sts])
 
 
+            saveJson(speeches,   f"ecb-speeches-{filterBy}"      , "tmp-import")
             print(f"\treading ECB speeches stop")
 
-            newSamples = txtsIntoSample(speeches)
-            # saveJson(newSamples, f"ecb-speeches-{filterBy}-smpls", "tmp-import")
+            newSamples = txtsIntoSample(speeches, numSntc=2)
 
-            saveJson(speeches,   f"ecb-speeches-{filterBy}", "tmp-import")
             saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}", "tmp-import")
 
 
             return newSamples
 
 
-        except Exception as e:
+        except Exception as exc:
             file2.close()
-            print(f"exception {e}")
+            print(f"ecbSpeechesCSV2Json(): exception {exc}")
+            print(stackTrace(exc))
             return []
 
 
