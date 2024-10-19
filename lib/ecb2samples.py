@@ -39,7 +39,9 @@ def headerCols(lineCntr, colByIdx, cols):
                 # dont shorten
                 pass
             elif colByIdx[idx] == "subtitle" :
-                # dont shorten
+                val = val.replace("Speech by ", " ")
+                val = val.replace("Member of the Executive Board of the ", " ")
+                val = val[:32]
                 pass
             elif colByIdx[idx] == "date":
                 val = val[2:]

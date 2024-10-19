@@ -726,7 +726,7 @@ def loadAll(args):
 
     if args.ecb:
         # smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=10, filterBy="Asset purchase")
-        smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=3, filterBy="Asset purchase", numSntc=10 )
+        smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=3, filterBy="Asset purchase", numSntc=1 )
         samples.update(smplsNew)
         samples.save()
         quit()

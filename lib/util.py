@@ -266,7 +266,7 @@ RE_pagecite3 = re.compile(r'[\d]+, Issue')
 def trivial(s):
     lBef = len(s)
     bef = s
-    s = RE_BRACK1.sub(" ", s)
+    s = RE_numberRange.sub(" ", s)
     s = s.strip()
     s = RE_pagecite1.sub(" ", s)
     s = s.strip()
