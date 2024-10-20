@@ -3,22 +3,10 @@ from pprint import pprint
 
 # pip install nltk
 import nltk
-
-if False:
-    nltk.download('punkt')  # for tokenization
-    nltk.download("averaged_perceptron_tagger") # for parts of speech tagging
-
-from nltk import sent_tokenize
-from nltk import word_tokenize
-from nltk.probability import FreqDist
-
-from nltk.text import Text # for concordance
+from   nltk import sent_tokenize, word_tokenize
 
 
-from nltk.stem import WordNetLemmatizer
-wnLem = WordNetLemmatizer()
-
-from lib.util import cleanBodyText, trivial, txtsIntoSample
+from lib.util import cleanBodyText, txtsIntoSample
 from lib.util import loadJson, saveJson
 from lib.util import stackTrace
 
@@ -143,6 +131,11 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
                     else:
                         print(f"\t  filtered out '{filterBy}' - ")
                         continue
+
+                cutoff = raw.index("hank you for your attention")
+                fourFifths = int(len(raw)*0.8)
+                if cutoff > fourFifths:
+                    raw = raw[:cutoff]
 
 
                 impoCntr += 1

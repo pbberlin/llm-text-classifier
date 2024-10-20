@@ -11,22 +11,35 @@ from pprint import pprint
 import nltk
 from nltk import sent_tokenize
 from nltk import word_tokenize
-from nltk import word_tokenize
 from nltk import pos_tag, ne_chunk
 
-# for SPO
-from nltk.tree import Tree
-if False:
-    nltk.download('punkt')
-    nltk.download('maxent_ne_chunker')
-    nltk.download('maxent_ne_chunker_tab')
-    nltk.download('words')
-    nltk.download('averaged_perceptron_tagger')
-    nltk.download('averaged_perceptron_tagger_eng')
 
+from nltk.downloader import Downloader
+from nltk.tree import Tree
+
+from pathlib import Path
 
 from lib.init import logTimeSince
 
+# the only *fast* way to check for nltk files
+def checkNLTKFiles():
+    home = str(Path.home())
+    print(f"home dir is {home}")
+    # print(f"nltk data dir is {nltk.data.path}")
+
+    try:
+        word_tokenize("hello world")
+    except Exception as exc:
+        nltk.download('punkt')  # for tokenization
+        nltk.download("averaged_perceptron_tagger") # for parts of speech tagging
+        nltk.download('words')
+        # for SPO
+        nltk.download('maxent_ne_chunker')
+        nltk.download('maxent_ne_chunker_tab')
+        nltk.download('averaged_perceptron_tagger_eng')
+
+
+checkNLTKFiles()
 
 def stackTrace(e):
 
@@ -508,7 +521,7 @@ def components(st):
 def coreOfSentence(st):
     comps = components(st)
     # print(f"{"Sentence":12}: {st}")
-    core = f"{comps["subject"]} {comps["object"]} {comps["indir_objs"]}"
+    core = f'{comps["subject"]} {comps["object"]} {comps["indir_objs"]}'
     core = core.strip()
     # print(f"{"Components":12}: {compsSubset}")
     for k in comps:
@@ -533,6 +546,6 @@ if __name__ == '__main__':
     ]
     for st in sts:
         core = coreOfSentence(st)
-        print(f"{"core components":12}: {core}")
+        print(f'{"core components":12}: {core}')
         print("-" * 40)
 
