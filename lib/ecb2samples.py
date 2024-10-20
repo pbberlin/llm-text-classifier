@@ -69,7 +69,7 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
         idxByCol = {}
         colByIdx = []
         try:
-            print(f"\treading ECB speeches start - filter by {filterBy}")
+            print(f"reading ECB speeches start - filter by {filterBy}")
             while True:
 
                 if impoCntr > earlyBreakAt:
@@ -108,15 +108,10 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
                 # body data processing
                 cols = line.split("|")
                 metaData = headerCols(lineCntr, colByIdx , cols)
-                print(f"\t    {metaData}")
+                metaDataTwoLines = metaData.split(" ti: ")
 
                 raw = cols[ idxByCol["contents"] ]
                 raw.strip()
-
-                raw = cleanBodyText(raw)
-
-
-                print(f"\t    line {lineCntr:3d} - content size {len(raw)} ")
 
                 if raw == "":
                     continue
@@ -127,18 +122,50 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
                     contains3 = (filterBy.lower() in raw)
 
                     if contains1 or contains2 or contains3:
-                        pass
+                        print(f"\tline {lineCntr:3d} - content size {len(raw)} ")
                     else:
-                        print(f"\t  filtered out '{filterBy}' - ")
+                        print(f"\tline {lineCntr:3d} - does not contain '{filterBy}' - continue")
                         continue
 
-                cutoff = raw.index("hank you for your attention")
-                fourFifths = int(len(raw)*0.8)
-                if cutoff > fourFifths:
-                    raw = raw[:cutoff]
-
-
                 impoCntr += 1
+
+
+                print(f"\t    {metaDataTwoLines[0]}")
+                print(f"\t    {metaDataTwoLines[1][:60]}")
+
+                # cut off reference part
+                # before cleanBodyText
+                delimiters = [
+                    "hank you for your attention.",
+                    "orward to your questions.",
+                    "ielen dank für Ihre Aufmerksamkeit.",
+                    "hank you.",
+                    "your questions.      See ",
+                    "your questions.       See ",
+                    ".      See ",
+                    ".       See ",
+                ]
+                anyFound = False
+                for delimiter in delimiters:
+                    if delimiter in raw:
+                        print(f"\t\t'{delimiter}'s found")
+                        cutoff = raw.index(delimiter)
+                        fourFifths = int(len(raw)*0.65)
+                        if cutoff > fourFifths:
+                            raw = raw[:cutoff]
+                            print(f"\t\t cutoff at {cutoff} - {fourFifths}")
+                            anyFound = True
+                            break
+                    else:
+                        pass
+                        # print(f"\t\t'{delimiter}' not found")
+
+                print(f"\t\tany delimiter found: {anyFound}")
+
+
+
+
+                raw = cleanBodyText(raw)
 
                 sts = sent_tokenize(raw)
                 for idx, st in enumerate(sts):
@@ -161,11 +188,14 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
 
 
             saveJson(speeches,   f"ecb-speeches-{filterBy}"      , "tmp-import")
-            print(f"\treading ECB speeches stop")
+            # print(f"reading ECB speeches stop")
 
-            newSamples = txtsIntoSample(speeches, numSntc=numSntc)
+            longwords = {}
+            longwords = loadJson(f"longwords", "tmp-import", onEmpty="dict")
+            newSamples, longwords = txtsIntoSample(speeches, longwords, numSntc=numSntc)
+            saveJson(longwords,  f"longwords", "tmp-import")
 
-            saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}", "tmp-import")
+            saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}-{numSntc}stcs", "tmp-import")
 
 
             return newSamples

@@ -724,9 +724,9 @@ def loadAll(args):
 
     config.load()
 
-    if args.ecb:
+    if args.ecb > 0:
         # smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=10, filterBy="Asset purchase")
-        smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=3, filterBy="Asset purchase", numSntc=1 )
+        smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=3, filterBy="Asset purchase", numSntc=args.ecb )
         samples.update(smplsNew)
         samples.save()
         quit()
@@ -774,9 +774,9 @@ def saveAll(force=False):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser("LLM classifier args")
-    parser.add_argument("-cntr", "--counter", help="help for command line arg", default=0      , type=int)
-    parser.add_argument("-ecb" , "--ecb",     help="import ECB stuff",          default=False  , type=bool)
-    parser.add_argument("-upl" , "--upl",     help="import uploaded stuff",     default=False  , type=bool)
+    parser.add_argument("-cntr", "--counter", help="help for command line arg",  default=0      , type=int)
+    parser.add_argument("-ecb" , "--ecb",     help="import ECB - X sentences",   default=-1     , type=int)
+    parser.add_argument("-upl" , "--upl",     help="import uploaded stuff",      default=False  , type=bool)
 
     args = parser.parse_args()
 

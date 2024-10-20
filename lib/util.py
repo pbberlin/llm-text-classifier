@@ -14,7 +14,6 @@ from nltk import word_tokenize
 from nltk import pos_tag, ne_chunk
 
 
-from nltk.downloader import Downloader
 from nltk.tree import Tree
 
 from pathlib import Path
@@ -153,8 +152,9 @@ def saveJson(dta, name, subset="misc", tsGran=0):
 '''
 generic loading from JSON.
 
-    :param str name   :       name part of file
-    :param str subset :       subdir under data
+    :param str name    :       name part of file
+    :param str subset  :       subdir under data
+    :param str onEmpty :       ["dict"] - return dict instead of list
     :rtype: []
 '''
 def loadJson(name, subset="misc", onEmpty="list"):
@@ -265,7 +265,7 @@ def cleanBodyText(s, compare=False):
 
 
 # 189-222.
-RE_numberRange = re.compile(r'[\d\-\.]+')
+RE_numberRange = re.compile(r'[\d]+\-[\d]+\.')
 
 # 96, pp.
 RE_pagecite1 = re.compile(r'[\d]+, pp.')
@@ -277,6 +277,14 @@ RE_pagecite2 = re.compile(r'[\d]+, No')
 RE_pagecite3 = re.compile(r'[\d]+, Issue')
 
 def trivial(s):
+
+    if len(s) < 10:
+        return ""
+
+
+    if len(s) > 20:
+        return s
+
     lBef = len(s)
     bef = s
     s = RE_numberRange.sub(" ", s)
@@ -360,9 +368,9 @@ def longWordsByLen(s, greaterThan=7, maxLen=64):
     return " ".join(lng)
 
 
-def txtsIntoSample(txts, numSntc=5 ):
+def txtsIntoSample(txts, longwords, numSntc=5 ):
 
-    logTimeSince(f"txtsIntoSample start", startNew=True)
+    logTimeSince(f"txtsIntoSample start - numSntc {numSntc}", startNew=True)
 
     smpls = []  # newly created samples
 
@@ -392,7 +400,13 @@ def txtsIntoSample(txts, numSntc=5 ):
             i3 = numSntc*i2
             btch = " ".join(sntcs[i3:i3+numSntc]) # ||
             # shrt = longWordsByLen(btch) 
-            shrt = longWordsNLTK(btch) 
+            shrt = ""
+            if btch in longwords:
+                shrt = longwords[btch] 
+            else:
+                shrt = longWordsNLTK(btch) 
+                longwords[btch] = shrt
+
             stmt = {}
             stmt["short"] = shrt
             stmt["long"]  = btch.strip()
@@ -406,10 +420,10 @@ def txtsIntoSample(txts, numSntc=5 ):
         smpls.append(smpl)
 
 
-    logTimeSince(f"txtsIntoSample stop")
+    logTimeSince(f"txtsIntoSample stop - numSntc {numSntc}")
 
 
-    return smpls
+    return smpls, longwords
 
 
 
