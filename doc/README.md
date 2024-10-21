@@ -4,14 +4,38 @@ There has been sentiment analysis using LLMs. The empirical evidence seems very 
 
 ---
 
-Now the research question:  
+Several upcoming projects hope to use LLMs. 
+
+* Zareh's textual data collection on municipal taxation  
+  needs to be mined for
+  * Perceived `competitive networks`
+  * Tax multipliers
+  * Narratives
+  * ...
+
+* Kathi's projects on CbCR need an easy way 
+  to extract taxation parameters from weakly structured texts 
+
+* Geld und Währung project needs  
+  good classification of official speeches  
+
+* Financial markets - research into pension policy -  
+   classify pension policy discussion against basic concepts
+
+* Financial markets - financial literacy -  
+   limits of capturing `financial calculus` with LLMs
+
+=> Time to establish some foundations.
+
+
+First research question:  
 
 Can we use LLM embeddings to quantify text against more avanced concepts?  
 Not just `favorable`  vs `unfavorable`.
 
-Example for research into EU public finance:  
-    How much do the applicable official statements of the EU concerning issuance of debt 
-     contain the concept of `structured debt` (risk tiered debt)?
+Example for research into EU public finance - asset purchasing programmes - APP:  
+  * Can the discussion captured by LLMs?  
+  * Can text content be measured against economic theories?
 
 Example for research into local taxation:  
     How much do municipal council statements on local business tax rates reflect on possible behavior of _surrounding_ municipalities?  
@@ -24,6 +48,15 @@ Example for research into tax incidence:
 Example for research into pension planning:  
     How much weight is given in politicians' statements on any of the three pillars of retirement planning:  
     legal pension vs. company pensions vs. private provison?
+
+### Validation
+
+If we reach useful result with LLM, how to measure quality? How to validate?
+
+Can we contract out these task to "clickworker" companies?
+
+At what cost?
+
 
 ## Bag of words
 
@@ -40,17 +73,14 @@ Following statements contain identical words, with only a difference in punctuat
 * I am giving up  drinking until this is over.
 * I am giving up. Drinking until this is over.
 
-
-The embeddings for these two statements are ![vastly different](./img/embeddings-drinking-until.jpg).
+The embeddings for these two statements are ![considerably different](./img/embeddings-drinking-until.jpg).
 
 The chart shows "significant" positive and negative values - the 32 values with the biggest magnitude.
 
+The significant values vary. Still some dimensions overlap. Others are completely distinct.
+
 LLMs treat punctuation as important tokens. 
 Also the preceding words heavily influence the classification of a word.
-
-
-
-Example is of course cherry picked to illustrate the point.
 
 
 ## Delimination I - Language
