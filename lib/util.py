@@ -243,7 +243,7 @@ def cleanBodyText(s, compare=False):
     s = RE_URLs.sub(" ", s)
 
     s = RE_CONDENSE_NL.sub(" ", s)
-    
+
     s = RE_BRACK1.sub(" ", s)
     s = RE_BRACK2.sub(" ", s)
 
@@ -276,7 +276,7 @@ RE_pagecite2 = re.compile(r'[\d]+, No')
 
 RE_pagecite3 = re.compile(r'[\d]+, Issue')
 
-def trivial(s):
+def removeTrivialElems(s):
 
     if len(s) < 10:
         return ""
@@ -307,18 +307,18 @@ def trivial(s):
 # because it should ignore the first dot in "Mr. Smith goes to Washington."
 debugLines=4
 
-def sentences(txt):
+def parseSentences(txt, dump=True):
     sntcs = sent_tokenize(txt, language="english")
-    print( f"  { len(sntcs)} sentences found")
-    for idx, sntc in enumerate(sntcs):
-        if idx < debugLines or idx >= len(sntcs) - debugLines:
-            # print( f"    {idx+1:3}  {len(sntc):3}  {ell(sntc, x=48)}")
-            print( f"    {idx+1:3}  {len(sntc):3}  {sntc[:124]}")
+    if dump:
+        print( f"  { len(sntcs)} sentences found")
+        for idx, sntc in enumerate(sntcs):
+            if idx < debugLines or idx >= len(sntcs) - debugLines:
+                print( f"    {idx+1:3}  {len(sntc):3}  {sntc[:124]}")
     return sntcs
 
 
 def longWordsNLTK(s, maxLen=64):
-    sts = sent_tokenize(s) 
+    sts = sent_tokenize(s)
     cores = []
     for idx, st in enumerate(sts):
         core = coreOfSentence(st)
@@ -347,7 +347,7 @@ def longWordsByLen(s, greaterThan=7, maxLen=64):
         if len(w) > greaterThan:
             if not lng.count(w) > 0:  # dont add twice
                 lng.append(w)
-   
+
 
     lng.sort(key=len)
     lng.reverse()
@@ -368,59 +368,66 @@ def longWordsByLen(s, greaterThan=7, maxLen=64):
     return " ".join(lng)
 
 
-def txtsIntoSample(txts, longwords, numSntc=5 ):
+def txtsIntoSample(txts, longwords, numSntcs ):
 
-    logTimeSince(f"txtsIntoSample start - numSntc {numSntc}", startNew=True)
+    logTimeSince(f"txtsIntoSample start - numSntc {numSntcs}", startNew=True)
 
     smpls = []  # newly created samples
 
     for i1, row in enumerate(txts):
 
-        smpl = {}
-        smpl["descr"] = txts[i1][0].strip()
-        smpl["statements"] = []
+        for i2, numSntc in enumerate(numSntcs):
 
-        body =  txts[i1][1]
+            print(f"    {i1:2}/{len(txts)} {i2:2} - {numSntc}")
 
-        sntcs = sentences(body)
+            smpl = {}
+            title = txts[i1][0].strip()
+            smpl["descr"] = f"{numSntc}S  {title}"
+            smpl["statements"] = []
 
-        for i2, st in enumerate(sntcs):
-            sntcs[i2] = trivial(sntcs[i2])
-        # remove empty
-        lnBef = len(sntcs)
-        sntcs[:] = [x for x in sntcs if x]
-        sntcs[:] = [x for x in sntcs if len(x) > 5]
-        lnAft = len(sntcs)
-        if lnBef != lnAft:
-            print(f"\tremoved {lnBef-lnAft} trivial sentences")
+            body =  txts[i1][1]
 
-        numBatches = int(len(sntcs) / numSntc)
+            sntcs = parseSentences(body, dump=(i2==0))
 
-        for i2 in range(numBatches):
-            i3 = numSntc*i2
-            btch = " ".join(sntcs[i3:i3+numSntc]) # ||
-            # shrt = longWordsByLen(btch) 
-            shrt = ""
-            if btch in longwords:
-                shrt = longwords[btch] 
-            else:
-                shrt = longWordsNLTK(btch) 
-                longwords[btch] = shrt
+            for i3, st in enumerate(sntcs):
+                sntcs[i3] = removeTrivialElems(sntcs[i3])
+            # remove empty from trivial check
+            lnBef = len(sntcs)
+            sntcs[:] = [x for x in sntcs if x]
+            sntcs[:] = [x for x in sntcs if len(x) > 5]
+            lnAft = len(sntcs)
+            if lnBef != lnAft:
+                print(f"\tremoved {lnBef-lnAft} trivial sentences")
 
-            stmt = {}
-            stmt["short"] = shrt
-            stmt["long"]  = btch.strip()
-            smpl["statements"].append(stmt)
+            numBatches = int(len(sntcs) / numSntc)
+            if numBatches == 0:
+                numBatches = 1
 
-            print(".", end="", flush=True)
-        
-        print("|")
+            for i3 in range(numBatches):
+                i3 = numSntc*i3
+                btch = " ".join(sntcs[i3:i3+numSntc]) # ||
+                # shrt = longWordsByLen(btch)
+                shrt = ""
+                if btch in longwords:
+                    shrt = longwords[btch]
+                else:
+                    shrt = longWordsNLTK(btch)
+                    longwords[btch] = shrt
+
+                stmt = {}
+                stmt["short"] = shrt
+                stmt["long"]  = btch.strip()
+                smpl["statements"].append(stmt)
+
+                print(".", end="", flush=True)
+
+            print("|")
 
 
-        smpls.append(smpl)
+            smpls.append(smpl)
 
 
-    logTimeSince(f"txtsIntoSample stop - numSntc {numSntc}")
+    logTimeSince(f"txtsIntoSample stop - numSntc {numSntcs}")
 
 
     return smpls, longwords

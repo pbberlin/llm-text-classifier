@@ -59,7 +59,7 @@ def headerCols(lineCntr, colByIdx, cols):
 speeches = []
 
 #
-def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=False):
+def ecbSpeechesCSV2Json(numSntcs,  filterBy="", earlyBreakAt=10,  tokenizeWords=False):
 
     speeches = []
 
@@ -168,6 +168,7 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
                 raw = cleanBodyText(raw)
 
                 sts = sent_tokenize(raw)
+                # debug only
                 for idx, st in enumerate(sts):
                     if idx < 7:
                         break
@@ -192,10 +193,11 @@ def ecbSpeechesCSV2Json(filterBy="", earlyBreakAt=10, numSntc=5, tokenizeWords=F
 
             longwords = {}
             longwords = loadJson(f"longwords", "tmp-import", onEmpty="dict")
-            newSamples, longwords = txtsIntoSample(speeches, longwords, numSntc=numSntc)
+            newSamples, longwords = txtsIntoSample(speeches, longwords, numSntcs)
             saveJson(longwords,  f"longwords", "tmp-import")
 
-            saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}-{numSntc}stcs", "tmp-import")
+            numSStr = "-".join(  map(str, numSntcs) )
+            saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}-{numSStr}stcs", "tmp-import")
 
 
             return newSamples
