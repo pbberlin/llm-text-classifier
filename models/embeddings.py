@@ -38,21 +38,6 @@ import openai
 
 
 
-if False:
-    # API key is now entered by user and stored into as session variable
-    client = None
-    #
-    # os.environ["OPENAI_API_KEY"] = "secret"
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    if OPENAI_API_KEY is None or  len(OPENAI_API_KEY) < 2:
-        print("set Open AI key via 'OPENAI_API_KEY'")
-        os._exit(0)
-
-    client = openai.OpenAI(
-        api_key=OPENAI_API_KEY # defaults os.environ.get("OPENAI_API_KEY")
-    )
-
-
 # https://platform.openai.com/docs/models/embeddings
 modelName = "text-embedding-3-large"
 vectSize = 3078
@@ -73,7 +58,7 @@ from   flask import request, session
 def passingOnRequestAndSession(dummy1, dummy2=4):
     user_agent = request.headers.get('User-Agent')
     print( f"-- user agent: {user_agent}")
-    print( f"-- session[api_key]: {session['api_key']}")
+    print( f"-- session[api_key]: {get('OpenAIKey')}")
 
 
 def restore_broken_words(text):
@@ -640,11 +625,11 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
     if len(stmtsNotInC)>0:
 
         print( f"")
-        print( f"  API key is -{session['api_key']}-.")
+        print( f"  API key is -{get('OpenAIKey')}-.")
 
         try:
             clientNew = openai.OpenAI(
-                api_key = session['api_key'],
+                api_key = get('OpenAIKey'),
                 timeout=10,
             )
             print( f"  client created \n")

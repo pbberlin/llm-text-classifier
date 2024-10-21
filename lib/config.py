@@ -1,4 +1,4 @@
-
+import os
 
 from lib.util import loadJson, saveJson
 
@@ -10,12 +10,24 @@ from pprint import pprint, pformat
 cfg = {}
 
 
+
+
 def load():
     global cfg  # in order to _write_ to module variable
     cfg = loadJson("config", "cfg", onEmpty="dict")
     if len(cfg)== 0:
         cfg = loadJson("config", "init", onEmpty="dict")
+
+    envOpenAIKey = os.getenv('OPENAI_API_KEY')
+    if envOpenAIKey is None or  len(envOpenAIKey) < 2:
+        pass
+    else:
+        set("OpenAIKey", envOpenAIKey)
+
     pprint(cfg)
+
+
+
 
 def save():
     saveJson(cfg, "config", "cfg")
