@@ -7,9 +7,9 @@ This module extends the OpenAI API
 """
 
 
-import os
 import sys
 import re
+import json
 
 import hashlib
 
@@ -39,7 +39,6 @@ import openai
 
 
 # https://platform.openai.com/docs/models/embeddings
-modelName = "text-embedding-3-large"
 vectSize = 3078
 
 
@@ -543,7 +542,6 @@ def checkAPIKeyInner(newKey):
         }
         response = requests.get("https://api.openai.com/v1/models", headers=headers)
         if response.status_code == 200:
-
             return (True, "API key is valid.")
         else:
             return (False,  f"API key is invalid. Status code: {response.status_code}, Response: {response.text}" )
@@ -646,7 +644,7 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
         try:
             response = clientNew.embeddings.create(
                 input=stmtsNotInC,
-                model=modelName,
+                model=get("modelNameEmbeddings"),
             )
         except Exception as exc:
             errStr = f"error during embeddings retrieval: {exc}"
@@ -853,5 +851,54 @@ def correlationsXY(
                 coeffsMatr[-1].append('--')
 
     return (coeffsMatr,"  ")
+
+
+
+# result, error = alignmentByChat("belief_statement", "speech_text")
+# print(json.dumps(result, indent=4))
+# 
+def alignmentByChat(beliefStatement, speech):
+
+    # Optionally:
+
+    # "Which specific arguments or parts of the speech support or contradict the belief?"
+    # "Does the speech include any caveats or conditions that modify the central argument?"
+
+
+    prompt = f"""
+    The belief statement is: "{beliefStatement}"
+    The speech text is: "{speech}"
+
+    I need a thorough analysis on how much the speech aligns with the belief statement. 
+    Provide a percentage score for alignment and determine whether the speech agrees, disagrees, or remains neutral on the belief. 
+    Use the following format for your response:
+    
+    {{
+        "alignment": <percentage_score>, 
+        "agreement": "<agrees/disagrees/neutral>"
+    }}
+    
+    Make sure to give an objective analysis based on the content of the speech.
+    """
+    
+
+    openai.api_key = get('OpenAIKey')   
+    response = openai.ChatCompletion.create(
+        model=get("modelNameChat"),
+        temperatur=0.0,
+        messages=[
+            {"role": "system", "content": "You are an economic policy analyst."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    
+    # extract response
+    strResult = response['choices'][0]['message']['content']
+    
+    try:
+        jsonResult = json.loads(strResult)
+        return jsonResult, False
+    except json.JSONDecodeError as exc:
+        return strResult, f"Failed to parse GPT output as JSON \n{exc}"
 
 

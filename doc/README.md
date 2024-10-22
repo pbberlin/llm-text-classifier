@@ -294,3 +294,12 @@ One should considering a large index of "stock" embeddings - and tiny "delta" in
 being merged at night.
 
 If needed, a distributed index across several server machines needs to be built.
+
+
+
+## Extensions
+
+Vector embeddings capture the general relationship between two texts but lack deep understanding of specific contexts. 
+
+
+By directly engaging with a chatbot, we can get more insight into how the chatbot interprets the meaning and implications of a statement within the broader context of economics and government policies.
