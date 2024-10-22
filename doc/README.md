@@ -273,7 +273,41 @@ You can change according to your reserch.
 It displays embeddings and similarity as charts.
 
 
-### Indexing (purely technical)
+## Conclusion
+
+* Vector embeddings capture the general relationship between two texts  
+  but lack deep understanding of specific concepts.
+
+* Vector embeddings are immune to the hallucination problem.
+
+* The results are stable and reliable.  
+  Small variations might occur, depending on the LLM vendor and LLM training details.
+
+* The current dimensionality of 3078 is a limiting factor for capturing meaning and similarity.
+
+* If LLM companies can increase the dimensionality in the future, the quality of analysis can increase further. 
+
+## Extension: Chatbot
+
+By directly engaging with a chatbot,  
+we can get more insight into how the chatbot interprets the meaning and implications of a statement within the broader context of economics and government policies.
+
+By setting the `temperature` to zero, we minimize hallucinations.
+
+
+
+---------------
+
+## Technical documentation
+
+This is purely technical - for software engineers and programmers
+
+### Production webserver
+
+See ./production-setup.md
+
+
+### Indexing
 
 Directory   ./indexing-embeddings/autofaiss  contains some steps towards building an index for embeddings,
 so that most closely matching embeddings can be searched and found quickly.
@@ -297,9 +331,3 @@ If needed, a distributed index across several server machines needs to be built.
 
 
 
-## Extensions
-
-Vector embeddings capture the general relationship between two texts but lack deep understanding of specific contexts. 
-
-
-By directly engaging with a chatbot, we can get more insight into how the chatbot interprets the meaning and implications of a statement within the broader context of economics and government policies.
