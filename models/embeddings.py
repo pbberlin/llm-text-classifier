@@ -860,45 +860,53 @@ def correlationsXY(
 def alignmentByChat(beliefStatement, speech):
 
     # Optionally:
-
     # "Which specific arguments or parts of the speech support or contradict the belief?"
     # "Does the speech include any caveats or conditions that modify the central argument?"
 
-
     prompt = f"""
-    The belief statement is: "{beliefStatement}"
-    The speech text is: "{speech}"
+You are an economic policy analyst.
 
-    I need a thorough analysis on how much the speech aligns with the belief statement. 
-    Provide a percentage score for alignment and determine whether the speech agrees, disagrees, or remains neutral on the belief. 
-    Use the following format for your response:
-    
-    {{
-        "alignment": <percentage_score>, 
-        "agreement": "<agrees/disagrees/neutral>"
-    }}
-    
-    Make sure to give an objective analysis based on the content of the speech.
+The belief statement is: "{beliefStatement}"
+
+The speech text is: "{speech}"
+
+I need a thorough analysis on how much the speech aligns with the belief statement. 
+Provide a percentage score for alignment and determine whether the speech agrees, disagrees, or remains neutral on the belief. 
+Use the following format for your response:
+
+{{
+    "alignment":  <percentage_score>, 
+    "agreement": "<agrees/disagrees/neutral>"
+}}
+
+Make sure to give an objective analysis based on the content of the speech.
     """
-    
+
+    prompt = prompt.strip()
 
     openai.api_key = get('OpenAIKey')   
-    response = openai.ChatCompletion.create(
+
+    completion = openai.chat.completions.create(    
         model=get("modelNameChat"),
-        temperatur=0.0,
+        temperature=0.0,
         messages=[
-            {"role": "system", "content": "You are an economic policy analyst."},
-            {"role": "user", "content": prompt}
-        ]
+            {
+                "role":   "user",
+                "content": prompt,
+            }
+        ],
+
+        max_tokens=1000,    # Limit for response tokens
+        n=1,                # Number of completions to generate
+        stop=None,          # Specify stop sequences if needed        
     )
     
-    # extract response
-    strResult = response['choices'][0]['message']['content']
-    
+    resp = completion.choices[0].message.content
+
     try:
-        jsonResult = json.loads(strResult)
-        return jsonResult, False
+        jsonResult = json.loads(resp)
+        return prompt, jsonResult, False
     except json.JSONDecodeError as exc:
-        return strResult, f"Failed to parse GPT output as JSON \n{exc}"
+        return prompt, resp, f"Failed to parse GPT output as JSON \n{exc}"
 
 

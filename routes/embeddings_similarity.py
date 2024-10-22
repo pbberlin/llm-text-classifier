@@ -4,6 +4,7 @@ from pprint import pprint, pformat
 import markdown
 import models.samples as samples
 
+from   flask import url_for
 
 
 
@@ -35,8 +36,13 @@ def posInSortQuant(el, els, quant=4):
 
     return f"{q:02d}"
 
+def stripSingleQ(s):
+    return s.replace("'", " ")
 
-def renderTable(t, colHdrs, rowHdrs,
+def renderTable( 
+    t, 
+    colHdrsSh, colHdrsLg, 
+    rowCol1Sh, rowCol1Lg,
     tableOnlyNumber=False,
     onlyNumbers=False,
     numCtxs=1,    # number distinct contexts
@@ -47,18 +53,20 @@ def renderTable(t, colHdrs, rowHdrs,
     nRows = len(t)
     nCols = len(t[0])
 
-    cssNCols = f"width: { 1/float(nCols+1)*100:5.1f}%"
+    widthCol1 = 0.2
+    widthCol1Str = f"{100*widthCol1}%"
+    cssNCols = f"width: { (1.0-widthCol1)/float(nCols+1)*100:5.1f}%"
 
     if tableOnlyNumber:
         s += "<table class='results'>"
         s += "<tr>"
         s += f"<td> &nbsp; </td>"
-        for idxCol, cell in enumerate(colHdrs):
+        for idxCol, cell in enumerate(colHdrsSh):
             s += f"<td> {cell:<3} </td>"
         s += "</tr>\n"
         for idxRow, row in enumerate(t):
             s += "<tr>"
-            s += f"<td> {rowHdrs[idxRow]} </td>"
+            s += f"<td> {rowCol1Sh[idxRow]} </td>"
             for idxCol, cell in enumerate(row):
                 s += f"<td> {cell:<3} </td>"
             s += "</tr>\n"
@@ -66,18 +74,32 @@ def renderTable(t, colHdrs, rowHdrs,
         s += "\n"
 
 
+
     s += "<table class='results'>"
+
+
+    # first row
     s += "<tr>"
-    s += f"<td> &nbsp; </td>"
-    for idxCol, cell in enumerate(colHdrs):
-        s += f"<td style='{cssNCols}' > {cell:<3} </td>"
+    # first row - first cell
+    s += f"<td style='font-size: 80%; vertical-align:bottom;'>  &nbsp; &nbsp; mouse over => long version </td>"
+    for idxCol, cell in enumerate(colHdrsSh):
+        stl = cssNCols
+        if idxCol == 0:
+            stl = widthCol1Str
+        s += f"<td  title='{stripSingleQ(colHdrsLg[idxCol])}' style='{stl}'> {cell:<3} </td>"
     s += "</tr>\n"
 
+
+    # data rows
     for idxRow, row in enumerate(t):
 
-        # print(f"row {idxRow+1}")
+        # first col
         s += "<tr>"
-        s += f"  <td> {rowHdrs[idxRow]} </td>"
+        num = f"<span class='col1-numbering'>{idxRow+1}</span>"
+        # num = ""
+        s += f"  <td title='{stripSingleQ(rowCol1Lg[idxRow])}' >{num}. {rowCol1Sh[idxRow]} </td>"
+
+        # first *data* cols
 
         max = -10 # max row value
 
@@ -114,9 +136,23 @@ def renderTable(t, colHdrs, rowHdrs,
             if f1 == max:
                 maxStyle = "max-cell"
 
+            # not here
+            if False:
+                promt, res, err = embeddings.alignmentByChat(rowCol1Lg[idxRow], colHdrsLg[idxCol])
+
+            frmURL = url_for("llmChatH")            
+            frm = f"""
+                <form action='{frmURL}' target='_chat' method='POST'>
+                    <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
+                    <input type=hidden name='speech'            value='{stripSingleQ(rowCol1Lg[idxRow])}' />
+                    <button class='llm-submit'>X</button>
+                </form>        
+            """
+
             s += f"  <td style='{cssNCols}'>"
             s += f"     <span class='number' >  {f1:10.2f}  </span> "
             s += f"     <div  class='bar {maxStyle} quant{pos} {neg}' style='width:{fPct}'></div> "
+            s += f"     {frm}"
             s += f"  </td>"
         s += "</tr>\n"
     s += "</table>"
@@ -186,8 +222,8 @@ def model(ctxs, bmrk, smpl ):
 
     htmlTable = renderTable(
         coeffsMatr,
-        bmrkSh,
-        smplSh,
+        bmrkSh, bmrkLg, 
+        smplSh, smplLg,
         onlyNumbers=False,
         numCtxs = len(ctxs),
     )

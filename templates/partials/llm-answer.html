@@ -1,0 +1,42 @@
+<h3>
+    Request chat GPT
+</h3>
+
+<br>
+
+<form action="" method="POST">
+
+    <label class="label-input" for="belief-statement">Belief statement</label>
+    <textarea  cols="120" rows="4"  name="belief-statement">{{vals.beliefStatement}}</textarea>
+    <br>
+
+    <label class="label-input" for="speech">Speech</label>
+    <textarea  cols="120" rows="6"  name="speech"           >{{vals.speech}}</textarea>
+    <br>
+
+    <label class="label-input" for="submit-1"> &nbsp; </label>
+    <button name="submit-1" accesskey="a" > <u>A</u>sk </button>
+
+</form>        
+
+<br>
+
+{% if err %}
+    <p>Error:  '{{vals.err}}' </p>
+ {% else %}
+    <!-- <p>No error</p> -->
+{% endif %}
+
+<hr>
+
+<p class="label-input" >Prompt: </p> <span class="pre-llm">{{vals.prompt}}</span>  
+
+<br>
+<br>
+
+<p class="label-input" >Result: </p> <span class="pre-llm">{{vals.result}}</span>  
+
+
+<br>
+<br>
+<br>

@@ -113,11 +113,20 @@ form.frmPartial  {
 	right: 2rem; */
 }
 
-form.frmPartial label {
+form.frmPartial label,
+.label-input,
+dummy {
 	display: inline-block;
 	min-width: 12rem;
+	min-width: 6rem;
 	/* text-align: right; */
 }
+
+.label-input {
+	min-width: 8rem;
+	vertical-align: top;
+}
+
 
 /* vertical align of label and checkbox  */
 form.frmPartial input[type="checkbox"] {
@@ -192,7 +201,10 @@ table.results {
 
 table.results td {
 	margin:  0;
-	padding: 0.2rem 1.1rem;
+	padding: 0.2rem 0.8rem;
+	padding-left: 0.4rem;
+
+	position: relative;
 }
 
 /* first row */
@@ -202,12 +214,14 @@ table.results tr:first-child  td{
 	vertical-align: top;
 	padding: 0.2rem 0.2rem;
 	line-height: 100%;
+	font-size: 85%;
 }
 
 /* first column */
 table.results td:first-child {
 	background-color: lightgrey;
 	text-transform: capitalize;
+	font-size: 85%;
 }
 
 
@@ -225,7 +239,43 @@ table.results div.bar {
 
 	border-bottom: 3px solid transparent;
 
+	display: inline-block;
+
 }
+
+table.results form,
+dummy {
+	margin: 0;
+	padding:0;
+	display: inline-block;
+	/* display: block; */
+	line-height: 0.5rem;
+	vertical-align: top;
+	margin-top:  0.34rem;
+	/* margin-left: 1.24rem; */
+
+	position: absolute;
+	right: 0.5rem;
+}
+table.results .llm-submit {
+	font-size: 33%;
+	height: 1.04rem;
+	margin: 0;
+	padding:0 0.2rem;
+	display: inline-block;
+	border: none;
+	background-color: lightgray;
+	opacity: 0.5;
+}
+
+table.results .col1-numbering {
+	display: inline-block;
+	font-size: 80%;
+	margin-right: 0.2rem;
+	/* background-color: blue; */
+}
+
+
 table.results div.max-cell {
 	border-bottom: 3px solid rgb(113, 136, 160);
 }
@@ -340,3 +390,16 @@ p.embeds {
 }
 
 
+
+.pre-llm {
+	white-space: pre;
+	white-space: pre-line;
+	white-space: pre-wrap;
+
+	display: inline-block;
+	max-width: 55rem;
+
+	padding: 0.2rem;
+	background-color: lightgray;
+
+}

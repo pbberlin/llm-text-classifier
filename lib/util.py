@@ -317,6 +317,7 @@ def parseSentences(txt, dump=True):
     return sntcs
 
 
+# slow and not very good
 def longWordsNLTK(s, maxLen=64):
     sts = sent_tokenize(s)
     cores = []

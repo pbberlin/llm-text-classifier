@@ -84,6 +84,7 @@ def handle_error(e):
     return jsonify(error=str(e)), code
 
 
+# hone
 @app.route('/')
 def indexH():
 
@@ -669,6 +670,66 @@ def embeddingsBasicsH():
 
 
 
+
+@app.route('/llm-chat', methods=['post','get'])
+def llmChatH():
+
+    args = request.args
+    kvGet = args.to_dict()
+    kvPost = request.form.to_dict()
+
+
+    beliefStatement =  ""
+    if "belief-statement" in kvPost:
+        beliefStatement =  kvPost["belief-statement"]
+
+    speech          =  ""
+    if "speech" in kvPost:
+        speech =  kvPost["speech"]
+
+
+    inputs = {
+        "beliefStatement" :  beliefStatement,
+        "speech"          :  speech,
+    }
+
+
+    try:
+
+        if len(beliefStatement.strip()) > 5 and len(speech.strip()) > 5:
+            prompt, result, err = embeddings.alignmentByChat(beliefStatement, speech)
+
+            # promptDisplay = prompt
+            # promptDisplay = promptDisplay.replace("<", " ")
+            # promptDisplay = promptDisplay.replace(">", " ")
+
+            results = {
+                "prompt": prompt, 
+                "result": result, 
+                "err":    err, 
+            }
+        else:
+            results = {
+                "prompt": "-", 
+                "result": "-", 
+                "err":    "", 
+            }
+
+
+
+        return render_template(
+            'main.html',
+            HTMLTitle="Ask ChatGPT",
+            contentTpl="llm-answer",
+            # cnt1=cnt1,
+            # cnt2=cnt2,
+            vals= inputs | results,
+        )
+
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
