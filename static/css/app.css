@@ -224,6 +224,14 @@ table.results td:first-child {
 	font-size: 85%;
 }
 
+table.results .col1-numbering {
+	display: inline-block;
+	font-size: 80%;
+	margin-right: 0.2rem;
+	/* background-color: blue; */
+}
+
+
 
 table.results span.number {
 	display:    block;
@@ -243,6 +251,17 @@ table.results div.bar {
 
 }
 
+
+table.results div.max-cell {
+	border-bottom: 3px solid rgb(113, 136, 160);
+}
+
+
+
+
+/* 
+	link / button to chat completion
+*/
 table.results form,
 dummy {
 	margin: 0;
@@ -268,17 +287,6 @@ table.results .llm-submit {
 	opacity: 0.5;
 }
 
-table.results .col1-numbering {
-	display: inline-block;
-	font-size: 80%;
-	margin-right: 0.2rem;
-	/* background-color: blue; */
-}
-
-
-table.results div.max-cell {
-	border-bottom: 3px solid rgb(113, 136, 160);
-}
 
 .quant01{
 	opacity: 1;

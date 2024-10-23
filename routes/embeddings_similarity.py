@@ -39,9 +39,9 @@ def posInSortQuant(el, els, quant=4):
 def stripSingleQ(s):
     return s.replace("'", " ")
 
-def renderTable( 
-    t, 
-    colHdrsSh, colHdrsLg, 
+def renderTable(
+    t,
+    colHdrsSh, colHdrsLg,
     rowCol1Sh, rowCol1Lg,
     tableOnlyNumber=False,
     onlyNumbers=False,
@@ -136,17 +136,15 @@ def renderTable(
             if f1 == max:
                 maxStyle = "max-cell"
 
-            # not here
-            if False:
-                promt, res, err = embeddings.alignmentByChat(rowCol1Lg[idxRow], colHdrsLg[idxCol])
+            # ... = embeddings.alignmentByChat(...)
 
-            frmURL = url_for("llmChatH")            
+            frmURL = url_for("llmChatH")
             frm = f"""
                 <form action='{frmURL}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
                     <input type=hidden name='speech'            value='{stripSingleQ(rowCol1Lg[idxRow])}' />
                     <button class='llm-submit'>X</button>
-                </form>        
+                </form>
             """
 
             s += f"  <td style='{cssNCols}'>"
@@ -222,7 +220,7 @@ def model(ctxs, bmrk, smpl ):
 
     htmlTable = renderTable(
         coeffsMatr,
-        bmrkSh, bmrkLg, 
+        bmrkSh, bmrkLg,
         smplSh, smplLg,
         onlyNumbers=False,
         numCtxs = len(ctxs),

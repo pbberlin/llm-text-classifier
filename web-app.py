@@ -697,24 +697,20 @@ def llmChatH():
     try:
 
         if len(beliefStatement.strip()) > 5 and len(speech.strip()) > 5:
-            prompt, result, err = embeddings.alignmentByChat(beliefStatement, speech)
+            results = embeddings.requestChatCompletion(beliefStatement, speech)
 
-            # promptDisplay = prompt
-            # promptDisplay = promptDisplay.replace("<", " ")
-            # promptDisplay = promptDisplay.replace(">", " ")
-
-            results = {
-                "prompt": prompt, 
-                "result": result, 
-                "err":    err, 
-            }
         else:
-            results = {
-                "prompt": "-", 
-                "result": "-", 
-                "err":    "", 
-            }
-
+            results = []
+            results.append(
+                {
+                "prompt"    : "-",
+                },
+                {
+                "ident":      "-",
+                "jsonResult": "{}",
+                "error"     : "no input given",
+                }
+            )
 
 
         return render_template(
@@ -723,7 +719,8 @@ def llmChatH():
             contentTpl="llm-answer",
             # cnt1=cnt1,
             # cnt2=cnt2,
-            vals= inputs | results,
+            vals=inputs,
+            results=results,
         )
 
     except Exception as exc:

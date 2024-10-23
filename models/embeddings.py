@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
+from lib.init import logTimeSince
 
 import openai
 
@@ -557,6 +558,27 @@ def checkAPIKeyInner(newKey):
             return (False,  f"API key could not be validated: \n\t{error}" )
 
 
+def createClient():
+    # print( f"")
+    print( f"  OpenAI API key is -{get('OpenAIKey')}-   ", end="")
+    try:
+        clientNew = openai.OpenAI(
+            api_key = get('OpenAIKey'),
+            timeout=10,
+        )
+        print( f" - client created")
+        return (clientNew, "")
+
+    except requests.exceptions.Timeout:
+        errStr = "request to openAI timed out."
+        print(errStr)
+        return (None, errStr)
+    except Exception as exc:
+        errStr = f"error during client creation: {exc}"
+        print(errStr)
+        return (None, errStr)
+
+
 # lst python list of statements or sentences,
 # for example ['inflation will be high', 'inflation will be low']
 # We get "loadings" for a principal components analysis (PCA).
@@ -622,27 +644,12 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
     #       => add to cache
     if len(stmtsNotInC)>0:
 
-        print( f"")
-        print( f"  API key is -{get('OpenAIKey')}-.")
-
-        try:
-            clientNew = openai.OpenAI(
-                api_key = get('OpenAIKey'),
-                timeout=10,
-            )
-            print( f"  client created \n")
-
-        except requests.exceptions.Timeout:
-            errStr = "request to openAI timed out."
-            print(errStr)
-            return ([], errStr)
-        except Exception as exc:
-            errStr = f"error during client creation: {exc}"
-            print(errStr)
+        clnt, errStr = createClient()
+        if errStr != "":
             return ([], errStr)
 
         try:
-            response = clientNew.embeddings.create(
+            response = clnt.embeddings.create(
                 input=stmtsNotInC,
                 model=get("modelNameEmbeddings"),
             )
@@ -854,59 +861,134 @@ def correlationsXY(
 
 
 
-# result, error = alignmentByChat("belief_statement", "speech_text")
-# print(json.dumps(result, indent=4))
-# 
-def alignmentByChat(beliefStatement, speech):
+# platform.openai.com/docs/guides/text-generation/conversations-and-context
+def requestChatCompletion(beliefStatement, speech):
+
 
     # Optionally:
     # "Which specific arguments or parts of the speech support or contradict the belief?"
     # "Does the speech include any caveats or conditions that modify the central argument?"
 
+    role = "You are an economic policy analyst."
+
     prompt = f"""
-You are an economic policy analyst.
+{role}
 
 The belief statement is: "{beliefStatement}"
 
 The speech text is: "{speech}"
 
-I need a thorough analysis on how much the speech aligns with the belief statement. 
-Provide a percentage score for alignment and determine whether the speech agrees, disagrees, or remains neutral on the belief. 
-Use the following format for your response:
+Make sure to give an objective analysis based on the content of the speech.
+
+I need a thorough textual analysis on how much the speech aligns with the belief statement.
+
+Determine whether the speech agrees, disagrees, or remains neutral on the belief.
+
+Provide a percentage score for alignment.
+
+Use the following json format for your response:
 
 {{
-    "alignment":  <percentage_score>, 
-    "agreement": "<agrees/disagrees/neutral>"
+    "agreement":        "<agrees/disagrees/neutral>",
+    "alignment":         <percentage_score>
+    "textual_analysis":  <text>
 }}
-
-Make sure to give an objective analysis based on the content of the speech.
     """
 
+
+
     prompt = prompt.strip()
+    hsh = strHash(prompt)
+    results = loadJson(f"chat-completion-{hsh}", subset=get("dataset"))
 
-    openai.api_key = get('OpenAIKey')   
+    if len(results) > 0:
+        return results
 
-    completion = openai.chat.completions.create(    
-        model=get("modelNameChat"),
-        temperature=0.0,
-        messages=[
-            {
-                "role":   "user",
-                "content": prompt,
-            }
-        ],
+    # platform.openai.com/docs/models
+    # model=get("modelNameChat"),
+    models = ["gpt-4o","gpt-4"]
+    listSeeds = [100,101,102]
+    listSeeds = [100] # seeds are only BETA - output should be mostly *deterministic*
+    results = [] # responses
+    results.append( {"prompt":prompt} )
 
-        max_tokens=1000,    # Limit for response tokens
-        n=1,                # Number of completions to generate
-        stop=None,          # Specify stop sequences if needed        
-    )
-    
-    resp = completion.choices[0].message.content
+    clnt, errStr = createClient()
+    if errStr != "":
+        results.append( { "error" : errStr}  )
+        return results
 
-    try:
-        jsonResult = json.loads(resp)
-        return prompt, jsonResult, False
-    except json.JSONDecodeError as exc:
-        return prompt, resp, f"Failed to parse GPT output as JSON \n{exc}"
+
+    for idx1, model in enumerate(models):
+        for idx2, seed in enumerate(listSeeds):
+
+            ident = f"{idx1+1}{idx2+1}--model{model}-seed{seed}"
+            logTimeSince(f"chat completion start {ident}", startNew=True)
+
+            # https://platform.openai.com/docs/api-reference/chat/create
+            respFmt = { "type": "json_object" }
+            if model != "gpt-4o":
+                respFmt = openai.NOT_GIVEN
+
+            completion = clnt.chat.completions.create(
+                model=model,
+                temperature=0.0,
+                response_format= respFmt ,
+                messages=[
+                    {
+                        "role":      "system",
+                        "content":  f"{role}"
+                    },
+                    {
+                        "role":     "user",
+                        "content":   prompt,
+                    }
+                ],
+                max_completion_tokens=2000,    # Limit for response tokens
+                n=1,                # Number of completions to generate
+                stop=None,          # Specify stop sequences if needed
+                seed=seed,
+            )
+
+            txt = completion.choices[0].message.content
+
+
+            try:
+                jsonResult = json.loads(txt)
+                results.append(
+                    {
+                        "ident":      ident,
+                        "jsonResult": jsonResult,
+                        "error"     : "",
+                    }
+                )
+            except json.JSONDecodeError as exc:
+                results.append(
+                    {
+                        "ident":      ident,
+                        "jsonResult": txt,
+                        "error"     : f"Failed to parse GPT output as JSON \n{exc}",
+                    }
+                )
+            except Exception as exc:
+                results.append(
+                    {
+                        "ident":      ident,
+                        "jsonResult": txt,
+                        "error"     : f"Common exc parsing GPT output as JSON \n{exc}",
+                    }
+                )
+
+            logTimeSince(f"chat completion stop  {ident} - len {len(txt)} chars")
+
+
+    ts = f"-{datetime.now():%m-%d-%H-%M}"
+    saveJson(results, f"chat-completion-{ts}", subset=get("dataset"))
+
+    saveJson(results, f"chat-completion-{hsh}", subset=get("dataset"))
+
+
+
+    return results
+
 
 

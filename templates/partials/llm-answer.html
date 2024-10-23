@@ -17,24 +17,76 @@
     <label class="label-input" for="submit-1"> &nbsp; </label>
     <button name="submit-1" accesskey="a" > <u>A</u>sk </button>
 
+
+    <div style="display: none;">
+        <label class="label-input" for="seed">Seed</label>
+        <input type="text" name="seed" value="100">
+        <!-- <br> -->
+    
+        <label class="label-input" for="model">model</label>
+        <input type="text" name="model" value="gpt-4">
+        <br>
+    
+    </div>
+
+
+
+
+
 </form>        
 
 <br>
 
-{% if err %}
-    <p>Error:  '{{vals.err}}' </p>
- {% else %}
-    <!-- <p>No error</p> -->
-{% endif %}
 
-<hr>
 
-<p class="label-input" >Prompt: </p> <span class="pre-llm">{{vals.prompt}}</span>  
+{% for    result in results %}
 
-<br>
-<br>
+    {% if result.prompt %}
+        <p class="label-input" >Prompt: </p> <span class="pre-llm">{{result.prompt}}</span>  
+        <br>
 
-<p class="label-input" >Result: </p> <span class="pre-llm">{{vals.result}}</span>  
+
+    {% else %}
+
+
+        <hr>
+
+        <p class="label-input" >Ident : </p> <span class="pre-llm">{{result.ident}}</span>  
+        <br>
+
+
+        {% if result.error %}
+            <p>Error:  <pre>{{result.error}}</pre>  </p>
+
+            <br>
+            <p class="label-input" >raw response: </p> <span class="pre-llm">{{result.jsonResult}}</span>  
+            <br>
+
+        {% else %}
+            <!-- <p>No error</p> -->
+
+            <br>
+            <p class="label-input" >Agreement: </p> <span class="pre-llm">{{result.jsonResult.agreement}}</span>  
+            <br>
+            <br>
+            <p class="label-input" >Alignment: </p> <span class="pre-llm">{{result.jsonResult.alignment}}</span>  
+            <br>
+            <br>
+            <p class="label-input" >Analysis: </p> <span class="pre-llm">{{result.jsonResult.textual_analysis}}</span>  
+            <br>
+    
+        {% endif %}
+
+
+
+
+
+    {% endif %}
+
+
+
+{% endfor %}
+
 
 
 <br>
