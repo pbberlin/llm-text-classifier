@@ -4,7 +4,6 @@ from lib.util import loadJson, saveJson
 
 from   copy     import deepcopy
 
-from pprint import pprint, pformat
 
 
 cfg = {}
@@ -24,7 +23,9 @@ def load():
     else:
         set("OpenAIKey", envOpenAIKey)
 
-    pprint(cfg)
+    for idx, k in enumerate(cfg):
+        if not k.endswith("_help"):
+            print(f"\t{k:12} {cfg[k]}")
 
 
 

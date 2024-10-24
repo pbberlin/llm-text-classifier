@@ -1,39 +1,52 @@
 # Flask application in production using Apache
 
-Using **WSGI (Web Server Gateway Interface)**. 
-by using **mod_wsgi** (WSGI compliant interface as Apache module). 
+Using WSGI (Web Server Gateway Interface). 
+by using mod_wsgi (WSGI compliant interface as Apache module). 
+
+
+
+## gunicorn
+
+* Green unicorn does not work on windows.
+
+* Extend Apache2 or Nginx with gunicorn as reverse proxy
+
+```bash
+pip install gunicorn
+gunicorn -w 1 -b 127.0.0.1:5000 web-app:app
+
+gunicorn -w 1 -b 127.0.0.1:5000 web-app:app
+
+# Minimal support for https:  
+gunicorn --certfile=/path/to/cert.pem --keyfile=/path/to/privkey.pem -w 4 web-app:app
+
+# threaded workers
+#   4 workers            - each worker is a separate process.
+#   8 threads per worker - each worker can handle 8 concurrent requests.
+#          threads use less memory than additional workers
+gunicorn --workers 4 --threads 8 --bind 0.0.0.0:8000 web-app:app
+
+
+```
+
+
 
 ### Step 1: Install Necessary Packages
 
-1. **Install Apache** if it's not already installed on your server:
+1. Install Apache
 
 ```bash
 sudo apt update
 sudo apt install apache2
 ```
 
-* Windows
-
-* [Download](https://www.apachelounge.com/download/VS17/binaries/httpd-2.4.62-240904-win64-VS17.zip)
-
-Set env variable `C:\httpd\bin`
-
-Install service
-
-```bash
-httpd -k install
-Apache2.4 start
-```
-
-2. **Install `mod_wsgi`** to interface Apache with Python:
+2. Install `mod_wsgi` to interface Apache with Python
 
 ```bash
 sudo apt install libapache2-mod-wsgi-py3
 ```
 
-This installs the WSGI module for Python 3.
-
-3. **Install Flask** and any other Python dependencies you need:
+3. Install Flask and any other Python dependencies
 
 ```bash
 pip install flask
@@ -56,13 +69,18 @@ if __name__ == '__main__':
     app.run()
 ```
 
-You'll want to modify your `app.py` to avoid calling `app.run()` in production (as that's mainly for development). For production, you don't need to run the app manually; Apache will serve it via WSGI.
+* Apache will serve the app via WSGI.
 
-Rename the entry point of your app to something like `app = Flask(__name__)` (as shown above). It will later be referenced by Apache.
+* => Remove the `app.run()`. 
 
-### Step 3: Create a WSGI File
+* `app = Flask(__name__)` will later be referenced by Apache.
 
-Next, create a `.wsgi` file, which is used by Apache to interface with your Flask app. This file typically resides in the same directory as your Flask app or in `/var/www/`.
+
+### Step 3: WSGI File
+
+Next, create a `.wsgi` file, 
+which is used by Apache to interface with your Flask app. 
+This file typically resides in the same directory as your Flask app or in `/var/www/`.
 
 For example, create a file called `myapp.wsgi`:
 
@@ -91,56 +109,57 @@ from app import app as application
 
 Now you need to configure Apache to serve your Flask app using `mod_wsgi`.
 
-1. **Create a new Apache configuration file**:
+1. Create a new Apache configuration file:
 
-   ```bash
-   sudo nano /etc/apache2/sites-available/myapp.conf
-   ```
+```bash
+sudo nano /etc/apache2/sites-available/myapp.conf
+```
 
-   Contents of the file:
+Contents of the file:
 
-   ```apache
-   <VirtualHost *:80>
-       ServerName myapp.com
-       ServerAdmin webmaster@myapp.com
+```apache
+<VirtualHost *:80>
+    ServerName myapp.com
+    ServerAdmin webmaster@myapp.com
 
-       WSGIDaemonProcess myapp user=www-data group=www-data threads=5
-       WSGIScriptAlias / /var/www/myapp/myapp.wsgi
+    WSGIDaemonProcess myapp user=www-data group=www-data threads=5
+    WSGIScriptAlias / /var/www/myapp/myapp.wsgi
 
-       <Directory /var/www/myapp>
-           Require all granted
-       </Directory>
+    <Directory /var/www/myapp>
+        Require all granted
+    </Directory>
 
-       Alias /static /var/www/myapp/static
-       <Directory /var/www/myapp/static/>
-           Require all granted
-       </Directory>
+    Alias /static /var/www/myapp/static
+    <Directory /var/www/myapp/static/>
+        Require all granted
+    </Directory>
 
-       ErrorLog ${APACHE_LOG_DIR}/myapp_error.log
-       CustomLog ${APACHE_LOG_DIR}/myapp_access.log combined
-   </VirtualHost>
-   ```
+    ErrorLog ${APACHE_LOG_DIR}/myapp_error.log
+    CustomLog ${APACHE_LOG_DIR}/myapp_access.log combined
+</VirtualHost>
+```
 
-   - `ServerName`: Replace this with your domain or IP address.
-   - `WSGIScriptAlias`: This points to the `.wsgi` file created earlier.
-   - `/var/www/myapp`: Path to your Flask app.
+- `ServerName`: Replace this with your domain or IP address.
+- `WSGIScriptAlias`: This points to the `.wsgi` file created earlier.
+- `/var/www/myapp`: Path to your Flask app.
 
-2. **Enable the site** and `mod_wsgi`:
+2. Enable the site and `mod_wsgi`:
 
-   ```bash
-   sudo a2ensite myapp
-   sudo a2enmod wsgi
-   ```
+```bash
+sudo a2ensite myapp
+sudo a2enmod wsgi
+```
 
-3. **Restart Apache**:
+3. Restart Apache:
 
-   ```bash
-   sudo systemctl restart apache2
-   ```
+```bash
+sudo systemctl restart apache2
+```
 
 ### Step 5: Set Up Permissions
 
-Ensure that the directory `/var/www/myapp` and its contents are readable by Apache. You can do this by changing the ownership to `www-data` (the Apache user):
+Ensure that the directory `/var/www/myapp` and its contents are readable by Apache. 
+You can do this by changing the ownership to `www-data` (the Apache user):
 
 ```bash
 sudo chown -R www-data:www-data /var/www/myapp
@@ -148,22 +167,20 @@ sudo chown -R www-data:www-data /var/www/myapp
 
 ### Step 6: (Optional) Virtual Environment
 
-If you're using a virtual environment, you'll need to modify the `.wsgi` file to activate it. To do this:
+If you're using a virtual environment, 
+you'll need to modify the `.wsgi` file to activate it. To do this:
 
-1. **Activate the virtual environment in the `.wsgi` file** by adding the following code:
+1. Activate the virtual environment in the `.wsgi` file by adding the following code:
 
-   ```python
-   activate_this = '/var/www/myapp/venv/bin/activate_this.py'
-   exec(open(activate_this).read(), {'__file__': activate_this})
-   ```
+```python
+activate_this = '/var/www/myapp/venv/bin/activate_this.py'
+exec(open(activate_this).read(), {'__file__': activate_this})
+```
 
-   Make sure to replace `/var/www/myapp/venv/` with the path to your virtual environment.
+Replace `/var/www/myapp/venv/` with the path to your virtual environment.
 
 ### Step 7: Test the Setup
 
-Now, visit your server’s IP address or domain. If everything is set up correctly, you should see your Flask app running.
-
----
 
 ### Summary
 
@@ -174,4 +191,3 @@ To deploy a Flask web application in production using Apache:
 3. Create a virtual host configuration for Apache.
 4. Set up necessary permissions and restart Apache.
 
-This is the idiomatic way to run a Flask application with Apache in a production environment.

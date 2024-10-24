@@ -6,7 +6,6 @@ import os
 from   pathlib import Path
 
 import json
-import pickle
 
 import sys
 
@@ -20,11 +19,12 @@ import signal
 import argparse
 
 import flask
-from   flask import Flask, request
+from   flask import Flask, request, Response
 from   flask import redirect, url_for
 from   flask import session
 from   flask import jsonify
 from   flask import render_template
+from   flask import send_from_directory
 
 
 
@@ -34,6 +34,7 @@ import models.benchmarks as benchmarks
 import models.samples    as samples
 import routes.embeddings_basics as embeddings_basics
 import routes.embeddings_similarity as embeddings_similarity
+import routes.stream as stream
 
 # modules generic logic
 from lib.util import loadEnglishStopwords
@@ -118,6 +119,25 @@ def indexH():
         print( stackTrace(exc) )
         return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
+
+
+
+# we set a different URL for favicon in main.html
+# this is only for the 'rogue' routes, who generate streams etc.
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    if False:
+        return '', 204
+
+
+@app.route('/flush-example', methods=['post','get'])
+def flushExampleH():
+    # No need for 'Transfer-Encoding: chunked'; Flask handles it for you    
+    # response = Response(generate(), mimetype='text/plain')
+    response = Response(stream.generate(), mimetype='text/html')
+    response.status_code = 200  # Explicitly set status code (optional)
+    return response
 
 
 @app.route('/upload-file',methods=['post','get'])
@@ -865,8 +885,6 @@ if __name__ == '__main__':
 
     dummy = args.counter + 1
 
-
-
     loadAll(args)
 
     app.run(
@@ -875,7 +893,6 @@ if __name__ == '__main__':
         port=8001,
         use_reloader=False,
     )
-
 
     saveAll()
 

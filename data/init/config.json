@@ -1,7 +1,7 @@
 {
     "dataset":   "set1",
     "OpenAIKey": "your secret",
-    "see": "# https://platform.openai.com/docs/models/embeddings",
+    "modelNameEmbeddings_help": "# https://platform.openai.com/docs/models/embeddings",
     "modelNameEmbeddings": "text-embedding-3-large",
     "modelNameChat":       "gpt-4",
     "last-item": "no-comma"
