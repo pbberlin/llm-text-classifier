@@ -862,12 +862,14 @@ def correlationsXY(
 
 
 # platform.openai.com/docs/guides/text-generation/conversations-and-context
+# this func is a "generator"
+#  returning a stream for return values in async style
+#  compare llmChatStreamedH() and generatorLLMResponses() for more
 def requestChatCompletion(beliefStatement, speech):
 
-
-    # Optionally:
-    # "Which specific arguments or parts of the speech support or contradict the belief?"
-    # "Does the speech include any caveats or conditions that modify the central argument?"
+    # Optional prompt enhancements:
+    #   "Which specific arguments or parts of the speech support or contradict the belief?"
+    #   "Does the speech include any caveats or conditions that modify the central argument?"
 
     role = "You are an economic policy analyst."
 
@@ -898,11 +900,32 @@ Use the following json format for your response:
 
 
     prompt = prompt.strip()
+
+    if len(beliefStatement.strip()) < 5 or len(speech.strip()) < 5:
+        results = []
+        results.append(
+            {
+                "prompt"    : prompt,
+            },
+            {
+                "ident":      "-",
+                "jsonResult": "{}",
+                "error"     : "no input given",
+            }
+        )
+
+    yield prompt
+
+
+    # load from file cache
     hsh = strHash(prompt)
     results = loadJson(f"chat-completion-{hsh}", subset=get("dataset"))
-
     if len(results) > 0:
-        return results
+        for result in results:
+            yield result
+        yield  "end-of-func"
+        return
+
 
     # platform.openai.com/docs/models
     # model=get("modelNameChat"),
@@ -910,7 +933,7 @@ Use the following json format for your response:
     listSeeds = [100,101,102]
     listSeeds = [100] # seeds are only BETA - output should be mostly *deterministic*
     results = [] # responses
-    results.append( {"prompt":prompt} )
+    # results.append( {"prompt":prompt} )
 
     clnt, errStr = createClient()
     if errStr != "":
@@ -980,6 +1003,8 @@ Use the following json format for your response:
 
             logTimeSince(f"chat completion stop  {ident} - len {len(txt)} chars")
 
+            yield results[-1]
+
 
     ts = f"-{datetime.now():%m-%d-%H-%M}"
     saveJson(results, f"chat-completion-{ts}", subset=get("dataset"))
@@ -987,8 +1012,8 @@ Use the following json format for your response:
     saveJson(results, f"chat-completion-{hsh}", subset=get("dataset"))
 
 
-
-    return results
+    yield  "end-of-func"
+    # return results
 
 
 

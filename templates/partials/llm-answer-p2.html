@@ -1,0 +1,33 @@
+
+
+<hr>
+
+<p class="label-input" >Ident : </p> <span class="pre-llm">{{result.ident}}</span>  
+<br>
+
+
+{% if result.error %}
+    <p>Error:  <pre>{{result.error}}</pre>  </p>
+
+    <br>
+    <p class="label-input" >raw response: </p> <span class="pre-llm">{{result.jsonResult}}</span>  
+    <br>
+
+{% else %}
+    <!-- <p>No error</p> -->
+
+    <br>
+    <p class="label-input" >Agreement: </p> <span class="pre-llm">{{result.jsonResult.agreement}}</span>  
+    <br>
+    <br>
+    <p class="label-input" >Alignment: </p> <span class="pre-llm">{{result.jsonResult.alignment}}</span>  
+    <br>
+    <br>
+    <p class="label-input" >Analysis: </p> <span class="pre-llm">{{result.jsonResult.textual_analysis}}</span>  
+    <br>
+
+{% endif %}
+
+
+<br>
+<br>

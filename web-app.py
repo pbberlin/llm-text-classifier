@@ -41,6 +41,7 @@ from lib.util import loadEnglishStopwords
 from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
 from lib.util import stackTrace
+from lib.util import loadTemplate, templateSuffix
 
 import  lib.config          as config
 
@@ -131,15 +132,6 @@ def favicon():
         return '', 204
 
 
-@app.route('/flush-example', methods=['post','get'])
-def flushExampleH():
-    # No need for 'Transfer-Encoding: chunked'; Flask handles it for you    
-    # response = Response(generate(), mimetype='text/plain')
-    response = Response(stream.generate(), mimetype='text/html')
-    response.status_code = 200  # Explicitly set status code (optional)
-    return response
-
-
 @app.route('/upload-file',methods=['post','get'])
 def uploadFileH():
 
@@ -221,8 +213,6 @@ def uploadFileH():
 
 @app.route('/samples-import', methods=['post','get'])
 def samplesImportH():
-
-
 
     # POST params
     kvPost = request.form.to_dict()
@@ -690,9 +680,56 @@ def embeddingsBasicsH():
 
 
 
+@app.route('/stream-flush-example', methods=['post','get'])
+def streamFlushExampleH():
+    # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
+    response = Response( stream.generate1(), mimetype='text/html')
+    response.status_code = 200  # Explicitly set status code (optional)
+    return response
 
+
+
+# we would like to move this into a module
+#   but then we have to import the app object into that submodule
+#       from web-app import app
+# and for this, we would need to put the entire web-app.py into a submodule.
+def generatorLLMResponses(beliefStatement, speech):
+
+    yield loadTemplate("main","Ask ChatGPT streamed")
+
+    prompt  = ""
+    idx1    = -1
+    for res in embeddings.requestChatCompletion( beliefStatement, speech):
+        idx1 += 1
+        if idx1 == 0:
+            prompt = res
+            with app.app_context():
+                yield render_template(
+                    './partials/llm-answer-p1.html',
+                    beliefStatement=beliefStatement,
+                    speech=speech,
+                    prompt=prompt,
+                    # context=app,
+                )
+
+        elif res == "end-of-func":
+            pass
+        else:
+            with app.app_context():
+                yield render_template(
+                    './partials/llm-answer-p2.html',
+                    result=res,
+                    # context=app.app_context(),
+                    # context=app,
+                )
+
+#
+# double caveat
+#   1.) we receive a *stream* of responses from OpenAI
+#   2.) we configure a "http chunked repsonse"
+#   we render  each response
 @app.route('/llm-chat', methods=['post','get'])
-def llmChatH():
+def llmChatStreamedH():
 
     args = request.args
     kvGet = args.to_dict()
@@ -707,30 +744,49 @@ def llmChatH():
     if "speech" in kvPost:
         speech =  kvPost["speech"]
 
+    response = Response( generatorLLMResponses(beliefStatement, speech), mimetype='text/html')
+    response.status_code = 200  # Explicitly set status code (optional)
+    return response
 
-    inputs = {
-        "beliefStatement" :  beliefStatement,
-        "speech"          :  speech,
-    }
+
+# single caveat
+#   we receive a *stream* of responses from OpenAI
+#   we collect all responses and render them at onece
+@app.route('/llm-chat-render-all-at-once', methods=['post','get'])
+def llmChatOldH():
+
+    args = request.args
+    kvGet = args.to_dict()
+    kvPost = request.form.to_dict()
+
+    beliefStatement =  ""
+    if "belief-statement" in kvPost:
+        beliefStatement =  kvPost["belief-statement"]
+
+    speech          =  ""
+    if "speech" in kvPost:
+        speech =  kvPost["speech"]
 
 
     try:
+        # before making it a generator
+        if False:
+            results = embeddings.requestChatCompletion( beliefStatement, speech)
 
-        if len(beliefStatement.strip()) > 5 and len(speech.strip()) > 5:
-            results = embeddings.requestChatCompletion(beliefStatement, speech)
+        # requestChatCompletion is now a generator
+        # returning various types of returns in an async way
+        prompt = ""
+        results = []
+        idx1 = -1
+        for res in embeddings.requestChatCompletion( beliefStatement, speech):
+            idx1 += 1
+            if idx1 == 0:
+                prompt = res
+            elif res == "end-of-func":
+                pass
+            else:
+                results.append(res)
 
-        else:
-            results = []
-            results.append(
-                {
-                "prompt"    : "-",
-                },
-                {
-                "ident":      "-",
-                "jsonResult": "{}",
-                "error"     : "no input given",
-                }
-            )
 
 
         return render_template(
@@ -739,7 +795,9 @@ def llmChatH():
             contentTpl="llm-answer",
             # cnt1=cnt1,
             # cnt2=cnt2,
-            vals=inputs,
+            beliefStatement=beliefStatement,
+            speech=speech,
+            prompt=prompt,
             results=results,
         )
 

@@ -571,3 +571,38 @@ if __name__ == '__main__':
         print(f'{"core components":12}: {core}')
         print("-" * 40)
 
+
+def loadTemplate(name, title, delim='<div class="content">'):
+
+    try:
+        dr = os.path.join(".", "templates")
+        fn = os.path.join(dr, f"{name}.html" )
+
+        with open(fn, encoding="utf-8") as inFile:
+            strContents = inFile.read()
+            print(f"loaded template '{name:12}' - {len(strContents):3} ")
+
+            strContents = strContents.replace(
+                """<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">""",
+                " ",
+            )
+            strContents = strContents.replace(
+                """{{ HTMLTitle    |safe }}""",
+                title,
+            )
+
+            parts = strContents.split(delim)
+            return parts[0]
+
+    except Exception as exc:
+        print(str(exc))
+        return str(exc)
+
+
+def templateSuffix():
+    bodySuffix = """
+    </div>
+</body>
+</html>
+"""
+    return bodySuffix
