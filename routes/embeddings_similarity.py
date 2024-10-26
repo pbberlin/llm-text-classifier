@@ -138,7 +138,7 @@ def renderTable(
 
             # ... = embeddings.alignmentByChat(...)
 
-            frmURL = url_for("llmChatH")
+            frmURL = url_for("llmChatCompletionStreamedH")
             frm = f"""
                 <form action='{frmURL}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />

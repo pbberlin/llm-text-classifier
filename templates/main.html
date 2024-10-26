@@ -4,12 +4,16 @@
 <head>
     <title>{{ HTMLTitle    |safe }}</title>
 
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta   charset="utf-8">
+    <meta   name="viewport"                 content="width=device-width, initial-scale=1">
 
-    <link  href="../static/css/app.css" rel="stylesheet">
+    <meta   name="color-scheme"             content="light dark">
+    <!-- created using https://picocss.com/docs/version-picker -->
+    <link   href="../static/css/pico.fluid.classless.slate.min.css"   rel="stylesheet" >
+    <link   href="../static/css/app.css"    rel="stylesheet" >
+
     <script src="../static/js/app.js"></script>
-    
+
     <!-- better: web app route def favicon(): -->
     <!-- <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}"> -->
 </head>
@@ -17,15 +21,18 @@
 
 <body>
 
-    <div class="header">
-        <ul>
-            <li  >
-                <a href="/" accesskey="h" > <u>H</u>ome</a>
-            </li>
-        </ul>
-    </div>
+    <header>
 
-    <div class="content">
+        <nav>
+            <ul>
+                <li  >
+                    <a href="/" accesskey="h" > <u>H</u>ome</a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
 
     {{ cntBefore    |safe }}
 
@@ -48,7 +55,7 @@
             {% include "partials/" ~ contentTpl ~ ".html" %}
 
         {% else %}
- 
+
             {% if contentTpl=="contexts" %}
                 {% include "partials/contexts.html" %}
             {% endif %}
@@ -56,7 +63,7 @@
         {% endif %}
 
 
- 
+
     {% else %}
 
 
@@ -65,7 +72,7 @@
     {{ cntAfter    |safe }}
 
 
-    </div>
+    </main>
 
 
 </body>

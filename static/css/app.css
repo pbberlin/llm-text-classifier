@@ -1,29 +1,65 @@
-body, html,root {
-	margin: 0;
-	padding: 0;
-}
-
 * {
-	box-sizing: border-box;
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-	font-size: 14px;
+	font-size:    14px;
+
+
+
 }
 
-h2 {
-	font-size:  2rem;
-	text-align: center;
-	width:      100%;
-	background: darkgray;
-	padding:     1rem;
-	line-height: 30px;
-	color: white;
+/* https://picocss.com/docs/css-variables */
+:root {
+	--pico-border-radius: 0.42rem;
+
+	--pico-form-element-spacing-vertical:   0.25rem;
+	--pico-form-element-spacing-horizontal: 1.00rem;
+
+	/* not pico - the secondary color set of pico is useless */
+	--secondary-background: #efe7af;
+	--tertiary-background:  #efe78d;
+
+	--content-max: 72rem;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  --pico-font-weight: 500;
+}
+h3 {
+	--pico-font-size: 1.25rem;
+}
+h4 {
+	--pico-font-size: 1.15rem;
+}
+/* 
+	color sets...
+
+	created using https://picocss.com/docs/version-picker
+	copied from the non-"min" file
+	changed "primary" to secondary
+
+	then study:
+	https://picocss.com/docs/css-variables
+	and fill into folloing selector  
+*/
+[data-theme="light"],
+:root:not([data-theme="dark"]) {
+	/* --pico-secondary-background: #756b00; */
+	--xxx: dummy;
+}
+
+/* unset some pico css  */
+[type=checkbox]~label:not(:last-of-type),
+[type=radio]   ~label:not(:last-of-type) {
+    margin-inline-end: unset;
+}
+
 
 
 h1, h2, h3 {
 	margin-top:    1.4rem;
-	margin-bottom: 0.1rem;
+	margin-bottom: 0.28rem;
 }
+
+
 
 p {
 	margin-top:    0.1rem;
@@ -38,46 +74,28 @@ ul.main-body li {
 	margin: 0.2rem 0;
 }
 
-input {
-	font-size: 100%;
-	margin-top:    0.1rem;
-	margin-bottom: 0.1rem;
-}
 
-button {
-	margin:  0.4rem 0;
-	padding: 0.1rem 4rem;
-	border-radius: 0.4rem;
-	background-color: #6cbde3;
-}
-
-/*
+ /*
 	====================================
 */
 
 
-div.header {
-	width: 100%;
-	overflow: hidden;
-	background-color: lightblue;
+header {
+	background-color: var(--pico-primary);
+	/* color: var(--pico-primary-inverse); */
+}
+nav li a {
+	color: var(--pico-primary-inverse);
+}
+
+
+
+main {
 	padding: 0.4rem 1rem;
-}
-
-div.header ul  {
-	margin: 0;
-	padding: 0;
-}
-
-div.header ul li {
-	list-style: none;
-}
-
-div.header a {
-	text-decoration: none;
-}
-
-div.content {
-	padding: 0.4rem 1rem;
+	max-width:   var(--content-max);
+	margin-left:  6rem !important;
+	margin-right: auto;
+	/* border: 1px solid red;; */
 }
 
 .small {
@@ -92,14 +110,15 @@ div.content {
 	row-gap: 0.2rem;
 
 	width: 100%;
-	max-width: 52rem;
+	max-width:   var(--content-max);
 
 	padding: 0.2rem   0.4rem;
 	margin:  0.2rem   0;
 	border: none;
 
-	background-color: lightblue;;
 
+	background-color: var(--secondary-background);
+	border-radius: var(--pico-border-radius);
 
 }
 
@@ -109,17 +128,13 @@ form.frmPartial  {
 
 #partial-ui-wrapper ul {
 	flex-basis:  45%;
-	/* top:   -0.8rem;
-	right: 2rem; */
 }
 
 form.frmPartial label,
 .label-input,
 dummy {
 	display: inline-block;
-	min-width: 12rem;
-	min-width: 6rem;
-	/* text-align: right; */
+	min-width: 14rem;
 }
 
 .label-input {
@@ -138,10 +153,6 @@ form.frmPartial input[type="checkbox"] {
 
 
 
-.txt_response {
-	background-color: #FFF ;
-	height: 150px ;
-}
 
 /* can be a benchmark or a sample */
 .item-row {
@@ -164,7 +175,6 @@ form.frmPartial input[type="checkbox"] {
 	max-width:   10rem;
 
 	text-transform:   capitalize;
-	background-color: lightblue;
 }
 
 .item-long {
@@ -182,16 +192,6 @@ form.frmPartial input[type="checkbox"] {
 	flex-wrap: wrap;
 }
 
-.speech-shrt {
-	background-color: lightblue;
-	text-transform: capitalize;
-	flex-basis:  12rem;
-}
-.speech-long {
-	/* width:     42rem; */
-	font-size: 91%;
-	flex-basis:  calc(92% - 10rem);
-}
 
 table.results {
 	margin:  0;
@@ -215,6 +215,7 @@ table.results tr:first-child  td{
 	padding: 0.2rem 0.2rem;
 	line-height: 100%;
 	font-size: 85%;
+	cursor: pointer;
 }
 
 /* first column */
@@ -222,13 +223,13 @@ table.results td:first-child {
 	background-color: lightgrey;
 	text-transform: capitalize;
 	font-size: 85%;
+	cursor: pointer;
 }
 
 table.results .col1-numbering {
 	display: inline-block;
 	font-size: 80%;
 	margin-right: 0.2rem;
-	/* background-color: blue; */
 }
 
 
@@ -259,7 +260,7 @@ table.results div.max-cell {
 
 
 
-/* 
+/*
 	link / button to chat completion
 */
 table.results form,
@@ -283,6 +284,7 @@ table.results .llm-submit {
 	padding:0 0.2rem;
 	display: inline-block;
 	border: none;
+	color: black;
 	background-color: lightgray;
 	opacity: 0.5;
 }
@@ -360,14 +362,16 @@ p.embeds {
 .toggle-container {
 
 	width: 100%;
-	max-width: 52rem;
+	max-width:   var(--content-max);
 
 	padding:  0 0.3rem;
 	padding-bottom: 0.3rem;
 	margin:  0.2rem   0;
 	border: none;
 
-	background-color: burlywood;
+	border-radius: var(--pico-border-radius);
+	background-color: var(--tertiary-background);
+
 }
 
 .toggle-head {
@@ -387,7 +391,7 @@ p.embeds {
 .toggle-body.open {
 	/* adjust based on your content's height */
     max-height: 12rem; /* Adjust based on your content's height */
-    max-height: 44rem; 
+    max-height: 44rem;
 
 	transition: max-height 0.2s ease-in;
 }
@@ -405,9 +409,14 @@ p.embeds {
 	white-space: pre-wrap;
 
 	display: inline-block;
-	max-width: 55rem;
+	max-width:   var(--content-max);
 
 	padding: 0.2rem;
-	background-color: lightgray;
+
+	border-radius: var(--pico-border-radius);
+	background-color: var(--secondary-background);
 
 }
+
+
+

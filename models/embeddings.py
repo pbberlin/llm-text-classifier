@@ -295,9 +295,9 @@ def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
 
     # print(f"  {len(overlaps):4} overlaps")
     overlaps.sort()
-    print(f"    ", end="")
 
     if False:
+        print(f"    ", end="")
         for idx, k in enumerate(overlaps):
             # print(f"{k:3}-{permutes[k]} ", end="")
             print(f"{k:3} ", end="")
@@ -433,7 +433,7 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, overlaps=[], groupSize=1):
     fn = lblHash
 
     plt.savefig(f'./static/img/dynamic/{lblHash}.jpg', format='jpg')
-    print(f"        plot saved for lbl '{lbl[:44]}'")
+    print(f"     plot saved for lbl '{lbl[:44]}'")
 
     # Show plot for review
     # plt.show()
@@ -447,6 +447,7 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, overlaps=[], groupSize=1):
 def significantsAsPlots(lbls, embds, numCtxs):
 
     allIdxs, allVals, mn, mx, overlaps = significantsForPlot(embds)
+
 
     for idx1, embd in enumerate(embds):
         lbl = lbls[idx1]
@@ -688,7 +689,6 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
     for row in embds:
         arrNp.append(  np.array(row) )
     print(f"   {len(arrNp)} return vals converted {len(stmts)}")
-    print("  --")
 
 
     return arrNp

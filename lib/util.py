@@ -23,7 +23,7 @@ from lib.init import logTimeSince
 # the only *fast* way to check for nltk files
 def checkNLTKFiles():
     home = str(Path.home())
-    print(f"home dir is {home}")
+    # print(f"home dir is {home}")
     # print(f"nltk data dir is {nltk.data.path}")
 
     try:
@@ -572,7 +572,9 @@ if __name__ == '__main__':
         print("-" * 40)
 
 
-def loadTemplate(name, title, delim='<div class="content">'):
+# better to use render_template
+#  but this requires importing app
+def mainTemplateHeadForChunking(name, title, delim='<main>'):
 
     try:
         dr = os.path.join(".", "templates")
@@ -583,16 +585,12 @@ def loadTemplate(name, title, delim='<div class="content">'):
             print(f"loaded template '{name:12}' - {len(strContents):3} ")
 
             strContents = strContents.replace(
-                """<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">""",
-                " ",
-            )
-            strContents = strContents.replace(
                 """{{ HTMLTitle    |safe }}""",
                 title,
             )
 
             parts = strContents.split(delim)
-            return parts[0]
+            return parts[0] + delim
 
     except Exception as exc:
         print(str(exc))
@@ -601,7 +599,7 @@ def loadTemplate(name, title, delim='<div class="content">'):
 
 def templateSuffix():
     bodySuffix = """
-    </div>
+        </main>
 </body>
 </html>
 """

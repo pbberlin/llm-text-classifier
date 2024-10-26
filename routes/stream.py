@@ -1,12 +1,10 @@
 import   time
 
-from lib.util import loadTemplate, templateSuffix
+from lib.util import mainTemplateHeadForChunking, templateSuffix
 
 
-
-# a generator, yielding chunks of data
-def generate1():
-    yield loadTemplate("main","stream")
+def chunksGenerator():
+    yield mainTemplateHeadForChunking("main","stream")
     yield "<p>Starting streaming...</p>\n" + " " * 1024  # Force an early flush with padding
     yield f"<div style='height: 2px; background-color: grey'> { '&nbsp;'  * 1024} </div>"  # Force an early flush with padding
     for i in range(8):

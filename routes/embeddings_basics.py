@@ -28,6 +28,7 @@ def model(req,session):
 
         embeds = embeddings.getEmbeddings(statementsLong, ctxs=ctxs)
         embeddings.getEmbeddingsPlot(statementsLong, embeds, ctxs)
+        print("  -----")
 
         s = embeddings.getEmbeddingsHTML(statementsLong, embeds, ctxs, strFormat="extended")
         res += f"{s}"

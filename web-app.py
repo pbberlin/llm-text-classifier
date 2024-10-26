@@ -41,7 +41,7 @@ from lib.util import loadEnglishStopwords
 from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
 from lib.util import stackTrace
-from lib.util import loadTemplate, templateSuffix
+from lib.util import mainTemplateHeadForChunking, templateSuffix
 
 import  lib.config          as config
 
@@ -385,9 +385,9 @@ def configH():
         <button accesskey="s" ><u>S</u>ubmit</button>
     </form>
 
-    <a href="/" {"autofocus" if apiKeyValid else ""}  >   Home        </a>
-
     '''
+
+    #     <a href="/" {"autofocus" if apiKeyValid else ""}  >   Home        </a>
 
     try:
         return render_template(
@@ -683,7 +683,7 @@ def embeddingsBasicsH():
 @app.route('/stream-flush-example', methods=['post','get'])
 def streamFlushExampleH():
     # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
-    response = Response( stream.generate1(), mimetype='text/html')
+    response = Response( stream.chunksGenerator(), mimetype='text/html')
     response.status_code = 200  # Explicitly set status code (optional)
     return response
 
@@ -693,9 +693,9 @@ def streamFlushExampleH():
 #   but then we have to import the app object into that submodule
 #       from web-app import app
 # and for this, we would need to put the entire web-app.py into a submodule.
-def generatorLLMResponses(beliefStatement, speech):
+def generatorChatCompletionChunks(beliefStatement, speech):
 
-    yield loadTemplate("main","Ask ChatGPT streamed")
+    yield mainTemplateHeadForChunking("main","Ask ChatGPT streamed")
 
     prompt  = ""
     idx1    = -1
@@ -725,11 +725,11 @@ def generatorLLMResponses(beliefStatement, speech):
 
 #
 # double caveat
-#   1.) we receive a *stream* of responses from OpenAI
+#   1.) we receive a *stream* of responses from OpenAI from requestChatCompletion()
 #   2.) we configure a "http chunked repsonse"
-#   we render  each response
-@app.route('/llm-chat', methods=['post','get'])
-def llmChatStreamedH():
+#           each response LLM response is rendered and streamed to client
+@app.route('/llm-chat-streamed', methods=['post','get'])
+def llmChatCompletionStreamedH():
 
     args = request.args
     kvGet = args.to_dict()
@@ -744,7 +744,7 @@ def llmChatStreamedH():
     if "speech" in kvPost:
         speech =  kvPost["speech"]
 
-    response = Response( generatorLLMResponses(beliefStatement, speech), mimetype='text/html')
+    response = Response( generatorChatCompletionChunks(beliefStatement, speech), mimetype='text/html')
     response.status_code = 200  # Explicitly set status code (optional)
     return response
 
@@ -752,8 +752,8 @@ def llmChatStreamedH():
 # single caveat
 #   we receive a *stream* of responses from OpenAI
 #   we collect all responses and render them at onece
-@app.route('/llm-chat-render-all-at-once', methods=['post','get'])
-def llmChatOldH():
+@app.route('/llm-chat-completion-sync', methods=['post','get'])
+def llmChatSynchroneousH():
 
     args = request.args
     kvGet = args.to_dict()
