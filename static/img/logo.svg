@@ -1,0 +1,9 @@
+<svg id="logo"  
+    width="80" height="68" 
+    viewBox="12 8 48 48"
+    xmlns="http://www.w3.org/2000/svg">
+    <!-- Magnifying Glass -->
+    <line x1="40" y1="40" x2="60" y2="60" stroke="#efe78d" stroke-width="4" />
+    <circle cx="30" cy="30" r="20" fill="#efe7af" opacity="0.8" stroke="#efe78d" stroke-width="3"/>
+    <text font-size="22"  x="14" y="35" stroke="#62708D" > T C  </text>
+</svg>

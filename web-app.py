@@ -127,7 +127,9 @@ def indexH():
 # this is only for the 'rogue' routes, who generate streams etc.
 @app.route('/favicon.ico')
 def favicon():
-    return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    # return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    # return send_from_directory('static', 'favicon.svg', mimetype='image/x-icon')
+    return send_from_directory('static', 'favicon.svg')
     if False:
         return '', 204
 
@@ -734,7 +736,6 @@ def llmChatCompletionStreamedH():
     args = request.args
     kvGet = args.to_dict()
     kvPost = request.form.to_dict()
-
 
     beliefStatement =  ""
     if "belief-statement" in kvPost:

@@ -1,9 +1,6 @@
 * {
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	font-size:    14px;
-
-
-
 }
 
 /* https://picocss.com/docs/css-variables */
@@ -57,8 +54,16 @@ h4 {
 h1, h2, h3 {
 	margin-top:    1.4rem;
 	margin-bottom: 0.28rem;
+	/* background-color: #62708D; */
 }
 
+
+#logo {
+	display: inline-block;
+	width:  3rem;
+	height: 3rem;
+	margin-right: 2rem;
+}
 
 
 p {
@@ -70,6 +75,9 @@ ul {
 	margin: 0;
 }
 
+ul.main-body  {
+	margin-top: 0.8rem;
+}
 ul.main-body li {
 	margin: 0.2rem 0;
 }

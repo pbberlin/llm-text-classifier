@@ -1,0 +1,32 @@
+<svg id="progress-animation" 
+    width="200" height="68" 
+    viewBox="60 12 85 48"
+
+    xmlns="http://www.w3.org/2000/svg" >
+    <!-- Funnel Shape -->
+    <polygon points="80,10 120,10 100,50" fill="#efe78d" />
+    <text id="caption" font-size="10"  font-family="Arial"      x="082" y="28" fill="#62708D" 
+        >loading...</text>
+    <text id="caption" font-size="8"  font-family="Arial"       x="092" y="38" fill="#62708D" 
+        >4-6s</text>
+    <!-- Moving Letters -->
+    <text id="letter1" font-size="20"  font-family="monospace"  x="080" y="58" fill="#62708D" 
+        >T</text>
+    <text id="letter2" font-size="20"  font-family="monospace"  x="112" y="58" fill="#62708D" 
+        >C</text>
+
+    <style>
+        /* Animation for letters moving  */
+        @keyframes moveUp {
+            0% { transform: translateY(    0); opacity: 1; }
+            100% { transform: translateY(-36px); opacity: 0; }
+        }
+        #letter1, #letter2 {
+            /* animation:  moveUp 0.8s infinite alternate; */
+            animation:  moveUp 0.3s infinite alternate;
+        }
+        #letter2 { animation-delay: 0.2s; }
+    </style>
+
+</svg>
+
