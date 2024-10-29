@@ -686,18 +686,23 @@ def embeddingsBasicsH():
         return app.response_class(response=json.dumps( str(exc) ), status=500, mimetype='application/json')
 
 
-def chunksGenerator(mT):
+def chunksGenerator(modeES=False):
 
     pfx = ""
-    if mT == 'text/event-stream':
+    if modeES:
         pfx = "data: "
 
-    if False:
-        yield mainTemplateHeadForChunking("main","stream example")
-        yield "<p>Starting streaming...</p>\n" + " " * 1024  # Force an early flush with padding
+    if not modeES:
+        yield mainTemplateHeadForChunking("main", "streaming example")
+        # yield f"{pfx}<p><a href={url_for('streamFlushExampleH') }?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024  
+        yield f"{pfx}<p><a href=/stream-flush-example?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024  
+    
+    # force early flush with padding
+    yield f"{pfx}<p>Starting streaming...</p>\n" + " " * 1024  
 
     # force early flush with padding
     yield f"{pfx}<div style='height: 2px; background-color: grey'> { ' ' * 1024}  &nbsp;</div>\n\n"  
+    
     # sending content chunks to client
     for i in range(12):
         print(f"\t  yielding chunk {i:2}")
@@ -705,20 +710,31 @@ def chunksGenerator(mT):
         time.sleep(0.15)
         time.sleep(0.05)
     yield f"{pfx}<p>response finished</p>\n\n"
-    # yield templateSuffix()
+
+    if not modeES:
+        yield templateSuffix()
 
 
 @app.route('/stream-flush-example', methods=['GET','POST'])
 def streamFlushExampleH():
-    mType = 'text/plain'
-    mType = 'text/html'
-    mType = 'text/html; charset=UTF-8'
-    mType = 'text/event-stream'
 
+    # GET + POST params
+    kvGet  = request.args.to_dict()
+    kvPost = request.form.to_dict()
+    # for k in kvPost:
+    #     print(f"{k}")
+
+    asEventStream = False
+    # 'text/plain', 'text/html; charset=UTF-8'
     mType = 'text/html'
-    mType = 'text/event-stream'
+
+    if ("event-stream" in kvGet) or ("event-stream" in kvPost):
+        asEventStream = True
+        mType = 'text/event-stream'
+
+
     # content_type=mType if '...charset=UTF-8'
-    rsp = Response( chunksGenerator(mType), mimetype=mType)
+    rsp = Response( chunksGenerator(modeES=asEventStream), mimetype=mType)
     # if True:
     if False:
         # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
