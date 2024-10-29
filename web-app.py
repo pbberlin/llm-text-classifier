@@ -216,10 +216,9 @@ def uploadFileH():
 @app.route('/samples-import', methods=['post','get'])
 def samplesImportH():
 
-    # POST params
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
-    # for k in kvPost:
-    #     print(f"{k}")
 
     # extract and process POST params
     importedSmpls = []
@@ -337,6 +336,8 @@ def saveAllH():
 @app.route('/config-edit',methods=['post','get'])
 def configH():
 
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
     apiKey =  None
@@ -409,7 +410,8 @@ def configH():
 @app.route('/contexts-edit', methods=['post','get'])
 def contextsEditH():
 
-    # POST params
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
     # extract and process POST params
@@ -466,7 +468,8 @@ def contextsEditH():
 @app.route('/benchmarks-edit', methods=['post','get'])
 def benchmarksEditH():
 
-    # POST params
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
     # for k in kvPost:
     #     print(f"{k}")
@@ -564,7 +567,8 @@ def benchmarksEditH():
 @app.route('/samples-edit', methods=['post','get'])
 def samplesEditH():
 
-    # POST params
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
     # for k in kvPost:
     #     print(f"{k}")
@@ -711,16 +715,27 @@ def generatorChatCompletionChunks(beliefStatement, speech):
                     beliefStatement=beliefStatement,
                     speech=speech,
                     prompt=prompt,
+                    seq=idx1,
+                    seqPrev=(idx1-1),
                     # context=app,
                 )
 
         elif res == "end-of-func":
             pass
+            yield f"""
+                <style>
+                    #progress-animation-outer-{idx1-1} {{
+                        display: none;
+                    }}
+                </style>
+            """
         else:
             with app.app_context():
                 yield render_template(
                     './partials/llm-answer-p2.html',
                     result=res,
+                    seq=idx1,
+                    seqPrev=(idx1-1),
                     # context=app.app_context(),
                     # context=app,
                 )
@@ -733,8 +748,8 @@ def generatorChatCompletionChunks(beliefStatement, speech):
 @app.route('/llm-chat-streamed', methods=['post','get'])
 def llmChatCompletionStreamedH():
 
-    args = request.args
-    kvGet = args.to_dict()
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
     beliefStatement =  ""
@@ -745,7 +760,10 @@ def llmChatCompletionStreamedH():
     if "speech" in kvPost:
         speech =  kvPost["speech"]
 
-    response = Response( generatorChatCompletionChunks(beliefStatement, speech), mimetype='text/html')
+    response = Response( 
+        generatorChatCompletionChunks(beliefStatement, speech), 
+        mimetype='text/html',
+    )
     response.status_code = 200  # Explicitly set status code (optional)
     return response
 
@@ -756,8 +774,8 @@ def llmChatCompletionStreamedH():
 @app.route('/llm-chat-completion-sync', methods=['post','get'])
 def llmChatSynchroneousH():
 
-    args = request.args
-    kvGet = args.to_dict()
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
     beliefStatement =  ""
@@ -793,7 +811,7 @@ def llmChatSynchroneousH():
         return render_template(
             'main.html',
             HTMLTitle="Ask ChatGPT",
-            contentTpl="llm-answer",
+            contentTpl="llm-answer-sync",
             # cnt1=cnt1,
             # cnt2=cnt2,
             beliefStatement=beliefStatement,
@@ -814,13 +832,8 @@ def llmChatSynchroneousH():
 @app.route('/embeddings-similarity', methods=['post','get'])
 def embeddingsSimilarityH():
 
-
-    # GET params
-    args = request.args
-    kvGet = args.to_dict()
-    # pprint(kvGet)
-
-    # POST params
+    # GET + POST params
+    kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
     ctxUI, ctxs  = contexts.PartialUI(request, session)

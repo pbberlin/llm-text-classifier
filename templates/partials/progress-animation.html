@@ -1,0 +1,39 @@
+{% if seq == "": %}
+{% else %}
+{% endif %}
+<div    
+    id="progress-animation-outer-{{seq}}"
+    class="progress-animation-outer" 
+>
+    <img id="progress-animation" 
+        src="/static/img/progress-animation.svg" 
+        alt="loading..."
+    >
+</div>
+
+
+<style>
+
+    .progress-animation-outer {
+        width:100%;
+        display: flex;
+        justify-content: center;
+
+        /* border: 4px solid gray; */
+    }
+
+    #progress-animation {
+        /* border: none; */
+        /* border: 4px solid gray; */
+    }
+
+
+    #progress-animation-outer-{{seqPrev}} {
+        display: none;
+    }
+
+    #progress-animation-outer-{{seq}} {
+        display: flex;
+    }
+
+</style>
