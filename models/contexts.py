@@ -36,7 +36,7 @@ def load():
 
 def save():
     if not cacheDirty:
-        print(f"  contexts   are unchanged ({len(c_contexts):3} entries). ")
+        print(f"\tcontexts   are unchanged ({len(c_contexts):3} entries). ")
         return
     saveJson(c_contexts, "contexts", subset=get("dataset"))
 

@@ -522,7 +522,7 @@ def load():
 # save embeddings
 def save():
     if not cacheDirty:
-        print(f"  embeddings are unchanged ({len(c_embeddings):3} entries). ")
+        print(f"\tembeddings are unchanged ({len(c_embeddings):3} entries). ")
         return
 
     rng, lStr, _ ,  _ , _ = significantsList()
@@ -924,6 +924,7 @@ Use the following json format for your response:
         for result in results:
             yield result
         yield  "end-of-func"
+        logTimeSince(f"\tchat completion - cache", startNew=True)
         return
 
 
@@ -945,7 +946,7 @@ Use the following json format for your response:
         for idx2, seed in enumerate(listSeeds):
 
             ident = f"{idx1+1}{idx2+1}--model{model}-seed{seed}"
-            logTimeSince(f"chat completion start {ident}", startNew=True)
+            logTimeSince(f"\tchat completion start {ident}", startNew=True)
 
             # https://platform.openai.com/docs/api-reference/chat/create
             respFmt = { "type": "json_object" }
@@ -1001,7 +1002,7 @@ Use the following json format for your response:
                     }
                 )
 
-            logTimeSince(f"chat completion stop  {ident} - len {len(txt)} chars")
+            logTimeSince(f"\tchat completion stop  {ident} - len {len(txt)} chars")
 
             yield results[-1]
 

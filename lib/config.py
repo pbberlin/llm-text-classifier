@@ -24,8 +24,8 @@ def load():
         set("OpenAIKey", envOpenAIKey)
 
     for idx, k in enumerate(cfg):
-        if not k.endswith("_help"):
-            print(f"\t{k:12} {cfg[k]}")
+        if not k.endswith("_help") and not k.endswith("last-item")  :
+            print(f"\t  {k:24} {cfg[k]}")
 
 
 

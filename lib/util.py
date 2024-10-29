@@ -71,11 +71,8 @@ def stackTrace(e):
 domainSpecificWords = {}
 
 def loadDomainSpecificWords():
-    with open("./data/init/terms-central-banking.json") as file1:
-        contents = file1.read()
-        global domainSpecificWords
-        domainSpecificWords = json.loads(contents)
-        print(f"[lib_loaddata] central banking terms loaded after - type {type(domainSpecificWords)} - len {len(domainSpecificWords) } ", )
+    global domainSpecificWords
+    domainSpecificWords = loadJson("terms-central-banking", "init",)
 
 
 englishStopWords = []
@@ -140,7 +137,7 @@ def saveJson(dta, name, subset="misc", tsGran=0):
 
         with open(fn, "w", encoding='utf-8') as outFile:
             json.dump(dta, outFile, ensure_ascii=False, indent=4)
-            print(f"saving '{name:12}' as json - {len(dta):3} entries - {dr}")
+            print(f"\tsaving '{name:12}' as json - {len(dta):3} entries - {dr}")
 
     except Exception as exc:
         print(str(exc))
@@ -166,7 +163,7 @@ def loadJson(name, subset="misc", onEmpty="list"):
         with open(fn, encoding="utf-8") as inFile:
             strContents = inFile.read()
             dta = json.loads(strContents)
-            print(f"loaded  '{name:12}' as json {type(dta)} - {len(dta):3} entries - {dr}")
+            print(f"\tloaded  '{name:12}' as json {type(dta)} - {len(dta):3} entries - {dr}")
             return dta
 
 
@@ -582,7 +579,7 @@ def mainTemplateHeadForChunking(name, title, delim='<main>'):
 
         with open(fn, encoding="utf-8") as inFile:
             strContents = inFile.read()
-            print(f"loaded template '{name:12}' - {len(strContents):3} ")
+            print(f"\tloaded template '{name:12}' - {len(strContents):3} ")
 
             strContents = strContents.replace(
                 """{{ HTMLTitle    |safe }}""",

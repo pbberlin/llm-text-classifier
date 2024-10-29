@@ -1,6 +1,6 @@
 {
-    "dataset":   "set1",
     "OpenAIKey": "your secret",
+    "dataset":   "set1",
     "modelNameEmbeddings_help": "# https://platform.openai.com/docs/models/embeddings",
     "modelNameEmbeddings": "text-embedding-3-large",
     "modelNameChat":       "gpt-4",

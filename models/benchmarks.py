@@ -80,7 +80,7 @@ def load():
 
 def save():
     if not cacheDirty:
-        print(f"  benchmarks are unchanged ({len(c_benchmarks):3} entries). ")
+        print(f"\tbenchmarks are unchanged ({len(c_benchmarks):3} entries). ")
         return
     saveJson(c_benchmarks, "benchmarks", subset=get("dataset"))
 

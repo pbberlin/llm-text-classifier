@@ -84,7 +84,7 @@ def load():
 
 def save():
     if not cacheDirty:
-        print(f"  samples    are unchanged ({len(c_samples):3} entries). ")
+        print(f"\tsamples    are unchanged ({len(c_samples):3} entries). ")
         return
     saveJson(c_samples, "samples", subset=get("dataset"))
 

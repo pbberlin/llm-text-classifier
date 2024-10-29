@@ -2,6 +2,7 @@
 
 ```sh
 pip install -r requirements.txt
+pip install -r requirements.txt -U
 cls && python web-app.py
 ```
 

@@ -10,6 +10,7 @@ import json
 import sys
 
 from   datetime import datetime, timedelta
+import   time
 
 from   pprint   import pprint, pformat
 
@@ -134,7 +135,7 @@ def favicon():
         return '', 204
 
 
-@app.route('/upload-file',methods=['post','get'])
+@app.route('/upload-file',methods=['GET','POST'])
 def uploadFileH():
 
     content = ""
@@ -213,7 +214,7 @@ def uploadFileH():
 
 
 
-@app.route('/samples-import', methods=['post','get'])
+@app.route('/samples-import', methods=['GET','POST'])
 def samplesImportH():
 
     # GET + POST params
@@ -326,14 +327,14 @@ def listBoxDataset():
     return s
 
 
-@app.route('/save-all',methods=['post','get'])
+@app.route('/save-all',methods=['GET','POST'])
 def saveAllH():
     saveAll(force=True)
     return "OK"
 
 
 
-@app.route('/config-edit',methods=['post','get'])
+@app.route('/config-edit',methods=['GET','POST'])
 def configH():
 
     # GET + POST params
@@ -407,7 +408,7 @@ def configH():
 
 
 
-@app.route('/contexts-edit', methods=['post','get'])
+@app.route('/contexts-edit', methods=['GET','POST'])
 def contextsEditH():
 
     # GET + POST params
@@ -465,7 +466,7 @@ def contextsEditH():
         return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
-@app.route('/benchmarks-edit', methods=['post','get'])
+@app.route('/benchmarks-edit', methods=['GET','POST'])
 def benchmarksEditH():
 
     # GET + POST params
@@ -564,7 +565,7 @@ def benchmarksEditH():
 
 
 
-@app.route('/samples-edit', methods=['post','get'])
+@app.route('/samples-edit', methods=['GET','POST'])
 def samplesEditH():
 
     # GET + POST params
@@ -667,7 +668,7 @@ def samplesEditH():
 
 
 
-@app.route('/embeddings-basics', methods=['post','get'])
+@app.route('/embeddings-basics', methods=['GET','POST'])
 def embeddingsBasicsH():
     try:
 
@@ -686,12 +687,27 @@ def embeddingsBasicsH():
 
 
 
-@app.route('/stream-flush-example', methods=['post','get'])
+
+def chunksGenerator():
+    yield mainTemplateHeadForChunking("main","stream")
+    yield "<p>Starting streaming...</p>\n" + " " * 1024  # Force an early flush with padding
+    yield f"<div style='height: 2px; background-color: grey'> { '&nbsp;'  * 1024} </div>"  # Force an early flush with padding
+    for i in range(12):
+        yield f"<p>Chunk {(i + 1):2}</p>\n"  # Send the chunk to the client
+        time.sleep(0.15)  # Simulate a delay (e.g., long-running process)
+        time.sleep(0.55)  # Simulate a delay (e.g., long-running process)
+        print(f"\t  yielding chunk {i:2}")
+    yield f"<p>response finished</p>\n"
+    yield templateSuffix()
+
+@app.route('/stream-flush-example', methods=['GET','POST'])
 def streamFlushExampleH():
-    # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
-    response = Response( stream.chunksGenerator(), mimetype='text/html')
-    response.status_code = 200  # Explicitly set status code (optional)
-    return response
+    return Response( chunksGenerator(), mimetype='text/html')
+    if False:
+        # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
+        rsp.headers['Transfer-Encoding'] = 'chunked'
+        rsp.status_code = 200  # Explicitly set status code (optional)
+        return rsp
 
 
 
@@ -745,7 +761,7 @@ def generatorChatCompletionChunks(beliefStatement, speech):
 #   1.) we receive a *stream* of responses from OpenAI from requestChatCompletion()
 #   2.) we configure a "http chunked repsonse"
 #           each response LLM response is rendered and streamed to client
-@app.route('/llm-chat-streamed', methods=['post','get'])
+@app.route('/llm-chat-streamed', methods=['GET','POST'])
 def llmChatCompletionStreamedH():
 
     # GET + POST params
@@ -771,7 +787,7 @@ def llmChatCompletionStreamedH():
 # single caveat
 #   we receive a *stream* of responses from OpenAI
 #   we collect all responses and render them at onece
-@app.route('/llm-chat-completion-sync', methods=['post','get'])
+@app.route('/llm-chat-completion-sync', methods=['GET','POST'])
 def llmChatSynchroneousH():
 
     # GET + POST params
@@ -829,7 +845,7 @@ def llmChatSynchroneousH():
 
 
 
-@app.route('/embeddings-similarity', methods=['post','get'])
+@app.route('/embeddings-similarity', methods=['GET','POST'])
 def embeddingsSimilarityH():
 
     # GET + POST params
