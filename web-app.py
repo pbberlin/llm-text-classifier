@@ -686,28 +686,45 @@ def embeddingsBasicsH():
         return app.response_class(response=json.dumps( str(exc) ), status=500, mimetype='application/json')
 
 
+def chunksGenerator(mT):
 
+    pfx = ""
+    if mT == 'text/event-stream':
+        pfx = "data: "
 
-def chunksGenerator():
-    yield mainTemplateHeadForChunking("main","stream")
-    yield "<p>Starting streaming...</p>\n" + " " * 1024  # Force an early flush with padding
-    yield f"<div style='height: 2px; background-color: grey'> { '&nbsp;'  * 1024} </div>"  # Force an early flush with padding
+    if False:
+        yield mainTemplateHeadForChunking("main","stream example")
+        yield "<p>Starting streaming...</p>\n" + " " * 1024  # Force an early flush with padding
+
+    # force early flush with padding
+    yield f"{pfx}<div style='height: 2px; background-color: grey'> { ' ' * 1024}  &nbsp;</div>\n\n"  
+    # sending content chunks to client
     for i in range(12):
-        yield f"<p>Chunk {(i + 1):2}</p>\n"  # Send the chunk to the client
-        time.sleep(0.15)  # Simulate a delay (e.g., long-running process)
-        time.sleep(0.55)  # Simulate a delay (e.g., long-running process)
         print(f"\t  yielding chunk {i:2}")
-    yield f"<p>response finished</p>\n"
-    yield templateSuffix()
+        yield f"{pfx}<p>Chunk {(i + 1):2}  { ' '  * 512} &nbsp;</p>\n\n"
+        time.sleep(0.15)
+        time.sleep(0.05)
+    yield f"{pfx}<p>response finished</p>\n\n"
+    # yield templateSuffix()
+
 
 @app.route('/stream-flush-example', methods=['GET','POST'])
 def streamFlushExampleH():
-    return Response( chunksGenerator(), mimetype='text/html')
+    mType = 'text/plain'
+    mType = 'text/html'
+    mType = 'text/html; charset=UTF-8'
+    mType = 'text/event-stream'
+
+    mType = 'text/html'
+    mType = 'text/event-stream'
+    # content_type=mType if '...charset=UTF-8'
+    rsp = Response( chunksGenerator(mType), mimetype=mType)
+    # if True:
     if False:
         # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
         rsp.headers['Transfer-Encoding'] = 'chunked'
         rsp.status_code = 200  # Explicitly set status code (optional)
-        return rsp
+    return rsp
 
 
 
@@ -776,8 +793,8 @@ def llmChatCompletionStreamedH():
     if "speech" in kvPost:
         speech =  kvPost["speech"]
 
-    response = Response( 
-        generatorChatCompletionChunks(beliefStatement, speech), 
+    response = Response(
+        generatorChatCompletionChunks(beliefStatement, speech),
         mimetype='text/html',
     )
     response.status_code = 200  # Explicitly set status code (optional)
