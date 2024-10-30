@@ -694,11 +694,10 @@ def chunksGenerator(modeES=False):
 
     if not modeES:
         yield mainTemplateHeadForChunking("main", "streaming example")
-        # yield f"{pfx}<p><a href={url_for('streamFlushExampleH') }?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024  
         yield f"{pfx}<p><a href=/stream-flush-example?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024  
     
     # force early flush with padding
-    yield f"{pfx}<p>Starting streaming...</p>\n" + " " * 1024  
+    yield f"{pfx}<p>Starting streaming...</p>" + " " * 1024  + "\n\n"
 
     # force early flush with padding
     yield f"{pfx}<div style='height: 2px; background-color: grey'> { ' ' * 1024}  &nbsp;</div>\n\n"  
