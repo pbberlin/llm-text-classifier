@@ -1,46 +1,33 @@
-<h3>
-    Request chat GPT
-</h3>
+<p> Compute extended alignment using chat completion... </p>
 
 <br>
 
 <form action="" method="POST">
 
-    <label class="label-input" for="model">Model</label>
-    <input    name="model" value="{{model}}" />
-
-    <!-- -{{model}}- -->
 
     <label class="label-input" for="belief-statement">Belief statement</label>
-    <textarea  cols="120" rows="4"  name="belief-statement">{{beliefStatement}}</textarea>
+    <textarea  cols="120" rows="3"  name="belief-statement">{{beliefStatement}}</textarea>
 
     <label class="label-input" for="speech">Speech</label>
     <textarea  cols="120" rows="6"  name="speech"           >{{speech}}</textarea>
 
     <!-- <button name="submit-1" accesskey="a" > <u>A</u>sk </button> -->
 
-
     <div style="display: none;">
         <label class="label-input" for="seed">Seed</label>
         <input type="text" name="seed" value="100">
         <!-- <br> -->
-    
+
         <label class="label-input" for="model">model</label>
         <input type="text" name="model" value="gpt-4">
         <br>
-    
+
     </div>
 
+</form>
 
 
-
-
-</form>        
-
-<br>
-
-
-<p class="label-input" >Prompt: </p> <span class="pre-llm">{{prompt}}</span>  
+<p class="label-input" >Prompt: </p> <span class="pre-llm" style="font-size: 80%; line-height: 80%;">{{prompt}}</span>
 <br>
 
 
@@ -48,4 +35,168 @@
 
 
 </div>
+
+
+
+
+
+{% set models ='["gpt-4o", "gpt-4" ]' %}
+<!--
+{{models| tojson}}<br>
+{{models}}<br>
+-->
+
+<input type="hidden" id="role"   value="{{ role }}">
+<input type="hidden" id="prompt" value="{{ prompt }}">
+<input type="hidden" id="models" value="{{ models  }}">
+
+
+<div id="anchor-results"></div>
+
+<script>
+
+
+
+    document.addEventListener('DOMContentLoaded', async function () {
+
+
+        const anchorResults = document.getElementById('anchor-results'); // container for results
+
+        function animStart( seq ) {
+            const divAnimation = document.createElement('div');
+            let anim = `
+                <div
+                    id="progress-animation-outer-${seq}"
+                    class="progress-animation-outer"
+                >
+                    <img id="progress-animation"
+                        src="/static/img/progress-animation.svg"
+                        alt="loading..."
+                    >
+                </div>
+
+                <style>
+                    #progress-animation-outer-${seq} {
+                        display: flex;
+                    }
+                </style>
+            `;
+            divAnimation.innerHTML = anim;
+
+            anchorResults.appendChild(divAnimation);
+
+            divAnimation.scrollIntoView();
+        }
+
+        function animStop( seq ) {
+            let id = `progress-animation-outer-${seq}`;
+            el = document.getElementById(id);
+            el.style.display = "none";
+            el.parentNode.style.display = "none";
+        }
+
+
+        const models = JSON.parse(document.getElementById('models').value);
+        const prompt = document.getElementById('prompt').value;
+        const role   = document.getElementById('role'  ).value;
+
+        // console.log(prompt);
+        // console.log(role);
+        // console.log(models);
+
+        requests = []
+
+        for (let idx = 0; idx < models.length; idx++) {
+            const mod = models[idx];
+            let req = {
+                "model":   mod,
+                "role":    role,
+                "prompt":  prompt,
+            }
+            // console.log("model", mod);
+            requests.push(req);
+        }
+
+
+
+
+        // console.log(requests);
+
+
+
+
+
+        async function fetchModelResult( request ) {
+            let payload = {};
+            try {
+                payload = {
+                    model:  request.model,
+                    role:   request.role,
+                    prompt: request.prompt,
+                }
+                // console.log(payload);
+                const response = await fetch('/chat-completion-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                payload["error"] = error;
+                return payload;
+            }
+        }
+
+
+        let cntr = 0;
+        cntr++;
+        animStart(cntr);
+
+
+        // Fetch results sequentially or in parallel
+        const results = await Promise.all( requests.map(fetchModelResult) );
+        // console.log(results);
+        results.forEach(({ ident, jsonResult, error }) => {
+
+            const divResult = document.createElement('div');
+
+            let cnt = "";
+            cnt += `<hr>`;
+            cnt += `<p class="label-input" >Ident : </p> <span class="pre-llm">${ident}</span>
+                    <br>
+                    `;
+
+            if (error) {
+                cnt += `    <p>Error:  <pre>${error}</pre>  </p>`;
+                cnt += `    <br>
+                            <p class="label-input" >raw response: </p> <span class="pre-llm">${jsonResult}</span>
+                            <br>
+                        `;
+
+
+            } else {
+                cnt += `
+                    <p class="label-input" >Agreement: </p> <span class="pre-llm">${jsonResult.agreement}</span>
+                    <br>
+                    <p class="label-input" >Alignment: </p> <span class="pre-llm">${jsonResult.alignment}</span>
+                    <br>
+                    <p class="label-input" >Analysis: </p> <span class="pre-llm">${jsonResult.textual_analysis}</span>
+                `;
+
+            }
+
+            cnt += `<br><br>`
+            divResult.innerHTML = cnt;
+            anchorResults.appendChild(divResult);
+
+
+
+        });
+
+        animStop(cntr);
+
+    });
+</script>
+
 

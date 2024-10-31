@@ -1066,8 +1066,8 @@ def chatCompletionJsonGR(model, prompt, role, seed=100):
 
 
     maxCompletionTokens=get("tokens_max")    # Limit for response tokens
-    celcius=get("temperature")
-    ident = f"model{model}-{celcius}d-{maxCompletionTokens}t"
+    celsius=get("temperature")
+    ident = f"{model}-{celsius}d-{maxCompletionTokens}t"
     res = [] # responses
     respFmt = { "type": "json_object" }
     if model != "gpt-4o":
@@ -1092,7 +1092,7 @@ def chatCompletionJsonGR(model, prompt, role, seed=100):
         response_format= respFmt ,
         messages=msgs,
         max_completion_tokens=maxCompletionTokens,    # Limit for response tokens
-        temperature=celcius,
+        temperature=celsius,
         n=1,                # Number of completions to generate
         stop=None,          # Specify stop sequences if needed
         seed=seed,

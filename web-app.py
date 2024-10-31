@@ -886,6 +886,7 @@ def llmChatCompletionChunkedH():
 
 
 
+# returns JSON
 @app.route('/chat-completion-json', methods=['GET','POST'])
 def chatCompletionJsonH():
 
@@ -893,42 +894,33 @@ def chatCompletionJsonH():
     kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
+    kvPost = request.json
+
     model          =  ""
     if "model" in kvPost:
         model =  kvPost["model"].strip()
-
     if model == "":
         models = config.get("modelNamesChatCompletion")
         model =  models[0]
 
+    prompt =  ""
+    if "prompt" in kvPost:
+        prompt =  kvPost["prompt"]
 
-    beliefStatement =  ""
-    if "belief-statement" in kvPost:
-        beliefStatement =  kvPost["belief-statement"]
+    role          =  ""
+    if "role" in kvPost:
+        role =  kvPost["role"]
 
-    speech          =  ""
-    if "speech" in kvPost:
-        speech =  kvPost["speech"]
 
+    # if len(prompt) < 5:
+    #     print(f"  too short")
+    #     return app.response_class(
+    #         response=f"{{ error: too short {prompt} }}   ",
+    #         mimetype='application/json',
+    #         status=500,
+    #     )
 
     try:
-
-        prompt, role, err = embeddings.designPrompt( beliefStatement, speech)
-        if err != "":
-            result = []
-            result.append(
-                {
-                    "ident":      "getClient() failed",
-                    "jsonResult": embeddings.resDummy(),
-                    "error"     : err,
-                }
-            )
-            resp = Response(
-                json.dumps(result),
-                mimetype='application/json',
-            )
-            return resp
-
 
         result = embeddings.chatCompletionJsonGR(model, prompt, role)
         resp = Response(
@@ -941,26 +933,22 @@ def chatCompletionJsonH():
     except Exception as exc:
         # print(str(exc))
         print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
+        return app.response_class(
+            response=f"{{ error: {str(exc)} }}   ",
+            mimetype='application/json',
+            status=500,
+        )
 
 
-
+# returns HTML - first part of the page
+#   makes JS requests
+#   renders JSON responses
 @app.route('/chat-completion-js', methods=['GET','POST'])
 def chatCompletionJSH():
 
     # GET + POST params
     kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
-
-    model          =  ""
-    if "model" in kvPost:
-        model =  kvPost["model"].strip()
-        
-    if model == "":
-        models = config.get("modelNamesChatCompletion")
-        model =  models[0]
-        
-    
 
     beliefStatement =  ""
     if "belief-statement" in kvPost:
@@ -984,7 +972,6 @@ def chatCompletionJSH():
             # cnt2=cnt2,
             beliefStatement=beliefStatement,
             speech=speech,
-            model=model,
             prompt=prompt,
             role=role,
         )
