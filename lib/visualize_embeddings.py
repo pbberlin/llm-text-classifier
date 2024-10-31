@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
+from lib.config import get, set
+
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 if OPENAI_API_KEY is None or  len(OPENAI_API_KEY) < 2:
     print("set Open AI key via 'OPENAI_API_KEY'")
@@ -15,7 +17,6 @@ if OPENAI_API_KEY is None or  len(OPENAI_API_KEY) < 2:
 import openai
 client = openai.OpenAI()
 # https://platform.openai.com/docs/models/embeddings
-modelName = "text-embedding-3-large"
 
 
 
@@ -27,7 +28,7 @@ def get_embeddings(statements):
 
     response = client.embeddings.create(
         input=statements, 
-        model=modelName,
+        model=get("modelNameEmbeddings"),
     )
 
     for idx, record in enumerate(response.data):

@@ -861,17 +861,15 @@ def correlationsXY(
 
 
 
-# platform.openai.com/docs/guides/text-generation/conversations-and-context
-# this func is a "generator"
-#  returning a stream for return values in async style
-#  compare llmChatStreamedH() and generatorLLMResponses() for more
-def requestChatCompletion(beliefStatement, speech):
+def designPrompt(beliefStatement, speech):
+
+    role = "You are an economic policy analyst."
+
 
     # Optional prompt enhancements:
     #   "Which specific arguments or parts of the speech support or contradict the belief?"
     #   "Does the speech include any caveats or conditions that modify the central argument?"
 
-    role = "You are an economic policy analyst."
 
     prompt = f"""
 {role}
@@ -897,22 +895,43 @@ Use the following json format for your response:
 }}
     """
 
-
-
     prompt = prompt.strip()
 
     if len(beliefStatement.strip()) < 5 or len(speech.strip()) < 5:
+        return prompt, role, "too short"
+
+
+    return prompt, role, ""
+
+
+def resDummy():
+    dummy = {
+        "model":             "-",
+        "agreement":         "-",
+        "alignment":          0,
+        "textual_analysis":  "-"
+    } 
+    return dummy
+
+# platform.openai.com/docs/guides/text-generation/conversations-and-context
+# this func is a "generator"
+#  returning a stream for return values in async style
+#  compare llmChatStreamedH() and generatorLLMResponses() for more
+def chatCompletionChunks(beliefStatement, speech):
+
+    prompt, role, err = designPrompt(beliefStatement, speech)
+    if err != "":
+        yield prompt
         results = []
         results.append(
             {
-                "prompt"    : prompt,
-            },
-            {
                 "ident":      "-",
-                "jsonResult": "{}",
-                "error"     : "no input given",
+                "jsonResult": resDummy(),
+                "error"     : err,
             }
         )
+        yield results[-1]
+
 
     yield prompt
 
@@ -923,14 +942,18 @@ Use the following json format for your response:
     if len(results) > 0:
         for result in results:
             yield result
-        yield  "end-of-func"
+        
         logTimeSince(f"\tchat completion - cache", startNew=True)
+        yield  "end-of-func"
         return
 
 
-    # platform.openai.com/docs/models
-    # model=get("modelNameChat"),
-    models = ["gpt-4o","gpt-4"]
+
+
+
+
+    models=get("modelNamesChatCompletion")
+
     listSeeds = [100,101,102]
     listSeeds = [100] # seeds are only BETA - output should be mostly *deterministic*
     results = [] # responses
@@ -953,11 +976,7 @@ Use the following json format for your response:
             if model != "gpt-4o":
                 respFmt = openai.NOT_GIVEN
 
-            completion = clnt.chat.completions.create(
-                model=model,
-                temperature=0.0,
-                response_format= respFmt ,
-                messages=[
+            msgs = [
                     {
                         "role":      "system",
                         "content":  f"{role}"
@@ -966,8 +985,15 @@ Use the following json format for your response:
                         "role":     "user",
                         "content":   prompt,
                     }
-                ],
-                max_completion_tokens=2000,    # Limit for response tokens
+                ]
+            # print(  json.dumps(msgs, indent=4) )
+
+            completion = clnt.chat.completions.create(
+                model=model,
+                response_format= respFmt ,
+                messages=msgs,
+                max_completion_tokens=get("tokens_max"),    # Limit for response tokens
+                temperature=get("temperature"),
                 n=1,                # Number of completions to generate
                 stop=None,          # Specify stop sequences if needed
                 seed=seed,
@@ -989,7 +1015,7 @@ Use the following json format for your response:
                 results.append(
                     {
                         "ident":      ident,
-                        "jsonResult": txt,
+                        "jsonResult": resDummy(),
                         "error"     : f"Failed to parse GPT output as JSON \n{exc}",
                     }
                 )
@@ -997,7 +1023,7 @@ Use the following json format for your response:
                 results.append(
                     {
                         "ident":      ident,
-                        "jsonResult": txt,
+                        "jsonResult": resDummy(),
                         "error"     : f"Common exc parsing GPT output as JSON \n{exc}",
                     }
                 )
@@ -1015,6 +1041,96 @@ Use the following json format for your response:
 
     yield  "end-of-func"
     # return results
+
+
+
+# returns JSON responses as stream 
+def chatCompletionJsonGR(model, prompt, role, seed=100):
+
+    # load from file cache
+    hsh = strHash(prompt)
+    res = loadJson(f"chat-completion-{model}-{hsh}", subset=get("dataset"), onEmpty="dict")
+    if "model" in res   and   res["model"] == model:
+        return res
+
+
+    clnt, errStr = createClient()
+    if errStr != "":
+        res = {
+            "model":      model,
+            "ident":      "-",
+            "jsonResult": resDummy(),
+            "error"     : errStr,
+        }
+        return res
+
+
+    maxCompletionTokens=get("tokens_max")    # Limit for response tokens
+    celcius=get("temperature")
+    ident = f"model{model}-{celcius}d-{maxCompletionTokens}t"
+    res = [] # responses
+    respFmt = { "type": "json_object" }
+    if model != "gpt-4o":
+        respFmt = openai.NOT_GIVEN  # unsupported  -  platform.openai.com/docs/api-reference/chat/create
+
+    logTimeSince(f"\tchat completion start {ident}", startNew=True)
+
+    msgs = [
+            {
+                "role":      "system",
+                "content":  f"{role}"
+            },
+            {
+                "role":     "user",
+                "content":   prompt,
+            }
+        ]
+    # print(  json.dumps(msgs, indent=4) )
+
+    completion = clnt.chat.completions.create(
+        model=model,
+        response_format= respFmt ,
+        messages=msgs,
+        max_completion_tokens=maxCompletionTokens,    # Limit for response tokens
+        temperature=celcius,
+        n=1,                # Number of completions to generate
+        stop=None,          # Specify stop sequences if needed
+        seed=seed,
+    )
+
+    txt = completion.choices[0].message.content
+
+    try:
+        jsonResult = json.loads(txt)
+        res = {
+                "model":      model,
+                "ident":      ident,
+                "jsonResult": jsonResult,
+                "error"     : "",
+            }
+    except json.JSONDecodeError as exc:
+        res = {
+                "model":      model,
+                "ident":      ident,
+                "jsonResult": resDummy(),
+                "error"     : f"Failed to parse GPT output as JSON \n{exc}",
+            }
+    except Exception as exc:
+        res = {
+                "model":      model,
+                "ident":      ident,
+                "jsonResult": resDummy(),
+                "error"     : f"Common exc parsing GPT output as JSON \n{exc}",
+            }
+
+    logTimeSince(f"\tchat completion stop  {ident} - len {len(txt)} chars")
+
+
+    ts = f"-{datetime.now():%m-%d-%H-%M}"
+    saveJson(res, f"chat-completion-{model}-{hsh}-{ts}",  subset=get("dataset"))
+    saveJson(res, f"chat-completion-{model}-{hsh}", subset=get("dataset"))
+
+    return res    
 
 
 

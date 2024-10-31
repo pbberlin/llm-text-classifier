@@ -368,8 +368,13 @@ def configH():
         old = config.get("dataset")
 
         if datasetNew != old:
+            saveAll(force=True) # before switching
+
+            # now switch
             config.set("dataset", datasetNew)
-            saveAll(force=True)
+            config.save()
+
+            loadAll( {} )
 
 
     content = f'''
@@ -686,7 +691,70 @@ def embeddingsBasicsH():
         return app.response_class(response=json.dumps( str(exc) ), status=500, mimetype='application/json')
 
 
-def chunksGenerator(modeES=False):
+
+
+
+# single caveat
+#   we receive a *stream* of responses from OpenAI
+#   we collect all responses and render them at onece
+@app.route('/chat-completion-synchroneous', methods=['GET','POST'])
+def chatCompletionSynchroneousH():
+
+    # GET + POST params
+    kvGet  = request.args.to_dict()
+    kvPost = request.form.to_dict()
+
+    beliefStatement =  ""
+    if "belief-statement" in kvPost:
+        beliefStatement =  kvPost["belief-statement"]
+
+    speech          =  ""
+    if "speech" in kvPost:
+        speech =  kvPost["speech"]
+
+
+    try:
+        # before making it a generator
+        if False:
+            results = embeddings.chatCompletionChunks( beliefStatement, speech)
+
+        # requestChatCompletion is now a generator
+        # returning various types of returns in an async way
+        prompt = ""
+        results = []
+        idx1 = -1
+        for res in embeddings.chatCompletionChunks( beliefStatement, speech):
+            idx1 += 1
+            if idx1 == 0:
+                prompt = res
+            elif res == "end-of-func":
+                pass
+            else:
+                results.append(res)
+
+
+
+        return render_template(
+            'main.html',
+            HTMLTitle="Ask ChatGPT",
+            contentTpl="llm-answer-sync",
+            # cnt1=cnt1,
+            # cnt2=cnt2,
+            beliefStatement=beliefStatement,
+            speech=speech,
+            prompt=prompt,
+            results=results,
+        )
+
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
+
+
+
+#  suffix GR for generator
+def streamFlushExampleGR(modeES=False):
 
     pfx = ""
     if modeES:
@@ -694,14 +762,14 @@ def chunksGenerator(modeES=False):
 
     if not modeES:
         yield mainTemplateHeadForChunking("main", "streaming example")
-        yield f"{pfx}<p><a href=/stream-flush-example?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024  
-    
+        yield f"{pfx}<p><a href=/stream-flush-example?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024
+
     # force early flush with padding
     yield f"{pfx}<p>Starting streaming...</p>" + " " * 1024  + "\n\n"
 
     # force early flush with padding
-    yield f"{pfx}<div style='height: 2px; background-color: grey'> { ' ' * 1024}  &nbsp;</div>\n\n"  
-    
+    yield f"{pfx}<div style='height: 2px; background-color: grey'> { ' ' * 1024}  &nbsp;</div>\n\n"
+
     # sending content chunks to client
     for i in range(12):
         print(f"\t  yielding chunk {i:2}")
@@ -733,7 +801,7 @@ def streamFlushExampleH():
 
 
     # content_type=mType if '...charset=UTF-8'
-    rsp = Response( chunksGenerator(modeES=asEventStream), mimetype=mType)
+    rsp = Response( streamFlushExampleGR(modeES=asEventStream), mimetype=mType)
     # if True:
     if False:
         # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
@@ -742,18 +810,19 @@ def streamFlushExampleH():
     return rsp
 
 
-
+# GR for generator
+#
 # we would like to move this into a module
 #   but then we have to import the app object into that submodule
 #       from web-app import app
 # and for this, we would need to put the entire web-app.py into a submodule.
-def generatorChatCompletionChunks(beliefStatement, speech):
+def chatCompletionChunksGR(beliefStatement, speech):
 
     yield mainTemplateHeadForChunking("main","Ask ChatGPT streamed")
 
     prompt  = ""
     idx1    = -1
-    for res in embeddings.requestChatCompletion( beliefStatement, speech):
+    for res in embeddings.chatCompletionChunks( beliefStatement, speech):
         idx1 += 1
         if idx1 == 0:
             prompt = res
@@ -788,13 +857,13 @@ def generatorChatCompletionChunks(beliefStatement, speech):
                     # context=app,
                 )
 
-#
+# stream - but it does not work
 # double caveat
-#   1.) we receive a *stream* of responses from OpenAI from requestChatCompletion()
+#   1.) we receive a *stream* of responses from OpenAI from chatCompletionChunks()
 #   2.) we configure a "http chunked repsonse"
 #           each response LLM response is rendered and streamed to client
-@app.route('/llm-chat-streamed', methods=['GET','POST'])
-def llmChatCompletionStreamedH():
+@app.route('/chat-completion-chunked', methods=['GET','POST'])
+def llmChatCompletionChunkedH():
 
     # GET + POST params
     kvGet  = request.args.to_dict()
@@ -809,22 +878,29 @@ def llmChatCompletionStreamedH():
         speech =  kvPost["speech"]
 
     response = Response(
-        generatorChatCompletionChunks(beliefStatement, speech),
+        chatCompletionChunksGR(beliefStatement, speech),
         mimetype='text/html',
     )
     response.status_code = 200  # Explicitly set status code (optional)
     return response
 
 
-# single caveat
-#   we receive a *stream* of responses from OpenAI
-#   we collect all responses and render them at onece
-@app.route('/llm-chat-completion-sync', methods=['GET','POST'])
-def llmChatSynchroneousH():
+
+@app.route('/chat-completion-json', methods=['GET','POST'])
+def chatCompletionJsonH():
 
     # GET + POST params
     kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
+
+    model          =  ""
+    if "model" in kvPost:
+        model =  kvPost["model"].strip()
+
+    if model == "":
+        models = config.get("modelNamesChatCompletion")
+        model =  models[0]
+
 
     beliefStatement =  ""
     if "belief-statement" in kvPost:
@@ -836,36 +912,81 @@ def llmChatSynchroneousH():
 
 
     try:
-        # before making it a generator
-        if False:
-            results = embeddings.requestChatCompletion( beliefStatement, speech)
 
-        # requestChatCompletion is now a generator
-        # returning various types of returns in an async way
-        prompt = ""
-        results = []
-        idx1 = -1
-        for res in embeddings.requestChatCompletion( beliefStatement, speech):
-            idx1 += 1
-            if idx1 == 0:
-                prompt = res
-            elif res == "end-of-func":
-                pass
-            else:
-                results.append(res)
-
+        prompt, role, err = embeddings.designPrompt( beliefStatement, speech)
+        if err != "":
+            result = []
+            result.append(
+                {
+                    "ident":      "getClient() failed",
+                    "jsonResult": embeddings.resDummy(),
+                    "error"     : err,
+                }
+            )
+            resp = Response(
+                json.dumps(result),
+                mimetype='application/json',
+            )
+            return resp
 
 
+        result = embeddings.chatCompletionJsonGR(model, prompt, role)
+        resp = Response(
+            json.dumps(result, indent=4),
+            mimetype='application/json',
+        )
+        return resp
+
+
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
+
+
+
+@app.route('/chat-completion-js', methods=['GET','POST'])
+def chatCompletionJSH():
+
+    # GET + POST params
+    kvGet  = request.args.to_dict()
+    kvPost = request.form.to_dict()
+
+    model          =  ""
+    if "model" in kvPost:
+        model =  kvPost["model"].strip()
+        
+    if model == "":
+        models = config.get("modelNamesChatCompletion")
+        model =  models[0]
+        
+    
+
+    beliefStatement =  ""
+    if "belief-statement" in kvPost:
+        beliefStatement =  kvPost["belief-statement"]
+
+    speech          =  ""
+    if "speech" in kvPost:
+        speech =  kvPost["speech"]
+
+
+    prompt, role, err = embeddings.designPrompt(beliefStatement, speech)
+    if err != "":
+        prompt = f"Error designing prompt: {err}"
+
+    try:
         return render_template(
             'main.html',
-            HTMLTitle="Ask ChatGPT",
-            contentTpl="llm-answer-sync",
+            HTMLTitle="chat completion",
+            contentTpl="llm-answer-js",
             # cnt1=cnt1,
             # cnt2=cnt2,
             beliefStatement=beliefStatement,
             speech=speech,
+            model=model,
             prompt=prompt,
-            results=results,
+            role=role,
         )
 
     except Exception as exc:
@@ -920,9 +1041,7 @@ def loadAll(args):
 
     logTimeSince(f"loading data start", startNew=True)
 
-    config.load()
-
-    if len(args.ecb) > 0:
+    if "ecb" in args and  len(args.ecb) > 0:
         default =  [1, 2, 4, 8, 500]
         numStcs = default
         try:
@@ -942,7 +1061,7 @@ def loadAll(args):
         samples.save()
         quit()
 
-    if args.upl:
+    if "upl" in args and args.upl:
         smplsNew = uploadedToSamples()
         samples.update(smplsNew)
         samples.save()
@@ -971,7 +1090,6 @@ def saveAll(force=False):
         benchmarks.cacheDirty = True
         samples.cacheDirty = True
 
-    config.save()
 
     embeddings.save()
     contexts.save()
@@ -1005,6 +1123,7 @@ if __name__ == '__main__':
 
     dummy = args.counter + 1
 
+    config.load()
     loadAll(args)
 
     app.run(
@@ -1014,5 +1133,6 @@ if __name__ == '__main__':
         use_reloader=False,
     )
 
+    config.save()
     saveAll()
 

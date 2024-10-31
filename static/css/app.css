@@ -8,7 +8,7 @@
 	--pico-border-radius: 0.42rem;
 
 	--pico-form-element-spacing-vertical:   0.25rem;
-	--pico-form-element-spacing-horizontal: 1.00rem;
+	--pico-form-element-spacing-horizontal: 0.45rem;
 
 	/* not pico - the secondary color set of pico is useless */
 	--secondary-background: #efe7af;
@@ -282,7 +282,7 @@ dummy {
 	margin-top:  0.34rem;
 	/* margin-left: 1.24rem; */
 
-	position: absolute;
+	/* position: absolute; */
 	right: 0.5rem;
 }
 table.results .llm-submit {
@@ -420,8 +420,10 @@ p.embeds {
 	max-width:   var(--content-max);
 
 	padding: 0.2rem;
-
-	border-radius: var(--pico-border-radius);
+	
+	
+	padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+	border-radius:    var(--pico-border-radius);
 	background-color: var(--secondary-background);
 
 }

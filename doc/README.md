@@ -6,32 +6,80 @@ There has been sentiment analysis using LLMs. The empirical evidence seems very 
 
 Several upcoming projects hope to use LLMs. 
 
-* Zareh's textual data collection on municipal taxation  
-  needs to be mined for
-  * Perceived `competitive networks`
-  * Tax multipliers
-  * Narratives
-  * ...
-
-* Kathi's projects on CbCR need an easy way 
+1. Kathi's projects on CbCR need an easy way 
   to extract taxation parameters from weakly structured texts 
 
-* Geld und Währung project needs  
-  good classification of official speeches  
 
-* Financial markets - research into pension policy -  
+2. Zareh's textual data collection on municipal taxation  
+  needs to be mined for
+  * Business tax rates
+  * Period in time
+  * Own municipality vs. other municipalities
+
+But also for `concepts`
+  * Perceived `competitive networks`
+  * Tax multipliers 
+  * Various narratives
+  * ...
+
+
+3. Project "Geld und Währung"  
+
+* Classification of official speeches  
+
+
+4. Financial markets dept
+
+* research into pension policy -  
    classify pension policy discussion against basic concepts
 
-* Financial markets - financial literacy -  
+* financial literacy -  
    limits of capturing `financial calculus` with LLMs
+
 
 => Time to establish some foundations.
 
+## Cross sectional solution
 
-First research question:  
+<table>
+    <tr>
+        <td style="width:33%" >GuW</td>
+        <td style="width:33%" >CbCR</td>
+        <td style="width:33%" >Business tax</td>
+    </tr>
+    <tr>
+        <td colspan="3" style="text-align: center">crawling</td>
+    </tr>
+    <tr>
+        <td colspan="3" style="text-align: center">PDF extraction, cleansing</td>
+    </tr>
+    <tr>
+        <td colspan="3" style="text-align: center">number extraction</td>
+    </tr>
+    <tr>
+        <td colspan="3" style="text-align: center">concept alignment</td>
+    </tr>
+</table>
 
-Can we use LLM embeddings to quantify text against more avanced concepts?  
-Not just `favorable`  vs `unfavorable`.
+
+
+### Research questions
+
+1. Extract numbers with _conditions_  
+  * Business tax rate for Hintertupfingen for 2023
+  * Previous  rate for 2023, 2022
+  * Business tax rate of adjacent municipality
+
+2. Validation
+  * Can we outsource the validation of extracted data  
+    to platforms like Mechanical Turk
+  * Cost
+  * Automation
+
+
+3. Can we use LLM embeddings to quantify text against more avanced concepts?  
+  * Not just `favorable`  vs `unfavorable`.  
+  * How much `alignment` between a benchmark and some piece of text.
 
 Example for research into EU public finance - asset purchasing programmes - APP:  
   * Can the discussion captured by LLMs?  

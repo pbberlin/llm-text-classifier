@@ -136,22 +136,49 @@ def renderTable(
             if f1 == max:
                 maxStyle = "max-cell"
 
-            # ... = embeddings.alignmentByChat(...)
 
-            frmURL = url_for("llmChatCompletionStreamedH")
-            frm = f"""
-                <form action='{frmURL}' target='_chat' method='POST'>
+
+
+            frmURL1 = url_for("llmChatCompletionChunkedH")
+            frm1 = f"""
+                <form action='{frmURL1}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
                     <input type=hidden name='speech'            value='{stripSingleQ(rowCol1Lg[idxRow])}' />
                     <button class='llm-submit'>X</button>
                 </form>
             """
 
+
+            frmURL2 = url_for("chatCompletionJsonH")
+            frm2 = f"""
+                <form action='{frmURL2}' target='_chat' method='POST'>
+                    <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
+                    <input type=hidden name='speech'            value='{stripSingleQ(rowCol1Lg[idxRow])}' />
+                    <button class='llm-submit'>X</button>
+                </form>
+            """
+
+            frmURL3 = url_for("chatCompletionJSH")
+            frm3 = f"""
+                <form action='{frmURL3}' target='_chat' method='POST'>
+                    <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
+                    <input type=hidden name='speech'            value='{stripSingleQ(rowCol1Lg[idxRow])}' />
+                    <button class='llm-submit'>X</button>
+                </form>
+            """
+
+
             s += f"  <td style='{cssNCols}'>"
             s += f"     <span class='number' >  {f1:10.2f}  </span> "
             s += f"     <div  class='bar {maxStyle} quant{pos} {neg}' style='width:{fPct}'></div> "
-            s += f"     {frm}"
+            s += f"     {frm1}"
+            s += f"     {frm2}"
+            s += f"     {frm3}"
             s += f"  </td>"
+
+
+
+
         s += "</tr>\n"
     s += "</table>"
 
