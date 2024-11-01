@@ -153,8 +153,18 @@
         cntr++;
         animStart(cntr);
 
+        // fetch sequentially
+        let promiseSequentially = [1,2,3];
+        promiseSequentially.reduce( function(cur, next) {
+            let nextProm = new Promise( function() {
+                console.log(` prom ${cur} - ${next} `)
+                return 46 + next;
+            })
+            return nextProm;
+        });        
 
-        // Fetch results sequentially or in parallel
+
+        // fetch parallel => Promise.all
         const results = await Promise.all( requests.map(fetchModelResult) );
         // console.log(results);
         results.forEach(({ ident, jsonResult, error }) => {

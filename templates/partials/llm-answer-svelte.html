@@ -1,0 +1,71 @@
+<p> Compute extended alignment using chat completion... </p>
+
+<br>
+
+<form action="" method="POST">
+
+
+    <label class="label-input" for="belief-statement">Belief statement</label>
+    <textarea  cols="120" rows="3"  name="belief-statement">{{beliefStatement}}</textarea>
+
+    <label class="label-input" for="speech">Speech</label>
+    <textarea  cols="120" rows="6"  name="speech"           >{{speech}}</textarea>
+
+    <!-- <button name="submit-1" accesskey="a" > <u>A</u>sk </button> -->
+
+    <div style="display: none;">
+        <label class="label-input" for="seed">Seed</label>
+        <input type="text" name="seed" value="100">
+        <!-- <br> -->
+
+        <label class="label-input" for="model">model</label>
+        <input type="text" name="model" value="gpt-4">
+        <br>
+
+    </div>
+
+</form>
+
+
+<p class="label-input" >Prompt: </p> <span class="pre-llm" style="font-size: 80%; line-height: 80%;">{{prompt}}</span>
+<br>
+
+
+<div id="resp">
+
+
+</div>
+
+
+
+
+
+{% set models ='["gpt-4o", "gpt-4" ]' %}
+<!--
+{{models| tojson}}<br>
+{{models}}<br>
+-->
+
+<input type="hidden" id="role"   value="{{ role }}">
+<input type="hidden" id="prompt" value="{{ prompt }}">
+<input type="hidden" id="models" value="{{ models  }}">
+
+
+<div id="anchor-results"></div>
+
+<script defer src="build/bundle.js"></script> <!-- Path to Svelte-compiled JS -->
+
+<div id="app"></div>
+
+<script>
+    import ChatCompletion from './components/ChatCompletion.svelte';
+
+    const app = new ChatCompletion({
+        target: document.getElementById('app'),
+        props: {
+            prompt: "{{ prompt }}",
+            models:  {{ models | tojson }}
+        }
+    });
+</script>
+

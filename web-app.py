@@ -35,7 +35,6 @@ import models.benchmarks as benchmarks
 import models.samples    as samples
 import routes.embeddings_basics as embeddings_basics
 import routes.embeddings_similarity as embeddings_similarity
-import routes.stream as stream
 
 # modules generic logic
 from lib.util import loadEnglishStopwords
@@ -714,16 +713,13 @@ def chatCompletionSynchroneousH():
 
 
     try:
-        # before making it a generator
-        if False:
-            results = embeddings.chatCompletionChunks( beliefStatement, speech)
-
         # requestChatCompletion is now a generator
-        # returning various types of returns in an async way
+        # returning various types of returns in a protracted way
+        # we collect all chunks - and then render them in one go
         prompt = ""
         results = []
         idx1 = -1
-        for res in embeddings.chatCompletionChunks( beliefStatement, speech):
+        for res in embeddings.generateChatCompletionChunks( beliefStatement, speech):
             idx1 += 1
             if idx1 == 0:
                 prompt = res
@@ -753,8 +749,7 @@ def chatCompletionSynchroneousH():
 
 
 
-#  suffix GR for generator
-def streamFlushExampleGR(modeES=False):
+def generateStreamExample(modeES=False):
 
     pfx = ""
     if modeES:
@@ -762,7 +757,7 @@ def streamFlushExampleGR(modeES=False):
 
     if not modeES:
         yield mainTemplateHeadForChunking("main", "streaming example")
-        yield f"{pfx}<p><a href=/stream-flush-example?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024
+        yield f"{pfx}<p><a href=/generate-stream-example?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024
 
     # force early flush with padding
     yield f"{pfx}<p>Starting streaming...</p>" + " " * 1024  + "\n\n"
@@ -782,8 +777,9 @@ def streamFlushExampleGR(modeES=False):
         yield templateSuffix()
 
 
-@app.route('/stream-flush-example', methods=['GET','POST'])
-def streamFlushExampleH():
+
+@app.route('/generate-stream-example', methods=['GET','POST'])
+def generateStreamExampleH():
 
     # GET + POST params
     kvGet  = request.args.to_dict()
@@ -801,7 +797,7 @@ def streamFlushExampleH():
 
 
     # content_type=mType if '...charset=UTF-8'
-    rsp = Response( streamFlushExampleGR(modeES=asEventStream), mimetype=mType)
+    rsp = Response( generateStreamExample(modeES=asEventStream), mimetype=mType)
     # if True:
     if False:
         # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
@@ -810,79 +806,6 @@ def streamFlushExampleH():
     return rsp
 
 
-# GR for generator
-#
-# we would like to move this into a module
-#   but then we have to import the app object into that submodule
-#       from web-app import app
-# and for this, we would need to put the entire web-app.py into a submodule.
-def chatCompletionChunksGR(beliefStatement, speech):
-
-    yield mainTemplateHeadForChunking("main","Ask ChatGPT streamed")
-
-    prompt  = ""
-    idx1    = -1
-    for res in embeddings.chatCompletionChunks( beliefStatement, speech):
-        idx1 += 1
-        if idx1 == 0:
-            prompt = res
-            with app.app_context():
-                yield render_template(
-                    './partials/llm-answer-p1.html',
-                    beliefStatement=beliefStatement,
-                    speech=speech,
-                    prompt=prompt,
-                    seq=idx1,
-                    seqPrev=(idx1-1),
-                    # context=app,
-                )
-
-        elif res == "end-of-func":
-            pass
-            yield f"""
-                <style>
-                    #progress-animation-outer-{idx1-1} {{
-                        display: none;
-                    }}
-                </style>
-            """
-        else:
-            with app.app_context():
-                yield render_template(
-                    './partials/llm-answer-p2.html',
-                    result=res,
-                    seq=idx1,
-                    seqPrev=(idx1-1),
-                    # context=app.app_context(),
-                    # context=app,
-                )
-
-# stream - but it does not work
-# double caveat
-#   1.) we receive a *stream* of responses from OpenAI from chatCompletionChunks()
-#   2.) we configure a "http chunked repsonse"
-#           each response LLM response is rendered and streamed to client
-@app.route('/chat-completion-chunked', methods=['GET','POST'])
-def llmChatCompletionChunkedH():
-
-    # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
-
-    beliefStatement =  ""
-    if "belief-statement" in kvPost:
-        beliefStatement =  kvPost["belief-statement"]
-
-    speech          =  ""
-    if "speech" in kvPost:
-        speech =  kvPost["speech"]
-
-    response = Response(
-        chatCompletionChunksGR(beliefStatement, speech),
-        mimetype='text/html',
-    )
-    response.status_code = 200  # Explicitly set status code (optional)
-    return response
 
 
 
@@ -894,7 +817,13 @@ def chatCompletionJsonH():
     kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
-    kvPost = request.json
+    try:
+        kvPost = request.json
+    except Exception as exc:
+        # prompt, role, err = embeddings.designPrompt(beliefStatement, speech)       
+        print(exc)
+
+
 
     model          =  ""
     if "model" in kvPost:
@@ -922,7 +851,7 @@ def chatCompletionJsonH():
 
     try:
 
-        result = embeddings.chatCompletionJsonGR(model, prompt, role)
+        result = embeddings.chatCompletion(model, prompt, role)
         resp = Response(
             json.dumps(result, indent=4),
             mimetype='application/json',

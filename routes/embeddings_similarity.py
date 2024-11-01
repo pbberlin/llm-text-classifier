@@ -139,7 +139,7 @@ def renderTable(
 
 
 
-            frmURL1 = url_for("llmChatCompletionChunkedH")
+            frmURL1 = url_for("chatCompletionSynchroneousH")
             frm1 = f"""
                 <form action='{frmURL1}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />

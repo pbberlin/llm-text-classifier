@@ -1,5 +1,16 @@
 # Text classification using LLM embeddings
 
+## High level
+
+* High level overview
+
+* Give an intuition
+
+* => Inspiration
+
+
+## Research requirements
+
 There has been sentiment analysis using LLMs. The empirical evidence seems very good.
 
 ---
@@ -301,6 +312,12 @@ The embeddings of the two statements from a relatively specific scientific domai
 The web application can be downloaded from [ZEW git](https://git.zew.de/ub-public-finance/ecb-speeches-flask).
 
 It can be executed on your notebooks.
+
+The web application is written in `Python`.
+
+The core is advanced (web server stuff...)
+
+But the periphery is extendable by researchers and by student workers.
 
 The web application connects to OpenAI ChatGPT 4.  
 It requires an API key from OpenAI inc.  

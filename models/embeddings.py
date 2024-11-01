@@ -913,11 +913,10 @@ def resDummy():
     } 
     return dummy
 
+
 # platform.openai.com/docs/guides/text-generation/conversations-and-context
-# this func is a "generator"
-#  returning a stream for return values in async style
-#  compare llmChatStreamedH() and generatorLLMResponses() for more
-def chatCompletionChunks(beliefStatement, speech):
+#   the chunking is not used
+def generateChatCompletionChunks(beliefStatement, speech):
 
     prompt, role, err = designPrompt(beliefStatement, speech)
     if err != "":
@@ -946,10 +945,6 @@ def chatCompletionChunks(beliefStatement, speech):
         logTimeSince(f"\tchat completion - cache", startNew=True)
         yield  "end-of-func"
         return
-
-
-
-
 
 
     models=get("modelNamesChatCompletion")
@@ -1043,9 +1038,9 @@ def chatCompletionChunks(beliefStatement, speech):
     # return results
 
 
-
-# returns JSON responses as stream 
-def chatCompletionJsonGR(model, prompt, role, seed=100):
+# makes request to OpenAI
+# returns result as dict - read for usage as JSON 
+def chatCompletion(model, prompt, role, seed=100):
 
     # load from file cache
     hsh = strHash(prompt)

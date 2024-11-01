@@ -1,3 +1,24 @@
+```
+    <style>
+        #result {
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: inline-block;
+        }
+
+
+    <button id="fetchButton">Fetch Data</button>
+    <div id="result"></div>
+    <div class="loading" id="loadingIcon">Please wait...</div>
+
+
+```
+
+
 document.getElementById('fetchButton').addEventListener('click', fetchData);
 
 async function fetchData() {
