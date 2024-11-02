@@ -1,43 +1,38 @@
-<h3>
-    Request chat GPT
-</h3>
+<p> Compute extended alignment using chat completion... </p>
 
 <br>
 
 <form action="" method="POST">
 
     <label class="label-input" for="belief-statement">Belief statement</label>
-    <textarea  cols="120" rows="4"  name="belief-statement">{{beliefStatement}}</textarea>
-    <br>
+    <textarea  cols="120" rows="3"  name="belief-statement">{{beliefStatement}}</textarea>
 
     <label class="label-input" for="speech">Speech</label>
     <textarea  cols="120" rows="6"  name="speech"           >{{speech}}</textarea>
-    <br>
 
     <label class="label-input" for="submit-1"> &nbsp; </label>
     <button name="submit-1" accesskey="a" > <u>A</u>sk </button>
-
 
     <div style="display: none;">
         <label class="label-input" for="seed">Seed</label>
         <input type="text" name="seed" value="100">
         <!-- <br> -->
-    
+
         <label class="label-input" for="model">model</label>
         <input type="text" name="model" value="gpt-4">
         <br>
-    
+
     </div>
 
 
 
 
 
-</form>        
+</form>
 
 <br>
 
-<p class="label-input" >Prompt: </p> <span class="pre-llm">{{prompt}}</span>  
+<p class="label-input" >Prompt: </p> <span class="pre-llm">{{prompt}}</span>
 <br>
 
 
@@ -45,7 +40,7 @@
 
     <hr>
 
-    <p class="label-input" >Ident : </p> <span class="pre-llm">{{result.ident}}</span>  
+    <p class="label-input" >Ident : </p> <span class="pre-llm">{{result.ident}}</span>
     <br>
 
 
@@ -53,20 +48,20 @@
         <p>Error:  <pre>{{result.error}}</pre>  </p>
 
         <br>
-        <p class="label-input" >raw response: </p> <span class="pre-llm">{{result.jsonResult}}</span>  
+        <p class="label-input" >raw response: </p> <span class="pre-llm">{{result.jsonResult}}</span>
         <br>
 
     {% else %}
         <!-- <p>No error</p> -->
 
         <br>
-        <p class="label-input" >Agreement: </p> <span class="pre-llm">{{result.jsonResult.agreement}}</span>  
+        <p class="label-input" >Agreement: </p> <span class="pre-llm">{{result.jsonResult.agreement}}</span>
         <br>
         <br>
-        <p class="label-input" >Alignment: </p> <span class="pre-llm">{{result.jsonResult.alignment}}</span>  
+        <p class="label-input" >Alignment: </p> <span class="pre-llm">{{result.jsonResult.alignment}}</span>
         <br>
         <br>
-        <p class="label-input" >Analysis: </p> <span class="pre-llm">{{result.jsonResult.textual_analysis}}</span>  
+        <p class="label-input" >Analysis: </p> <span class="pre-llm">{{result.jsonResult.textual_analysis}}</span>
         <br>
 
     {% endif %}

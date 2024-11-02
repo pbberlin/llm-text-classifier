@@ -18,7 +18,7 @@
 }
 
 h1, h2, h3, h4, h5, h6 {
-  --pico-font-weight: 500;
+	--pico-font-weight: 500;
 }
 h3 {
 	--pico-font-size: 1.25rem;
@@ -26,6 +26,12 @@ h3 {
 h4 {
 	--pico-font-size: 1.15rem;
 }
+
+small {
+	/* 0.875em */
+	font-size: calc(var(--pico-font-size) - 0.2em ) ;
+}
+
 /* 
 	color sets...
 
@@ -428,6 +434,17 @@ p.embeds {
 
 }
 
+.pre-llm-small {
+	font-size: 80%; 
+	line-height: 85%;
+}
+
+.pre-llm-scroll {
+    max-height: 8rem; 
+    overflow-y: auto;   /* Adds vertical scroll only when content overflows */
+    overflow-x: hidden; /* Hides horizontal scroll */
+}
+
 
 
 .progress-animation-outer {
@@ -436,4 +453,11 @@ p.embeds {
 	justify-content: center;
 
 	/* border: 4px solid gray; */
+	display: none;
 }
+
+
+.progress-animation-active {
+	display: flex;
+}
+

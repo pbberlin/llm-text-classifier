@@ -4,7 +4,6 @@
 
 <form action="" method="POST">
 
-
     <label class="label-input" for="belief-statement">Belief statement</label>
     <textarea  cols="120" rows="3"  name="belief-statement">{{beliefStatement}}</textarea>
 
@@ -27,7 +26,7 @@
 </form>
 
 
-<p class="label-input" >Prompt: </p> <span class="pre-llm" style="font-size: 80%; line-height: 80%;">{{prompt}}</span>
+<p class="label-input" >Prompt  &nbsp; &nbsp; <small>(speech + belief statement)</small> : </p> <span class="pre-llm pre-llm-scroll pre-llm-small" >{{prompt}}</span>
 <br>
 
 
@@ -56,43 +55,36 @@
 <script>
 
 
-
     document.addEventListener('DOMContentLoaded', async function () {
 
 
         const anchorResults = document.getElementById('anchor-results'); // container for results
+        const divAnimation  = document.createElement('div');
 
         function animStart( seq ) {
-            const divAnimation = document.createElement('div');
-            let anim = `
-                <div
-                    id="progress-animation-outer-${seq}"
-                    class="progress-animation-outer"
+            divAnimation.setAttribute("id", "progress-animation" );
+            divAnimation.classList.add("progress-animation-outer");
+            let inner = `
+                <img
+                    src="/static/img/progress-animation.svg"
+                    alt="loading..."
                 >
-                    <img id="progress-animation"
-                        src="/static/img/progress-animation.svg"
-                        alt="loading..."
-                    >
-                </div>
-
-                <style>
-                    #progress-animation-outer-${seq} {
-                        display: flex;
-                    }
-                </style>
             `;
-            divAnimation.innerHTML = anim;
-
+            divAnimation.innerHTML = inner;
             anchorResults.appendChild(divAnimation);
-
+            divAnimation.classList.add("progress-animation-active");
             divAnimation.scrollIntoView();
+            window.scrollBy(0, 40);
+
         }
 
-        function animStop( seq ) {
-            let id = `progress-animation-outer-${seq}`;
-            el = document.getElementById(id);
-            el.style.display = "none";
-            el.parentNode.style.display = "none";
+        async function animStop( seq ) {
+            // let id = `progress-animation-outer-${seq}`;
+            // el = document.getElementById(id);
+            // el.style.display = "none";
+            // el.parentNode.style.display = "none";
+            await new Promise(r => setTimeout(r, 777));
+            divAnimation.classList.remove("progress-animation-active" );
         }
 
 
@@ -118,13 +110,7 @@
         }
 
 
-
-
         // console.log(requests);
-
-
-
-
 
         async function fetchModelResult( request ) {
             let payload = {};
@@ -150,18 +136,20 @@
 
 
         let cntr = 0;
-        cntr++;
         animStart(cntr);
 
-        // fetch sequentially
+        // fetch sequentially =>
         let promiseSequentially = [1,2,3];
         promiseSequentially.reduce( function(cur, next) {
             let nextProm = new Promise( function() {
-                console.log(` prom ${cur} - ${next} `)
+                console.log(` cur ${cur} - next ${next} - cntr ${cntr} `)
+                cntr++;
+                return 46 + next;
+            }).then( function() {
                 return 46 + next;
             })
             return nextProm;
-        });        
+        });
 
 
         // fetch parallel => Promise.all
@@ -204,7 +192,7 @@
 
         });
 
-        animStop(cntr);
+        await animStop(cntr);
 
     });
 </script>

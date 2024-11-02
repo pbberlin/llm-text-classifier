@@ -2,10 +2,9 @@
 {% else %}
 {% endif %}
 <div    
-    id="progress-animation-outer-{{seq}}"
-    class="progress-animation-outer" 
+    class="progress-animation-outer  seq{{seq}}" 
 >
-    <img id="progress-animation" 
+    <img  
         src="/static/img/progress-animation.svg" 
         alt="loading..."
     >
@@ -15,14 +14,13 @@
 <style>
 
 
-
-
-    #progress-animation-outer-{{seqPrev}} {
+    .seq{{seqPrev}} {
         display: none;
     }
 
-    #progress-animation-outer-{{seq}} {
+    .seq{{seq}} {
         display: flex;
     }
+
 
 </style>

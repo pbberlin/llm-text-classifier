@@ -57,10 +57,15 @@ logTimeSince(f"python script - imports stop")
 
 
 # https://dev.to/fullstackstorm/working-with-sessions-in-flask-a-comprehensive-guide-525k
-app = Flask(__name__)
-app.secret_key = b'32168'
-app.permanent_session_lifetime = timedelta(minutes=30)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
+
+def create_app():
+    app = Flask(__name__)
+    app.secret_key = b'32168'
+    app.permanent_session_lifetime = timedelta(minutes=30)
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
+    return app
+
+app = create_app()
 
 UPLOAD_FOLDER = os.path.join(app.root_path, 'uploaded-files')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -86,7 +91,7 @@ def handle_error(e):
     return jsonify(error=str(e)), code
 
 
-# hone
+# home
 @app.route('/')
 def indexH():
 
@@ -127,11 +132,20 @@ def indexH():
 # this is only for the 'rogue' routes, who generate streams etc.
 @app.route('/favicon.ico')
 def favicon():
-    # return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
-    # return send_from_directory('static', 'favicon.svg', mimetype='image/x-icon')
+    # following mimetypes made it worse:
+    #  ...', mimetype='image/vnd.microsoft.icon')
+    #  ...', mimetype='image/x-icon')
     return send_from_directory('static', 'favicon.svg')
     if False:
         return '', 204
+
+
+@app.route('/doc')
+def docServer():
+    return send_from_directory('static/html', 'reveal.html')
+    if False:
+        return '', 204
+
 
 
 @app.route('/upload-file',methods=['GET','POST'])
@@ -817,28 +831,40 @@ def chatCompletionJsonH():
     kvGet  = request.args.to_dict()
     kvPost = request.form.to_dict()
 
+    model  =  ""
+    prompt =  ""
+    role   =  ""
+
     try:
-        kvPost = request.json
+        kvPost = request.get_json(silent=False)
+
+        if "prompt" in kvPost:
+            prompt =  kvPost["prompt"]
+
+        role          =  ""
+        if "role" in kvPost:
+            role =  kvPost["role"]
+
     except Exception as exc:
-        # prompt, role, err = embeddings.designPrompt(beliefStatement, speech)       
-        print(exc)
+        print(f"request body was not JSON - probably POST")
+
+        beliefStatement          =  ""
+        if "belief-statement" in kvPost:
+            beliefStatement =  kvPost["belief-statement"]
+
+        speech          =  ""
+        if "speech" in kvPost:
+            speech =  kvPost["speech"]
+
+        prompt, role, _ = embeddings.designPrompt(beliefStatement, speech)
 
 
-
-    model          =  ""
     if "model" in kvPost:
         model =  kvPost["model"].strip()
     if model == "":
         models = config.get("modelNamesChatCompletion")
         model =  models[0]
 
-    prompt =  ""
-    if "prompt" in kvPost:
-        prompt =  kvPost["prompt"]
-
-    role          =  ""
-    if "role" in kvPost:
-        role =  kvPost["role"]
 
 
     # if len(prompt) < 5:
@@ -1039,7 +1065,9 @@ if __name__ == '__main__':
 
     dummy = args.counter + 1
 
-    config.load()
+    config.load(app)
+
+
     loadAll(args)
 
     app.run(
