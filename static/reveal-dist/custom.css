@@ -1,0 +1,150 @@
+:root {
+    /* not what we want: 100% is the width of the <h3> or <p>
+       depending in its contents  */
+    --section-margin: calc(   (100% - (min(95%,   54rem))) / 2);
+    /* this is what we want */
+    --section-margin: calc(   (100vw - (min(95vw, 72rem))) / 2);
+
+    --section-with: calc( min(95vw, 72rem));
+
+}
+
+/*  first div inside body  */
+div.reveal.slide {
+    border:none;
+    /* background-color: goldenrod !important; */
+}
+
+/*  second div inside above div  */
+div.slides {
+    border:none;
+    background-color: lightgreen !important;
+    /* width: 99% !important; */
+    text-align: center !important;
+}
+
+/*  thirst nesting level  */
+section {
+    background-color: lightgoldenrodyellow;
+    width:      auto   !important;
+    /* width:       var(--section-with) !important; */
+    text-align: center !important;
+
+    box-sizing: border-box;
+
+
+    margin-left: calc(50% + 1rem);
+    transform:   translateX(-50%)   ;
+
+    margin-left: calc(20% + 0.1rem);
+    transform:   translateX(-12%)   ;
+
+
+
+}
+
+.full-bleed { 
+    width: 100vw; 
+    margin-left: calc(50% - 50vw);
+}
+
+.reveal h2, 
+.reveal h3,
+dummy {
+     /* border: 2px solid green; */
+     text-align: left;
+    margin-left:   calc( var(--section-margin) - 2.3rem) ;
+    margin-right:  calc( var(--section-margin) + 0.2rem) ;
+}
+
+.reveal h3 {
+    /* increase */
+    margin-bottom: 2.4rem;
+}
+
+.reveal p {
+    text-align: left;
+    margin-left:   calc( var(--section-margin) - 1.3rem) ;
+    margin-right:  calc( var(--section-margin) + 0.2rem) ;
+}
+
+
+.reveal ul,
+dummy
+ {
+     /* border: 2px solid green; */
+    display: block;
+    margin-left:   calc( var(--section-margin) - 3rem) ;
+    margin-right:  calc( var(--section-margin) + 2rem) ;
+}
+
+.reveal ol,
+dummy
+{
+    /* border: 2px solid green; */
+    display: block;
+    margin-left:   calc( var(--section-margin) - 5rem) ;
+    margin-right:  calc( var(--section-margin) + 2rem) ;
+    margin-top:    1.4rem;
+    margin-bottom: 0.4rem;
+}
+
+
+
+.reveal pre.code-wrapper {
+    max-width:  64rem ;
+} 
+.reveal pre code {
+    max-height: 32rem ;
+    max-width:  64rem ;
+    font-size:  90%;
+}
+
+
+
+.reveal h2, 
+.reveal h3,
+.reveal p,
+.reveal ol,
+.reveal ul,
+dummmy
+{
+    text-align:    left;
+    margin-left:   10%;
+    margin-left:   5vw;
+}
+
+.reveal ol,
+.reveal ul,
+dummmy
+{
+    margin-left:   calc(10% + 2rem);
+    margin-left:   7vw;
+}
+
+
+.reveal li {
+    /* list-style-position: inside; */
+    list-style-position: outside;
+    margin-left:  2.0rem;
+    padding-left: 1.4rem;
+}
+
+
+/* 
+.reveal h2, 
+.reveal h3,
+dummy {
+     border: 2px solid green;
+}
+
+
+.reveal ol,
+.reveal ul,
+dummmy {
+    background-color: aquamarine;
+}
+
+.reveal li {
+    background-color: lightgoldenrodyellow;
+} */

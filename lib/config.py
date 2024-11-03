@@ -15,14 +15,18 @@ appInstance = None
 
 def copyToAppState():
 
-    # intricate: we have to import current_app from flask
-    #   we have *also* need the app instance
-    #       either per import or as function parameter 
-    #  => then we can do following
-    #       config settings being stored in app context
-    #       possible only once - "staticValue" can never changed  
-    #        => dynamic stuff needs to be written as function: exampleFunc(...)
+    '''
+        intricate: we have to import current_app from flask
+        we have *also* need the app instance
+            either per import or as function parameter
+        => then we can do following
+            config settings being stored in app context
+            possible only once - "staticValue" can never changed
+            => dynamic stuff needs to be written as function: exampleFunc(...)
 
+        see documentation, esp. the examples that *dont work*
+        https://flask.palletsprojects.com/en/stable/templating/#context-processors
+    '''
     with appInstance.app_context():
         @current_app.context_processor
         def setTemplateVars():

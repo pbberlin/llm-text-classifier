@@ -63,6 +63,9 @@ def create_app():
     app.secret_key = b'32168'
     app.permanent_session_lifetime = timedelta(minutes=30)
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
+
+    app.static_folder='static'  # favicon
+
     return app
 
 app = create_app()
@@ -140,11 +143,21 @@ def favicon():
         return '', 204
 
 
-@app.route('/doc')
-def docServer():
-    return send_from_directory('static/html', 'reveal.html')
-    if False:
-        return '', 204
+@app.route('/slides',  defaults={'fileName': "doc1.md"})
+@app.route('/slides/', defaults={'fileName': "doc1.md"})
+@app.route('/slides/<path:fileName>')
+def docServer(fileName):
+    # print(f"param fileName: -{fileName}-")
+    try:
+        return render_template(
+            'reveal-js-markdown-adapter.html',
+            markdownContent=fileName,
+        )
+
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 

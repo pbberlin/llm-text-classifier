@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Presentation {{markdownContent}}</title>
+
+        <link rel="stylesheet" href="../static/reveal-dist/reset.css" />
+        <link rel="stylesheet" href="../static/reveal-dist/reveal.css" />
+        <!-- <link rel="stylesheet" href="../static/reveal-dist/theme/black.css" /> -->
+        <link rel="stylesheet" href="../static/reveal-dist/theme/simple.css" />
+        <link rel="stylesheet" href="../static/reveal-dist/custom.css" />
+        
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<div class="slides">
+
+                <!-- 
+                    Use external markdown resource, 
+                    separate slides by ... 
+
+
+                    "comment-1": "https://revealjs.com/config/",
+
+                    "separator-linux-mac": "\n\n\n",
+                    "separator":           "\r\n\r\n\r\n",
+                    "theme":    "simple"
+                -->
+                <section 
+                    data-markdown2="../doc/slides/{{markdownContent}}" 
+                    data-markdown="../static/slides/{{markdownContent}}" 
+                    xx-data-separator="^\n\n" 
+                    data-separator="^<!--h-->$" 
+                    data-separator-vertical="^\n--impossible--\n$"
+                    data-separator-vertical="^<!--v-->$"
+                ></section>
+
+
+            </div>
+		</div>
+
+        <script type="module">
+            
+            import Reveal   from '../static/reveal-dist/reveal.esm.js';
+            import Markdown from '../static/reveal-dist/plugin/markdown/markdown.esm.js';
+            
+            let deck = new Reveal({
+
+                plugins: [Markdown],
+
+                controls: true,
+                progress: true,
+                history:  true,
+                center:   true,
+ 
+                "comment-1": "https://revealjs.com/config/",
+
+                "slideNumber":  true,
+                "previewLinks": true,
+
+                "controls": true,
+                "progress": true,
+
+
+                "width":  "100%",
+                "height": "100%",
+
+                "comment-3": "centering and scaling",
+                "disableLayout": false,
+                "center":        false,
+
+                "fragments":   true,
+
+                "autoSlide-1": 0,
+                "autoSlide-2": "4 secs",
+                "autoSlide-3": 4000,
+                "autoSlide":   0,
+
+                "transition-1":     "fade",
+                "transition-2":     "slide",
+                "transition-3":      "none",
+                "transition":       "slide",
+
+                "transitionSpeed-1":  "fast",
+                "transitionSpeed-2":  "slow",
+                "transitionSpeed":    "fast",
+
+
+                "beween-slides": "https://revealjs.com/auto-animate/",
+
+                "autoAnimate": true,
+
+
+
+                "last":  "entry"
+            });
+            deck.initialize({});
+        </script>
+
+
+
+	</body>
+</html>
