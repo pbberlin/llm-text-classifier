@@ -63,8 +63,7 @@ def create_app():
     app.secret_key = b'32168'
     app.permanent_session_lifetime = timedelta(minutes=30)
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
-
-    app.static_folder='static'  # favicon
+    app.static_folder='static'  # only source for static files in templates? 
 
     return app
 

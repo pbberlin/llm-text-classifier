@@ -1,94 +1,88 @@
 :root {
-    /* not what we want: 100% is the width of the <h3> or <p>
-       depending in its contents  */
-    --section-margin: calc(   (100% - (min(95%,   54rem))) / 2);
-    /* this is what we want */
-    --section-margin: calc(   (100vw - (min(95vw, 72rem))) / 2);
 
+    /* 
+        "100%" is the auto-width of the <h3> or <p> element 
+           depending on its contents.
+        We want "vw"
+    */
+
+    --section-with: calc( min(95% , 72rem));
     --section-with: calc( min(95vw, 72rem));
+
+    --section-margin: calc(   (100vw - var(--section-with))  / 2) ;
+
 
 }
 
 /*  first div inside body  */
 div.reveal.slide {
-    border:none;
     /* background-color: goldenrod !important; */
+    border:none;
 }
 
 /*  second div inside above div  */
 div.slides {
+    /* background-color: lightgreen !important; */
     border:none;
-    background-color: lightgreen !important;
-    /* width: 99% !important; */
-    text-align: center !important;
 }
 
 /*  thirst nesting level  */
 section {
-    background-color: lightgoldenrodyellow;
-    width:      auto   !important;
-    /* width:       var(--section-with) !important; */
-    text-align: center !important;
-
+    border-radius: 1rem;
+    background-color: #f8f8f8;
     box-sizing: border-box;
 
 
-    margin-left: calc(50% + 1rem);
-    transform:   translateX(-50%)   ;
+    /*  
+        self-sizing - depending on content;
+        sadly, "margin-left: auto" now no longer works
+    
+    */
+    width:       auto     !important;
 
-    margin-left: calc(20% + 0.1rem);
-    transform:   translateX(-12%)   ;
+    /* 
+        luckily - we can achieve the same effect:
+            half the screen  to the right
+            half the element to the left
+    */
+     transform:   translateX(calc(48.0vw - 50%))   ;
 
 
+    /*  now wide and narrow slides are neatly centered
+        whereas their contents is left-justified
+    */
 
 }
 
-.full-bleed { 
-    width: 100vw; 
-    margin-left: calc(50% - 50vw);
-}
+
+
+
+
 
 .reveal h2, 
 .reveal h3,
-dummy {
-     /* border: 2px solid green; */
-     text-align: left;
-    margin-left:   calc( var(--section-margin) - 2.3rem) ;
-    margin-right:  calc( var(--section-margin) + 0.2rem) ;
-}
-
-.reveal h3 {
-    /* increase */
-    margin-bottom: 2.4rem;
-}
-
-.reveal p {
-    text-align: left;
-    margin-left:   calc( var(--section-margin) - 1.3rem) ;
-    margin-right:  calc( var(--section-margin) + 0.2rem) ;
-}
-
-
+.reveal p,
+.reveal ol,
 .reveal ul,
-dummy
- {
-     /* border: 2px solid green; */
-    display: block;
-    margin-left:   calc( var(--section-margin) - 3rem) ;
-    margin-right:  calc( var(--section-margin) + 2rem) ;
+dummmy
+{
+    text-align:    left;
+    margin-left:   2vw;
 }
 
 .reveal ol,
-dummy
+.reveal ul,
+dummmy
 {
-    /* border: 2px solid green; */
-    display: block;
-    margin-left:   calc( var(--section-margin) - 5rem) ;
-    margin-right:  calc( var(--section-margin) + 2rem) ;
-    margin-top:    1.4rem;
-    margin-bottom: 0.4rem;
+    margin-left:   4vw;
 }
 
+
+.reveal li {
+    list-style-position: outside;
+    margin-left:  2.0rem;
+    padding-left: 1.4rem;
+}
 
 
 .reveal pre.code-wrapper {
@@ -102,49 +96,4 @@ dummy
 
 
 
-.reveal h2, 
-.reveal h3,
-.reveal p,
-.reveal ol,
-.reveal ul,
-dummmy
-{
-    text-align:    left;
-    margin-left:   10%;
-    margin-left:   5vw;
-}
 
-.reveal ol,
-.reveal ul,
-dummmy
-{
-    margin-left:   calc(10% + 2rem);
-    margin-left:   7vw;
-}
-
-
-.reveal li {
-    /* list-style-position: inside; */
-    list-style-position: outside;
-    margin-left:  2.0rem;
-    padding-left: 1.4rem;
-}
-
-
-/* 
-.reveal h2, 
-.reveal h3,
-dummy {
-     border: 2px solid green;
-}
-
-
-.reveal ol,
-.reveal ul,
-dummmy {
-    background-color: aquamarine;
-}
-
-.reveal li {
-    background-color: lightgoldenrodyellow;
-} */
