@@ -35,6 +35,9 @@ section {
     background-color: #f8f8f8;
     box-sizing: border-box;
 
+    /* waste a little for aesthetics */
+    margin-top: 2vh;
+
 
     /*  
         self-sizing - depending on content;
@@ -87,6 +90,16 @@ dummmy
     list-style-position: outside;
     margin-left:  2.0rem;
     padding-left: 1.4rem;
+
+    /* make bullets more vertically separate... */
+    margin-bottom:  1.08rem ;
+    /*   ... but keep them dense inside */
+    line-height: 110%      ;
+}
+
+/* ul - if child of a li */
+.reveal li ul {
+    margin-top:  1.08rem;
 }
 
 

@@ -17,31 +17,8 @@
 	<body>
 
 		<div class="reveal">
-
 			<div class="slides">
-
-                <!-- 
-                    Use external markdown resource, 
-                    separate slides by ... 
-
-
-                    "comment-1": "https://revealjs.com/config/",
-
-                    "separator-linux-mac": "\n\n\n",
-                    "separator":           "\r\n\r\n\r\n",
-                    "theme":    "simple"
-                -->
-                <section 
-                    data-markdown="/slides-prepare/{{markdownContent}}" 
-                    data-background-image='../static/img/slide-background-wider-2.jpg'
-                    data-background-size='contain'
-                    xx-data-separator="^\n\n" 
-                    data-separator="^<!--h-->$" 
-                    data-separator-vertical="^\n--impossible--\n$"
-                    data-separator-vertical="^<!--v-->$"
-                ></section>
-
-
+                {{revealHTML|safe}}
             </div>
 		</div>
 
@@ -58,7 +35,8 @@
                 progress: true,
                 history:  true,
                 center:   true,
- 
+
+
                 "comment-1": "https://revealjs.com/config/",
 
                 "slideNumber":  true,

@@ -18,6 +18,7 @@ import re
 import signal
 
 import argparse
+import markdown
 
 import flask
 from   flask import Flask, request, Response
@@ -43,7 +44,8 @@ from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
 from lib.util import stackTrace
 from lib.util import mainTemplateHeadForChunking, templateSuffix
-from lib.util import splitByLineBreak
+from lib.util import splitBySection
+from lib.util import markdownLineWrap
 
 import  lib.config          as config
 
@@ -116,18 +118,13 @@ def indexH():
             return redirect( url_for("configH") )
 
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="Main page",
-            contentTpl="main-body",
-            cntBefore=f"<p>{successMsg}</p>",
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="Main page",
+        contentTpl="main-body",
+        cntBefore=f"<p>{successMsg}</p>",
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -143,88 +140,89 @@ def favicon():
     if False:
         return '', 204
 
-@app.route('/slides-prepare',  defaults={'fileName': "doc1.md"})
-@app.route('/slides-prepare/', defaults={'fileName': "doc1.md"})
-@app.route('/slides-prepare/<path:fileName>')
-def slidesPrepare(fileName):
-
-    try:
-        dr = os.path.join(".", "doc", "slides")
-        fn = os.path.join(dr, f"{fileName}" )
-
-        if not fn.lower().endswith(".md"):
-            fn += ".md"
-
-        with open(fn, encoding="utf-8") as inFile:
-            strContents = inFile.read()
-            print(f"\tloaded markdown '{fileName}' - {len(strContents)} bytes - from {dr}")
-
-        lines = splitByLineBreak(strContents)
-
-        sfx1 = ''' <!-- .element: class="fragment" --> '''
-        prefixes = [
-            "*   ", 
-            "*  ", 
-            "* ", 
-            "=> ",
-        ]
-
-        for idx, line in enumerate(lines):
-
-            for pfx in prefixes:
-                if line.strip().startswith(pfx):
-                    # lines[idx] = line.replace(pfx, pfx + sfx1) 
-                    lines[idx] = line + sfx1 
-                    break  # one only
-
-            for num in range(0,12):
-                if line.strip().startswith(f"{num}. "):
-                    lines[idx] = line + sfx1
 
 
-        if False:
-            # open the browser URL for debugging
-            for idx, line in enumerate(lines):
-                if idx > 30:
-                    break
-                if line.strip() == "":
-                    continue
-                print(f"{idx:3}\t{line}")
-
-        strContents = "\r\n".join(lines)
-
-        rsp = make_response(
-            strContents,
-            200,
-        )
-        rsp.mimetype = "text/plain"
-        rsp.mimetype = "text/markdown"
-        return rsp
-
-
-
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
 @app.route('/slides',  defaults={'fileName': "doc1.md"})
 @app.route('/slides/', defaults={'fileName': "doc1.md"})
 @app.route('/slides/<path:fileName>')
-def serveSlides(fileName):
-    # print(f"param fileName: -{fileName}-")
-    try:
-        return render_template(
-            'reveal-js-markdown-adapter.html',
-            markdownContent=fileName,
-        )
+def serveSlides2(fileName):
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
+    '''
+        Page break for every header 1-3
+          # Heading 1
+          ## Heading 2...
+
+        In addition: Explicit page break can be set using
+            <!--pagebreak-->
+
+    '''
+
+    dr = os.path.join(".", "doc", "slides")
+    fn = os.path.join(dr, f"{fileName}" )
+    if not fn.lower().endswith(".md"):
+        fn += ".md"
+    with open(fn, encoding="utf-8") as inFile:
+        mdContent = inFile.read()
+        print(f"\tloaded markdown '{fileName}' - {len(mdContent)} bytes - from {dr}")
+
+
+    mdContent = markdownLineWrap(mdContent)
+
+    sections = splitBySection(mdContent)
+    mdContent = "\r\n<!--pagebreak-->\r\n## ".join(sections)
+
+    # todo
+    #  preserver order list numbers across sections:
+    #    	<ol start="3">
+
+
+    from markdown.extensions.attr_list import AttrListExtension
+
+    # https://python-markdown.github.io/extensions/attr_list/    
+    htmlContent = markdown.markdown(
+        mdContent,
+        extensions=[AttrListExtension()],
+        extension_configs="",
+        tab_length=4,
+    )
+
+    # adding sections
+    htmlContent = htmlContent.replace("<!--pagebreak-->", "\n\t</section>\n\t<section>\n")
+    htmlContent = f"\t<section>\n{htmlContent}\n\t</section>\n"
+
+    htmlContent = htmlContent.replace(
+        "<section>", 
+        '''<section 
+            data-background-image='/static/img/slide-background-wider-2.jpg' 
+            data-background-size='contain'
+        >''',
+    )
+
+
+    # there might be <p> and <p key=val> 
+    htmlContent = htmlContent.replace("<p ",   '<p class="fragment" ')
+    htmlContent = htmlContent.replace("<p>",   '<p class="fragment" >')
+
+    htmlContent = htmlContent.replace("<li ", '<li class="fragment" ')
+    htmlContent = htmlContent.replace("<li>", '<li class="fragment" >')
+
+
+
+    # dump file for debug
+    fnOut = os.path.join(dr, f"tmp-{fileName}-rendered.html" )
+    with open( fnOut, "w", encoding='utf-8') as outFile:
+        outFile.write(htmlContent)
+
+
+    return render_template(
+        'reveal-js-adapter.html',
+        revealHTML=htmlContent,
+    )
+
+
 
 
 
@@ -291,18 +289,13 @@ def uploadFileH():
         # content += "No single file<br>\n"
 
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="Upload file",
-            contentTpl="upload-file",
-            cntAfter=content,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="Upload file",
+        contentTpl="upload-file",
+        cntAfter=content,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -370,23 +363,19 @@ def samplesImportH():
     if len(importedSmpls)>0:
         msg = f"{len(importedSmpls)} samples imported"
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="Import samples",
-            cntBefore=f'''
-                {msg}
-                <br>
-                {importUI}
-                ''',
-            contentTpl="samples",
-            listSamples=effectiveSmpls,
-        )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
+    return render_template(
+        'main.html',
+        HTMLTitle="Import samples",
+        cntBefore=f'''
+            {msg}
+            <br>
+            {importUI}
+            ''',
+        contentTpl="samples",
+        listSamples=effectiveSmpls,
+    )
+
 
 
 
@@ -491,17 +480,12 @@ def configH():
 
     #     <a href="/" {"autofocus" if apiKeyValid else ""}  >   Home        </a>
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="API key",
-            cntBefore=content,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="API key",
+        cntBefore=content,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -549,19 +533,14 @@ def contextsEditH():
         print(f"   {i} - {v['short'][0:15]} {v['long'][0:15]}..." )
 
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="Edit Contexts",
-            cntBefore=f"{len(ctxs)} contexts found",
-            contentTpl="contexts",
-            listContexts=ctxs,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="Edit Contexts",
+        cntBefore=f"{len(ctxs)} contexts found",
+        contentTpl="contexts",
+        listContexts=ctxs,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 @app.route('/benchmarks-edit', methods=['GET','POST'])
@@ -641,23 +620,18 @@ def benchmarksEditH():
 
     # benchmarks.toHTML(bmSel)
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="Edit benchmarks",
-            cntBefore=f'''
-                {len(bmrks)} benchmarks found
-                <br>
-                {bmrkUI}
-                ''',
-            contentTpl="benchmarks",
-            listBenchmarks=bmrks,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="Edit benchmarks",
+        cntBefore=f'''
+            {len(bmrks)} benchmarks found
+            <br>
+            {bmrkUI}
+            ''',
+        contentTpl="benchmarks",
+        listBenchmarks=bmrks,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -743,23 +717,18 @@ def samplesEditH():
 
     # samples.toHTML(bmSel)
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="Edit samples",
-            cntBefore=f'''
-                {len(newSmpls)} samples found
-                <br>
-                {smplUI}
-                ''',
-            contentTpl="samples",
-            listSamples=newSmpls,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="Edit samples",
+        cntBefore=f'''
+            {len(newSmpls)} samples found
+            <br>
+            {smplUI}
+            ''',
+        contentTpl="samples",
+        listSamples=newSmpls,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -806,40 +775,35 @@ def chatCompletionSynchroneousH():
         speech =  kvPost["speech"]
 
 
-    try:
-        # requestChatCompletion is now a generator
-        # returning various types of returns in a protracted way
-        # we collect all chunks - and then render them in one go
-        prompt = ""
-        results = []
-        idx1 = -1
-        for res in embeddings.generateChatCompletionChunks( beliefStatement, speech):
-            idx1 += 1
-            if idx1 == 0:
-                prompt = res
-            elif res == "end-of-func":
-                pass
-            else:
-                results.append(res)
+    # requestChatCompletion is now a generator
+    # returning various types of returns in a protracted way
+    # we collect all chunks - and then render them in one go
+    prompt = ""
+    results = []
+    idx1 = -1
+    for res in embeddings.generateChatCompletionChunks( beliefStatement, speech):
+        idx1 += 1
+        if idx1 == 0:
+            prompt = res
+        elif res == "end-of-func":
+            pass
+        else:
+            results.append(res)
 
 
 
-        return render_template(
-            'main.html',
-            HTMLTitle="Ask ChatGPT",
-            contentTpl="llm-answer-sync",
-            # cnt1=cnt1,
-            # cnt2=cnt2,
-            beliefStatement=beliefStatement,
-            speech=speech,
-            prompt=prompt,
-            results=results,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="Ask ChatGPT",
+        contentTpl="llm-answer-sync",
+        # cnt1=cnt1,
+        # cnt2=cnt2,
+        beliefStatement=beliefStatement,
+        speech=speech,
+        prompt=prompt,
+        results=results,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -998,23 +962,18 @@ def chatCompletionJSH():
     if err != "":
         prompt = f"Error designing prompt: {err}"
 
-    try:
-        return render_template(
-            'main.html',
-            HTMLTitle="chat completion",
-            contentTpl="llm-answer-js",
-            # cnt1=cnt1,
-            # cnt2=cnt2,
-            beliefStatement=beliefStatement,
-            speech=speech,
-            prompt=prompt,
-            role=role,
-        )
+    return render_template(
+        'main.html',
+        HTMLTitle="chat completion",
+        contentTpl="llm-answer-js",
+        # cnt1=cnt1,
+        # cnt2=cnt2,
+        beliefStatement=beliefStatement,
+        speech=speech,
+        prompt=prompt,
+        role=role,
+    )
 
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 
@@ -1034,26 +993,20 @@ def embeddingsSimilarityH():
     smplUI, smplSel  = samples.PartialUI(request, session, showSelected=False)
 
 
+    sTable = embeddings_similarity.model(ctxs, bmSel, smplSel )
 
-    try:
-        sTable = embeddings_similarity.model(ctxs, bmSel, smplSel )
+    return render_template(
+        'main.html',
+        HTMLTitle="Embeddings - Similarity",
+        contentTpl="embeddings-similarity",
+        ctxUI=ctxUI,
+        bmrkUI=bmrkUI,
+        smplUI=smplUI,
+        cnt1=benchmarks.toHTML(bmSel),
+        cnt2=samples.toHTML(smplSel),
+        cntTable=sTable,
+    )
 
-        return render_template(
-            'main.html',
-            HTMLTitle="Embeddings - Similarity",
-            contentTpl="embeddings-similarity",
-            ctxUI=ctxUI,
-            bmrkUI=bmrkUI,
-            smplUI=smplUI,
-            cnt1=benchmarks.toHTML(bmSel),
-            cnt2=samples.toHTML(smplSel),
-            cntTable=sTable,
-        )
-
-    except Exception as exc:
-        # print(str(exc))
-        print( stackTrace(exc) )
-        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
 
 
 

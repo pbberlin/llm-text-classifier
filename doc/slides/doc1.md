@@ -1,47 +1,48 @@
 # Text classification using LLMs
 
-<!--h-->
 
 ## Overview
 
 * High level overview
 * Give an intuition
 * => Inspiration
+{: #an_id .a_class somekey='some value' }
 
-<!--h-->
 
 ## Application in research
 
 * LLMs have been used to conduct _sentiment analysis_
-
 * The empirical evidence was good
 
 
-<!--h-->
 
-### Upcoming projects hope to use LLMs
+### Projects with potential use for LLMs
 
-1.  Kathi's projects on CbCR need an easy way to extract taxation parameters from weakly structured texts 
-2.  Zareh's textual data collection on municipal taxation.<br>  
+1.  Kathi's projects on CbCR need an easy way to extract  
+taxation parameters from weakly structured texts 
+2.  Zareh's textual data collection on municipal taxation.<brS>  
   Needs to be mined for
     * Business tax rates
     * Period in time
     * Own municipality vs. other municipalities
 
-<!--h-->
 
 ### But also for _concepts_
 
   * Perceived `competitive networks`
   * Tax multipliers 
-  * Various narratives
+  * Various `narratives`
   * ...
 
+<!-- additional page break -->
+<!--pagebreak-->
 
-<!--h-->
+<!-- ### Projects with potential cont'd -->
 
-3.  Project "Geld und Währung"  
-    * Classification of official speeches  
+Projects with potential cont'd
+
+3.  Project "Geld und Währung"
+    * Classification of official speeches
 4.  Financial markets dept
     * research into pension policy -  
       classify pension policy discussion against basic concepts

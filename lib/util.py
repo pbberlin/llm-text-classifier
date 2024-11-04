@@ -188,14 +188,33 @@ def flagSpecialChars(s):
     return np
 
 
-if False:
-    RE_LINEBREAK = re.compile(r'\R')   # special escape not available in Pyton re 
-RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF 
 
-# markdown preparation
-def splitByLineBreak(s):
-    lines = RE_LINEBREAK.split(s)
+
+#                       two spaces
+#                              end of line
+RE_MD_WRAP = re.compile(r'[ ]{2,3}\r?\n')    # LF or CRLF 
+def markdownLineWrap(s: str):
+    return RE_MD_WRAP.sub("<br>\n", s )
+
+
+# unused
+# we split by [###,##,#] but we cannot retain the separators
+#   => later rejoin is fuzzy
+RE_SECTION = re.compile(r'\r?\n[\s]{0,3}[#]{1,3}[\s]+')    # LF or CRLF 
+def splitBySection(s: str):
+    sections = RE_SECTION.split(s)   
+    # print(f"found {len(sections)} sections")
+    return sections
+
+# unused
+RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF 
+def splitByLineBreak(s: str):
+    # lines = RE_LINEBREAK.split(s)
+    lines = s.splitlines()
     return lines
+
+
+
 
 
 RE_CONDENSE_SP = re.compile(r' +')   # condense spaces
