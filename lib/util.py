@@ -188,6 +188,14 @@ def flagSpecialChars(s):
     return np
 
 
+if False:
+    RE_LINEBREAK = re.compile(r'\R')   # special escape not available in Pyton re 
+RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF 
+
+# markdown preparation
+def splitByLineBreak(s):
+    lines = RE_LINEBREAK.split(s)
+    return lines
 
 
 RE_CONDENSE_SP = re.compile(r' +')   # condense spaces

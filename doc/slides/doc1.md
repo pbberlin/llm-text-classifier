@@ -1,8 +1,8 @@
-# Text classification using LLM embeddings
+# Text classification using LLMs
 
 <!--h-->
 
-## High level
+## Overview
 
 * High level overview
 * Give an intuition
@@ -10,26 +10,27 @@
 
 <!--h-->
 
-## Research requirements
+## Application in research
 
-There has been sentiment analysis using LLMs. The empirical evidence seems very good.
+* LLMs have been used to conduct _sentiment analysis_
 
----
+* The empirical evidence was good
+
 
 <!--h-->
 
 ### Upcoming projects hope to use LLMs
 
 1.  Kathi's projects on CbCR need an easy way to extract taxation parameters from weakly structured texts 
-2.  Zareh's textual data collection on municipal taxation  
-Needs to be mined for
+2.  Zareh's textual data collection on municipal taxation.<br>  
+  Needs to be mined for
     * Business tax rates
     * Period in time
     * Own municipality vs. other municipalities
 
 <!--h-->
 
-### But also for `concepts`
+### But also for _concepts_
 
   * Perceived `competitive networks`
   * Tax multipliers 

@@ -1,3 +1,5 @@
+
+
 :root {
 
     /* 
@@ -10,6 +12,7 @@
     --section-with: calc( min(95vw, 72rem));
 
     --section-margin: calc(   (100vw - var(--section-with))  / 2) ;
+
 
 
 }
@@ -44,6 +47,8 @@ section {
         luckily - we can achieve the same effect:
             half the screen  to the right
             half the element to the left
+
+            we would use 50vw - but we must compensate the 2vm margins of parent div.slides  - 
     */
      transform:   translateX(calc(48.0vw - 50%))   ;
 

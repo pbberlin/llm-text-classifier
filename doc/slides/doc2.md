@@ -5,9 +5,7 @@
 ## High level
 
 * foo
-
 * bar
-
 * => Inspiration
 
 <!--h-->

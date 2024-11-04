@@ -26,6 +26,7 @@ from   flask import session
 from   flask import jsonify
 from   flask import render_template
 from   flask import send_from_directory
+from   flask import make_response
 
 
 
@@ -42,6 +43,7 @@ from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
 from lib.util import stackTrace
 from lib.util import mainTemplateHeadForChunking, templateSuffix
+from lib.util import splitByLineBreak
 
 import  lib.config          as config
 
@@ -63,7 +65,7 @@ def create_app():
     app.secret_key = b'32168'
     app.permanent_session_lifetime = timedelta(minutes=30)
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
-    app.static_folder='static'  # only source for static files in templates? 
+    app.static_folder='static'  # only source for static files in templates?
 
     return app
 
@@ -141,11 +143,77 @@ def favicon():
     if False:
         return '', 204
 
+@app.route('/slides-prepare',  defaults={'fileName': "doc1.md"})
+@app.route('/slides-prepare/', defaults={'fileName': "doc1.md"})
+@app.route('/slides-prepare/<path:fileName>')
+def slidesPrepare(fileName):
+
+    try:
+        dr = os.path.join(".", "doc", "slides")
+        fn = os.path.join(dr, f"{fileName}" )
+
+        if not fn.lower().endswith(".md"):
+            fn += ".md"
+
+        with open(fn, encoding="utf-8") as inFile:
+            strContents = inFile.read()
+            print(f"\tloaded markdown '{fileName}' - {len(strContents)} bytes - from {dr}")
+
+        lines = splitByLineBreak(strContents)
+
+        sfx1 = ''' <!-- .element: class="fragment" --> '''
+        prefixes = [
+            "*   ", 
+            "*  ", 
+            "* ", 
+            "=> ",
+        ]
+
+        for idx, line in enumerate(lines):
+
+            for pfx in prefixes:
+                if line.strip().startswith(pfx):
+                    # lines[idx] = line.replace(pfx, pfx + sfx1) 
+                    lines[idx] = line + sfx1 
+                    break  # one only
+
+            for num in range(0,12):
+                if line.strip().startswith(f"{num}. "):
+                    lines[idx] = line + sfx1
+
+
+        if False:
+            # open the browser URL for debugging
+            for idx, line in enumerate(lines):
+                if idx > 30:
+                    break
+                if line.strip() == "":
+                    continue
+                print(f"{idx:3}\t{line}")
+
+        strContents = "\r\n".join(lines)
+
+        rsp = make_response(
+            strContents,
+            200,
+        )
+        rsp.mimetype = "text/plain"
+        rsp.mimetype = "text/markdown"
+        return rsp
+
+
+
+    except Exception as exc:
+        # print(str(exc))
+        print( stackTrace(exc) )
+        return app.response_class(response=str(exc), status=500, mimetype='text/plain')
+
+
 
 @app.route('/slides',  defaults={'fileName': "doc1.md"})
 @app.route('/slides/', defaults={'fileName': "doc1.md"})
 @app.route('/slides/<path:fileName>')
-def docServer(fileName):
+def serveSlides(fileName):
     # print(f"param fileName: -{fileName}-")
     try:
         return render_template(
