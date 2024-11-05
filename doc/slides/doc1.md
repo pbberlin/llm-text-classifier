@@ -37,7 +37,6 @@ taxation parameters from weakly structured texts
 <!-- additional page break -->
 <!--pagebreak-->
 
-<!-- ### Projects with potential cont'd -->
 
 
 Projects with potential cont'd 
