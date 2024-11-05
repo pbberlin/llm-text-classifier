@@ -39,11 +39,14 @@ taxation parameters from weakly structured texts
 
 <!-- ### Projects with potential cont'd -->
 
-Projects with potential cont'd
 
-3.  Project "Geld und Währung"
+Projects with potential cont'd 
+
+3.  Project "Geld und Währung" 
+{: value='3' }
     * Classification of official speeches
 4.  Financial markets dept
+{: value='4' }
     * research into pension policy -  
       classify pension policy discussion against basic concepts
     * financial literacy -  

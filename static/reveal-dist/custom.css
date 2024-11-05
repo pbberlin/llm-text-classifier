@@ -2,8 +2,8 @@
 
 :root {
 
-    /* 
-        "100%" is the auto-width of the <h3> or <p> element 
+    /*
+        "100%" is the auto-width of the <h3> or <p> element
            depending on its contents.
         We want "vw"
     */
@@ -15,6 +15,12 @@
 
 
 
+}
+
+/* background global */
+div.slides {
+    background-image: url('/static/img/slide-background-wider-2.jpg') !important ;
+    background-size: contain  !important;
 }
 
 /*  first div inside body  */
@@ -39,19 +45,19 @@ section {
     margin-top: 2vh;
 
 
-    /*  
+    /*
         self-sizing - depending on content;
         sadly, "margin-left: auto" now no longer works
-    
+
     */
     width:       auto     !important;
 
-    /* 
+    /*
         luckily - we can achieve the same effect:
             half the screen  to the right
             half the element to the left
 
-            we would use 50vw - but we must compensate the 2vm margins of parent div.slides  - 
+            we would use 50vw - but we must compensate the 2vm margins of parent div.slides  -
     */
      transform:   translateX(calc(48.0vw - 50%))   ;
 
@@ -67,7 +73,7 @@ section {
 
 
 
-.reveal h2, 
+.reveal h2,
 .reveal h3,
 .reveal p,
 .reveal ol,
@@ -105,7 +111,7 @@ dummmy
 
 .reveal pre.code-wrapper {
     max-width:  64rem ;
-} 
+}
 .reveal pre code {
     max-height: 32rem ;
     max-width:  64rem ;
