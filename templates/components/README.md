@@ -1,1 +1,1 @@
-svelte component source files - [this-repository-name]-svelte/src
+svelte component - source files - ../js/svelte-query-chatGPT

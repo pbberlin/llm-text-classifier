@@ -81,7 +81,16 @@ os.makedirs(  os.path.join(app.root_path, "static" ), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static", "img"), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static", "img", "dynamic"), exist_ok=True )
 
+def addPreflightCORS():
+    rsp = make_response()
+    rsp.headers.add("Access-Control-Allow-Origin",  "*")
+    rsp.headers.add("Access-Control-Allow-Headers", "*")
+    rsp.headers.add("Access-Control-Allow-Methods", "*")
+    return rsp
 
+def addActualCORS(rsp):
+    rsp.headers.add("Access-Control-Allow-Origin", "*")
+    return rsp
 
 def signalHandler(signal, frame):
     print(f'flask server immediate shutdown - sig {signal}')
@@ -891,8 +900,11 @@ def generateStreamExampleH():
 
 
 # returns JSON
-@app.route('/chat-completion-json', methods=['GET','POST'])
+@app.route('/chat-completion-json', methods=['GET','POST','OPTIONS'])
 def chatCompletionJsonH():
+
+    if request.method == "OPTIONS": # CORS preflight
+        return addPreflightCORS()
 
     # GET + POST params
     kvGet  = request.args.to_dict()
@@ -949,7 +961,7 @@ def chatCompletionJsonH():
             json.dumps(result, indent=4),
             mimetype='application/json',
         )
-        return resp
+        return addActualCORS(resp)
 
 
     except Exception as exc:
