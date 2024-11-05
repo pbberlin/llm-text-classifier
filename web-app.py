@@ -44,7 +44,7 @@ from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
 from lib.util import stackTrace
 from lib.util import mainTemplateHeadForChunking, templateSuffix
-from lib.util import splitBySection
+from lib.util import splitByMarkownHeaders
 from lib.util import markdownLineWrap
 
 import  lib.config          as config
@@ -76,6 +76,7 @@ app = create_app()
 UPLOAD_FOLDER = os.path.join(app.root_path, 'uploaded-files')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(  os.path.join(app.root_path, "data"), exist_ok=True )
+os.makedirs(  os.path.join(app.root_path, "data",   "set1" ), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static" ), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static", "img"), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, "static", "img", "dynamic"), exist_ok=True )
@@ -171,17 +172,20 @@ def serveSlides2(fileName):
 
     mdContent = markdownLineWrap(mdContent)
 
-    sections = splitBySection(mdContent)
-    mdContent = "\r\n<!--pagebreak-->\r\n## ".join(sections)
+    # wrapping into <section> tags _after_ conversion to HTML proved impossible:
+    # found no comfy document tree parser to wrap subtrees into <section>.
+    # Instead we insert user-defined string <!--pagebreak--> before headings.
+    # <!--pagebreak--> can be inserted in original markdown too.
+    for hdrLvl in [2,3]:
+        sections = splitByMarkownHeaders(mdContent, hdrLvl)
+        mdContent = f"\r\n<!--pagebreak-->\r\n{ '#'*hdrLvl } ".join(sections)
 
-    # todo
-    #  preserver order list numbers across sections:
-    #    	<ol start="3">
 
-
+    # https://python-markdown.github.io/extensions/attr_list/
+    # we can add CSS classes, element IDs and key-value attributes to markdown
+    # using syntax   {: #myid .myclass   key='val' }
     from markdown.extensions.attr_list import AttrListExtension
 
-    # https://python-markdown.github.io/extensions/attr_list/    
     htmlContent = markdown.markdown(
         mdContent,
         extensions=[AttrListExtension()],
@@ -189,26 +193,45 @@ def serveSlides2(fileName):
         tab_length=4,
     )
 
-    # adding sections
-    htmlContent = htmlContent.replace("<!--pagebreak-->", "\n\t</section>\n\t<section>\n")
-    htmlContent = f"\t<section>\n{htmlContent}\n\t</section>\n"
 
-    htmlContent = htmlContent.replace(
-        "<section>", 
-        '''<section 
-            data-background-image='/static/img/slide-background-wider-2.jpg' 
-            data-background-size='contain'
-        >''',
-    )
+    # replacing  <!--pagebreak--> from above
+    #  turning it into <section> nodes
+    openSect = "\t<section>\n"
+    closSect = "\n\t</section>"
+
+    # replace inner
+    htmlContent = htmlContent.replace("<!--pagebreak-->", f"{closSect}{openSect}")
+    # enclose outer
+    htmlContent = f"{openSect}<!--outer-->\n{htmlContent}\n<!--outer-->{closSect}"
+
+    '''
+     negative: ol counter will now be reset across sections.
+      How do we preserve order list numbers across sections?
+        	<ol start="3"> ?
+      Using attr_list extension - we manually insert
+           {: start='3' }
+      Remember: separate line after markdown element
+      But documentation says 'implied elements ... ul, ol ... no way'
+      We have to set an explicit value with each li:
+
+        3.  content of list item 3
+        {: value='3' }
+            * sub-list 1
+        4.  content of list item 4
+        {: value='4' }
+            * sub-list 1
+            * sub-list 2
 
 
-    # there might be <p> and <p key=val> 
+          '''
+
+
+    # there might be <p> and <p key=val>
     htmlContent = htmlContent.replace("<p ",   '<p class="fragment" ')
     htmlContent = htmlContent.replace("<p>",   '<p class="fragment" >')
 
     htmlContent = htmlContent.replace("<li ", '<li class="fragment" ')
     htmlContent = htmlContent.replace("<li>", '<li class="fragment" >')
-
 
 
     # dump file for debug

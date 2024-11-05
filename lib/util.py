@@ -192,22 +192,27 @@ def flagSpecialChars(s):
 
 #                       two spaces
 #                              end of line
-RE_MD_WRAP = re.compile(r'[ ]{2,3}\r?\n')    # LF or CRLF 
+RE_MD_WRAP = re.compile(r'[ ]{2,3}\r?\n')    # LF or CRLF
 def markdownLineWrap(s: str):
     return RE_MD_WRAP.sub("<br>\n", s )
 
 
-# unused
-# we split by [###,##,#] but we cannot retain the separators
-#   => later rejoin is fuzzy
-RE_SECTION = re.compile(r'\r?\n[\s]{0,3}[#]{1,3}[\s]+')    # LF or CRLF 
-def splitBySection(s: str):
-    sections = RE_SECTION.split(s)   
-    # print(f"found {len(sections)} sections")
-    return sections
+def splitByMarkownHeaders(s: str, hdrLvl: int):
+
+    # LF or CRLF - optional trailing white space -
+    #    x times '#' followed by space
+
+    tpl = r'\r?\n[\s]{0,3}[#]{2}[\s]+'
+    tpl = r'\r?\n[\s]{0,3}[#]{    2              }[\s]+'
+    eff = r'\r?\n[\s]{0,3}[#]{'+ str(hdrLvl) + r'}[\s]+'
+
+    RE_SECTION = re.compile(eff)
+    parts = RE_SECTION.split(s)
+    print(f"\tfound {len(parts)-1} headers of level {hdrLvl} => {len(parts)} parts")
+    return parts
 
 # unused
-RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF 
+RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF
 def splitByLineBreak(s: str):
     # lines = RE_LINEBREAK.split(s)
     lines = s.splitlines()
