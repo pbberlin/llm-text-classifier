@@ -31,8 +31,11 @@ div.slides {
 
 /*  thirst nesting level  */
 section {
+    border: 2px solid #f8f8f8;
     border-radius: 1rem;
-    background-color: #f8f8f8;
+    /* background-color: #f8f8f8; */
+    background-color: transparent;
+
     box-sizing: border-box;
 
     /* waste a little for aesthetics */
@@ -75,14 +78,15 @@ section {
 dummmy
 {
     text-align:    left;
-    margin-left:   2vw;
+    margin-left:    0.1vw;
+    margin-right:   0.1vw;
 }
 
 .reveal ol,
 .reveal ul,
 dummmy
 {
-    margin-left:   4vw;
+    margin-left:   2vw;
 }
 
 
