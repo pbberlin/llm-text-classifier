@@ -1,4 +1,4 @@
-# Text classification using LLM embeddings
+# Text classification using LLM embeddings and chat completion
 
 ## High level
 

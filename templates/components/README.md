@@ -1,1 +1,1 @@
-svelte component - source files - ../js/svelte-query-chatGPT
+svelte component - source files - ../js/llm-query-svelte
