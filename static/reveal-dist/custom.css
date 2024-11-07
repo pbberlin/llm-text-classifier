@@ -17,6 +17,8 @@
 
 }
 
+
+
 /* background global */
 div.slides {
     background-image: url('/static/img/slide-background-wider-2.jpg') !important ;
@@ -39,13 +41,14 @@ div.slides {
 section {
     border: 2px solid #f8f8f8;
     border-radius: 1rem;
-    /* background-color: #f8f8f8; */
+    background-color: #f8f8f8;
     background-color: transparent;
+    background-color: lightgoldenrodyellow;
 
     box-sizing: border-box;
 
     /* waste a little for aesthetics */
-    margin-top: 2vh;
+    margin-top: 0.8vh;
 
 
     /*
@@ -78,6 +81,7 @@ section {
 
 .reveal h2,
 .reveal h3,
+.reveal h4,
 .reveal p,
 .reveal ol,
 .reveal ul,
@@ -96,15 +100,34 @@ dummmy
 }
 
 
+/* h4 is for ... cont'd headlines */
+/* h4 is supposed to need little vertical space */
+.reveal h4{
+    margin-top:    0;
+    margin-bottom: 0.6rem;
+    font-size: 85%;
+}
+
+
 .reveal li {
     list-style-position: outside;
     margin-left:  2.0rem;
     padding-left: 1.4rem;
+    vertical-align: top;
+    vertical-align: bottom !important;
 
     /* make bullets more vertically separate... */
     margin-bottom:  1.08rem ;
     /*   ... but keep them dense inside */
     line-height: 110%      ;
+}
+
+.reveal li.nobullet {
+    list-style-type: none;
+}
+
+.reveal .small {
+    font-size: 80%;
 }
 
 /* ul - if child of a li */
@@ -120,6 +143,15 @@ dummmy
     max-height: 32rem ;
     max-width:  64rem ;
     font-size:  90%;
+}
+
+
+.reveal img {
+    padding: 0 ;
+    margin:  0 ;
+    /* max-width in *absolute* units required  */
+    max-width:      72rem !important ;
+    border: 2px solid gray;
 }
 
 

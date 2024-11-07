@@ -1,54 +1,58 @@
-# Text classification using LLM embeddings and chat completion
+# Text classification using LLMs
 
-## High level
+
+## Overview
 
 * High level overview
-
 * Give an intuition
-
 * => Inspiration
+{: #an_id .a_class somekey='some value' }
 
 
-## Research requirements
+## Application in research
 
-There has been sentiment analysis using LLMs. The empirical evidence seems very good.
-
----
-
-Several upcoming projects hope to use LLMs. 
-
-1. Kathi's projects on CbCR need an easy way 
-  to extract taxation parameters from weakly structured texts 
+* LLMs have been used to conduct _sentiment analysis_
+* The empirical evidence was good
 
 
-2. Zareh's textual data collection on municipal taxation  
-  needs to be mined for
-  * Business tax rates
-  * Period in time
-  * Own municipality vs. other municipalities
 
-But also for `concepts`
+### Projects with potential use for LLMs
+
+1.  Kathi's projects on CbCR need an easy way to extract  
+taxation parameters from weakly structured texts 
+2.  Zareh's textual data collection on municipal taxation.<brS>  
+  Needs to be mined for
+    * Business tax rates
+    * Period in time
+    * Own municipality vs. other municipalities
+
+
+### But also for _concepts_
+
   * Perceived `competitive networks`
   * Tax multipliers 
-  * Various narratives
+  * Various `narratives`
   * ...
 
-
-3. Project "Geld und Währung"  
-
-* Classification of official speeches  
+<!-- additional page break -->
+<!--pagebreak-->
 
 
-4. Financial markets dept
+Projects with potential cont'd 
 
-* research into pension policy -  
-   classify pension policy discussion against basic concepts
-
-* financial literacy -  
-   limits of capturing `financial calculus` with LLMs
+3.  Project "Geld und Währung" 
+{: value='3' }
+    * Classification of official speeches
+4.  Financial markets dept
+{: value='4' }
+    * research into pension policy -  
+      classify pension policy discussion against basic concepts
+    * financial literacy -  
+      limits of capturing `financial calculus` with LLMs
 
 
 => Time to establish some foundations.
+
 
 ## Cross sectional solution
 
@@ -126,21 +130,6 @@ Is it worth the effort?
 The LLM embeddings show distinct, and arguably  
 better results than [bag of words](https://en.wikipedia.org/wiki/Bag-of-words_model) approach.
 
-Example 1:  
-Following statements contain identical words, with only a difference in punctuation.
-
-* I am giving up  drinking until this is over.
-* I am giving up. Drinking until this is over.
-
-The embeddings for these two statements are ![considerably different](./img/embeddings-drinking-until.jpg).
-
-The chart shows "significant" positive and negative values - the 32 values with the biggest magnitude.
-
-The significant values vary. Still some dimensions overlap. Others are completely distinct.
-
-LLMs treat punctuation as important tokens. 
-Also the preceding words heavily influence the classification of a word.
-
 
 ## Delimination I - Language
 
@@ -169,12 +158,41 @@ The LLMs can only give a probabilistic extract from the existing debate about th
 
 ## Delimination II - Generative AI
 
-_Generative_ AI has some probabilistic element, that can lead to erroneous results,  
+* The _classification_ faculty of LLM is expressed in large vectors - the `_embeddings_`.<br>
+  `Embeddings` dont hallucinate.  
+  More on `embeddings` later.
+
+* _Generative_ AI has some probabilistic element, that can lead to erroneous results,  
 completely contradicting the language corpus and common sense.
 
-For this discussion, we dont use the _generative_ faculty of LLMs.
 
-We only use the _classification_ faculty of LLM - expressed in large vectors - the _embeddings_.
+
+* dont use the _generative_ faculty of LLMs.
+
+
+
+## On Embeddings
+
+* Each embeddings consists of 3078 numbers - each in the range of one trillon.
+[Embeddings for the word `price`](./embeddings-price-compr.json) - 20 sheets of pages.
+
+![Granularity](embeddings-granularity.jpg)
+
+Example 1:  
+Following statements contain identical words, with only a difference in punctuation.
+
+* I am giving up  drinking until this is over.
+* I am giving up. Drinking until this is over.
+
+The embeddings for these two statements are ![considerably different](./img/embeddings-drinking-until.jpg).
+
+The chart shows "significant" positive and negative values - the 32 values with the biggest magnitude.
+
+The significant values vary. Still some dimensions overlap. Others are completely distinct.
+
+LLMs treat punctuation as important tokens. 
+Also the preceding words heavily influence the classification of a word.
+
 
 ![embeddings](./img/embeddings-text.jpg)
 
@@ -359,6 +377,10 @@ we can get more insight into how the chatbot interprets the meaning and implicat
 
 By setting the `temperature` to zero, we minimize hallucinations.
 
+
+## Sources
+
+[Sergio Correia - Unlocking Data with LLM](https://www.youtube.com/watch?v=quf6jlJ-Mvg&t=3100s&pp=ygUyU2VyZ2lvIENvcnJlaWEgb24gVW5sb2NraW5nIEVjb25vbWljIERhdGEgd2l0aCBMTE0%3D)
 
 
 ---------------

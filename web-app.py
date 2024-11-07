@@ -46,6 +46,7 @@ from lib.util import stackTrace
 from lib.util import mainTemplateHeadForChunking, templateSuffix
 from lib.util import splitByMarkownHeaders
 from lib.util import markdownLineWrap
+from lib.util import splitByLineBreak
 
 import  lib.config          as config
 
@@ -151,7 +152,10 @@ def favicon():
         return '', 204
 
 
-
+# image handler for doc
+@app.route('/doc/img/<path:fileName>')
+def docImages(fileName):
+    return send_from_directory('doc/img', fileName)
 
 
 
@@ -179,15 +183,42 @@ def serveSlides2(fileName):
         print(f"\tloaded markdown '{fileName}' - {len(mdContent)} bytes - from {dr}")
 
 
-    mdContent = markdownLineWrap(mdContent)
+    pbInner = "<!--pagebreak-->"
+    pbOuter = f"\r\n{pbInner}\r\n"
 
     # wrapping into <section> tags _after_ conversion to HTML proved impossible:
     # found no comfy document tree parser to wrap subtrees into <section>.
     # Instead we insert user-defined string <!--pagebreak--> before headings.
     # <!--pagebreak--> can be inserted in original markdown too.
-    for hdrLvl in [2,3]:
+    for hdrLvl in [2,3,4]:
         sections = splitByMarkownHeaders(mdContent, hdrLvl)
-        mdContent = f"\r\n<!--pagebreak-->\r\n{ '#'*hdrLvl } ".join(sections)
+        mdContent = f"{pbOuter}{ '#'*hdrLvl } ".join(sections)
+
+
+    # auto split long
+    splitThreshold = 12
+    sections = mdContent.split(pbInner)
+    for idx1, sect in enumerate(sections):
+        lines = splitByLineBreak(sect)
+        nonEmpty =  [ln for ln in lines if ln]
+
+        if len(nonEmpty) > splitThreshold:
+            linesNew = []
+            lastInsert = 0
+            for idx2, line in enumerate(lines):
+                if lastInsert > splitThreshold:
+                    if not line.startswith(" "):
+                        lastInsert = 0
+                        linesNew.append("\r\n<!-- automatic pb -->")
+                        linesNew.append(pbOuter)
+                        print(f"\tsect{idx1} - pb before after {idx2}")
+                linesNew.append(line)
+                lastInsert += 1
+            sections[idx1] = "\n".join(linesNew) 
+
+    mdContent = pbOuter.join(sections)
+
+    mdContent = markdownLineWrap(mdContent)
 
 
     # https://python-markdown.github.io/extensions/attr_list/
@@ -209,7 +240,7 @@ def serveSlides2(fileName):
     closSect = "\n\t</section>"
 
     # replace inner
-    htmlContent = htmlContent.replace("<!--pagebreak-->", f"{closSect}{openSect}")
+    htmlContent = htmlContent.replace( pbInner, f"{closSect}{openSect}")
     # enclose outer
     htmlContent = f"{openSect}<!--outer-->\n{htmlContent}\n<!--outer-->{closSect}"
 
@@ -239,8 +270,29 @@ def serveSlides2(fileName):
     htmlContent = htmlContent.replace("<p ",   '<p class="fragment" ')
     htmlContent = htmlContent.replace("<p>",   '<p class="fragment" >')
 
-    htmlContent = htmlContent.replace("<li ", '<li class="fragment" ')
+    htmlContent = htmlContent.replace("<li class=\"", '<li  class="fragment ')  # two spaces - to prevent subsequent 
+    # htmlContent = htmlContent.replace("<li ", '<li class="fragment" ')
     htmlContent = htmlContent.replace("<li>", '<li class="fragment" >')
+
+    htmlContent = htmlContent.replace("<tr ", '<tr class="fragment" ')
+    htmlContent = htmlContent.replace("<tr>", '<tr class="fragment" >')
+
+    htmlContent = htmlContent.replace("<blockquote ", '<blockquote class="fragment" ')
+    htmlContent = htmlContent.replace("<blockquote>", '<blockquote class="fragment" >')
+
+    if False:
+        # images always inside list items
+        htmlContent = htmlContent.replace("<img ", '<img class="fragment" ')
+
+    # htmlContent = htmlContent.replace("<blockquote class=\"", '<blockquote class="fragment ')
+
+    #  src="./img/xyz.jpg
+    #       to
+    #  src="/img/doc/xyz.jpg
+
+    # image handler for doc
+    htmlContent = htmlContent.replace("src=\"./img/", "src=\"/doc/img/")
+
 
 
     # dump file for debug

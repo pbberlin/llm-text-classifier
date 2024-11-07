@@ -208,10 +208,9 @@ def splitByMarkownHeaders(s: str, hdrLvl: int):
 
     RE_SECTION = re.compile(eff)
     parts = RE_SECTION.split(s)
-    print(f"\tfound {len(parts)-1} headers of level {hdrLvl} => {len(parts)} parts")
+    print(f"\tfound {len(parts)-1:2} headers of level {hdrLvl} => {len(parts)} parts")
     return parts
 
-# unused
 RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF
 def splitByLineBreak(s: str):
     # lines = RE_LINEBREAK.split(s)
