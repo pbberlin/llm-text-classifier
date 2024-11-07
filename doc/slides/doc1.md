@@ -1,5 +1,33 @@
 # Text classification using LLMs
 
+### Summary 1
+
+* Use cheap `embeddings` for coarse pre-selection of text by relevance
+* Use expensive `LLM chat-completion` to measure relevant text
+* Find the cutoff, where LLMs can still "reason" reliably
+
+#### Summary 1 cont'd
+
+* Cutoff will depend on your research area; for example:
+    * All things inflation - "How inflationary is statement `x`"?
+        * Will work well.
+    * Effects of inflation going into an ISLM model economy - all the channels and effects.
+        * Will work somewhat - if the corpus is thick on "ISLM model"
+        * Will break down for more than two degrees of freedom
+
+### Summary 2
+
+* If extracting numbers and measuring content was largely successful: 
+* Restructure the remaining work, so that humans can do it as easy as possible
+* Validation
+* Robustness, fireproofing, scientific documentation 
+* Repeatability
+
+### Summary 3
+
+* I built some piece of software for quick testing and prototyping
+
+
 
 ## Overview
 
@@ -117,15 +145,6 @@ Generic solutions cont'd
 * How much do LLM embeddings improve on existing methods <br> such as [bag of words](https://en.wikipedia.org/wiki/Bag-of-words_model)?
 * Effort? Cost?
 
-
-### Results so far
-
-* Use cheap embeddings to make a coarse pre-selection of text by relevance
-* Use expensive LLM chat-completion to measure relevant parts
-* Try to find the cutoff, where the LLMs can still "reason" reliably
-    * All things inflation - yes
-    * Effects of inflation going into an ISLM model economy - all the channels and effects - somewhat - if the corpus is thick
-* Restructure the remaining work and validation, so that humans can do it as easy as possible
 
 ### Delimination I - Language
 
@@ -255,59 +274,15 @@ and highly positive on dimensions 528 and 57
 
 <!--pagebreak-->
 
-<pre style="font-size:40%; line-height: 80%">
-You are an economic policy analyst.
+![xx](./img/prompt-1.jpg)
 
-The speech text is: "ApfeldachSchlüssel wäre für uns alle ein großer Gewinn, 
-  wenn er die Chromodysterose absolviert hat. 
-  Davon kann man nur träumen."
-
-Make sure to give an objective analysis based on the content of the speech.
-
-I need a thorough textual analysis on how much the speech aligns 
-with the concept of favorable, beneficial, good and positive.
-
-Determine whether the speech agrees, disagrees, or remains neutral on 
-concept of favorable, beneficial, good and positive.
-
-Provide a percentage score for alignment.
-
-Use the following json format for your response:
-
-{{
-    "agreement":        "<agrees/disagrees/neutral>",
-    "alignment":         <percentage_score>
-    "textual_analysis":  <text>
-}}
-</pre>
-
-<pre style="font-size:50%">
-{
-    "agreement": "neutral",
-    "alignment": 50,
-    "textual_analysis": "The speech text mentions 'ApfeldachSchlüssel' as a potential 'big gain'
-     (translated from 'großer Gewinn') for everyone, 
-     indicating a positive outcome if certain conditions are met. 
-     Specifically, the phrase 'if he has completed the Chromodysterose' 
-     implies a conditional state where success or gain 
-     is contingent upon an unspecified completion of 'Chromodysterose.' 
-     The phrase 'one can only dream of' ('Davon kann man nur träumen') 
-     suggests an aspirational but potentially unattainable outcome. 
-     Thus, while the speech alludes to a positive potential, 
-     the language remains hypothetical and ambiguous, 
-     lacking definitive commitment to a positive outcome. 
-     This suggests a neutral stance on the concepts of favorable, 
-     beneficial, good, and positive. 
-     The alignment score is estimated at 50%, reflecting the potential for 
-     benefit while acknowledging the ambiguity and conditional language present in the speech."
-}
-
-</pre>
+<!--pagebreak-->
 
 
-#### Limitations for the generative Part of LLMs cont'd
+![xx](./img/prompt-2.jpg)
 
-Thin corpus
+
+#### Thin corpus
 
 * Huge amounts of material about [Hamlet](https://en.wikipedia.org/wiki/Hamlet) 
 * Little material on the German novel [Effi Briest](https://en.wikipedia.org/wiki/Effi_Briest)
@@ -317,10 +292,16 @@ Thin corpus
 
 With thin corpus coverage, the quality of classification might also suffer.
 
+#### Thin corpus 2
+
+* Svelte version 5
+* Streaming a HTML response using flask
+* Coding template with more than three functional dimensions
 
 
+### Advanced concepts
 
-But even _advanced concepts of research_ seem to be captured very well in embeddings. 
+How well can LLMs capture  _advanced concepts of research_ . 
 
 Example: Purchase of government bonds by the EU
 
@@ -404,7 +385,9 @@ It displays embeddings and similarity as charts.
 
 * The current dimensionality of 3078 is a limiting factor for capturing meaning and similarity.
 
-* If LLM companies can increase the dimensionality in the future, the quality of analysis can increase further. 
+* If LLM companies can increase the dimensionality in the future, <br> 
+  the quality of analysis can increase further. 
+
 
 ## Extension: Chatbot
 
