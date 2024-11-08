@@ -195,36 +195,43 @@ def serveSlides2(fileName):
         mdContent = f"{pbOuter}{ '#'*hdrLvl } ".join(sections)
 
 
-    # auto split long
-    splitThreshold = 12
-    sections = mdContent.split(pbInner)
-    for idx1, sect in enumerate(sections):
-        lines = splitByLineBreak(sect)
-        nonEmpty =  [ln for ln in lines if ln]
+    if False:
+        # auto split long text without headings
+        splitThreshold = 12
+        sections = mdContent.split(pbInner)
+        for idx1, sect in enumerate(sections):
+            lines = splitByLineBreak(sect)
+            nonEmpty =  [ln for ln in lines if ln]
 
-        if len(nonEmpty) > splitThreshold:
-            linesNew = []
-            lastInsert = 0
-            for idx2, line in enumerate(lines):
-                if lastInsert > splitThreshold:
-                    if not line.startswith(" "):
-                        lastInsert = 0
-                        linesNew.append("\r\n<!-- automatic pb -->")
-                        linesNew.append(pbOuter)
-                        print(f"\tsect{idx1} - pb before after {idx2}")
-                linesNew.append(line)
-                lastInsert += 1
-            sections[idx1] = "\n".join(linesNew) 
+            if len(nonEmpty) > splitThreshold:
+                linesNew = []
+                lastInsert = 0
+                for idx2, line in enumerate(lines):
+                    if lastInsert > splitThreshold:
+                        if not line.startswith(" "):
+                            lastInsert = 0
+                            linesNew.append("\r\n<!-- automatic pagebreak insertion -->")
+                            linesNew.append(pbOuter)
+                            print(f"\tsect{idx1} - pb before after {idx2}")
+                    linesNew.append(line)
+                    lastInsert += 1
+                sections[idx1] = "\n".join(linesNew)
 
-    mdContent = pbOuter.join(sections)
+        mdContent = pbOuter.join(sections)
 
     mdContent = markdownLineWrap(mdContent)
 
 
+    # https://python-markdown.github.io/extensions/
     # https://python-markdown.github.io/extensions/attr_list/
     # we can add CSS classes, element IDs and key-value attributes to markdown
     # using syntax   {: #myid .myclass   key='val' }
     from markdown.extensions.attr_list import AttrListExtension
+
+    # note: dont use the mermaid extension
+    #   instead write mermaid elements as <div class="mermaid">...
+    #   and import the necessary javascript.
+    #   examples in doc2.md
 
     htmlContent = markdown.markdown(
         mdContent,

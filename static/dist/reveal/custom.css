@@ -44,7 +44,7 @@ section {
 
     background-color: lightgoldenrodyellow;
     background-color: transparent;
-    
+
     border: 2px solid #f8f8f8;
 
     background: linear-gradient(to bottom, rgba(244, 244, 244, 1) 0%, rgba(244, 244, 244, 0.3) 70%);
@@ -164,6 +164,17 @@ dummmy
     /* border: 2px solid gray; */
 }
 
+
+
+
+.reveal div.mermaid {
+    padding: 0 ;
+    margin:  0 ;
+    /*  *absolute* units required  */
+    max-width:      70rem  ;
+    width:          70vw  !important;
+    /* border: 2px solid gray; */
+}
 
 
 

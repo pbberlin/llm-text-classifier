@@ -865,7 +865,6 @@ def designPrompt(beliefStatement, speech):
 
     role = "You are an economic policy analyst."
 
-
     # Optional prompt enhancements:
     #   "Which specific arguments or parts of the speech support or contradict the belief?"
     #   "Does the speech include any caveats or conditions that modify the central argument?"

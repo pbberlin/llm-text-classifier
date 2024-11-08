@@ -1,5 +1,6 @@
 Flask
 markdown
+py_markdown_table
 requests
 PyPDF
 pymupdf
@@ -7,5 +8,4 @@ pymupdf
 nltk
 pandas
 openai
-py_markdown_table
 matplotlib
