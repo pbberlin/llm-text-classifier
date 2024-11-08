@@ -18,14 +18,15 @@
 
 #### Summary 1 cont'd
 
-* Cutoff will depend on your research area; for example:
-    * All things inflation - "How inflationary is statement `x`"?
-        * Will work well.
-    * Effects of inflation going into an ISLM model economy - <br> all the channels and effects.
-        * Will work somewhat - if the corpus is thick on "ISLM model"
-        * More than two degrees of freedom => Confusion
+Cutoff will depend on your research area; for example:
 
+* All things inflation - "How inflationary is statement `x`"?
+    * Will work well.
+* Effects of inflation going into an ISLM model economy - <br> all the channels and effects.
+    * Will work somewhat - <br> if the corpus is thick on "ISLM model"
+* More than two degrees of freedom => Confusion
 * Improvement on existing methods <br> such as [bag of words](https://en.wikipedia.org/wiki/Bag-of-words_model)?
+{: .small }
 
 
 
@@ -36,9 +37,9 @@ If extracting numbers and measuring content was largely successful:
 * Restructure the remaining work, so that humans can do it as easy as possible
 * Validation
 * Robustness, fireproofing, scientific documentation 
-* Repeatability
+* Reproducibility
 
-I built some piece of software for quick testing and prototyping
+<!-- I built some piece of software for quick testing and prototyping -->
 
 
 
@@ -52,7 +53,7 @@ I built some piece of software for quick testing and prototyping
     mining speeches on central bank policies 
 1.  CbCR projects  - extracting   
 taxation parameters from weakly structured texts 
-2.  Municipal taxation - council minutes<br>
+2.  Municipal taxation - council minutes - <br>
   extracting
     * Business tax rates
     * Period in time
@@ -72,11 +73,12 @@ taxation parameters from weakly structured texts
 #### Projects with potential cont'd 
 
 <!-- : value='4'  -->
-* Financial markets dept
-    * Pension policy research  -  <br>
-      classify text against concepts
-    * Financial literacy research - <br>
-      limits of capturing `financial calculus` with LLMs
+Financial markets dept
+
+* Pension policy research  -  <br>
+  classify text against concepts
+* Financial literacy research - <br>
+  capturing `financial calculus` with LLMs
 
 
 => Time to establish some foundations
@@ -102,9 +104,15 @@ taxation parameters from weakly structured texts
 * LLMs are formidable at _sentiment analysis_ <br>
   categorization as `positive` and `negative` is excellent  
 * Even if evaluated _concepts_ are not in the corpus
-    * Apfeldachschlüssel wäre für uns alle ein großer Gewinn, <br> 
+    * "Apfeldachschlüssel wäre für uns alle ein großer Gewinn, <br> 
       wenn er die Chromodysterose absolviert hat. <br>
-      Davon kann man nur träumen.
+      Davon kann man nur träumen."
+    * Deliberately non-existent concepts: <br> `Apfeldachschlüssel` and `Chromodysterose`.
+    {: .small }
+    * Deliberately ambiguous and not in English.
+    {: .small }
+
+
 
 #### Sentiment for unknown concepts cont'd
 
@@ -125,11 +133,11 @@ Consider following two realms
 * The language corpus of the entire Internet
 
 There are all kinds of differences between  
-reality and the language corpus.  
+reality and the language corpus  
 
-The science of linguistics researches this. 
+Linguistics researches this
 
-Also [philosophy](https://en.wikipedia.org/wiki/Ludwig_Wittgenstein). 
+Also [philosophy](https://en.wikipedia.org/wiki/Ludwig_Wittgenstein)
 
 ### Corpus biases
 
@@ -144,8 +152,8 @@ Also [philosophy](https://en.wikipedia.org/wiki/Ludwig_Wittgenstein).
 for instance [Supply-side economics](https://en.wikipedia.org/wiki/Supply-side_economics)
 * Supply-side economics contains some more realistic assumptions<br> 
   such as `cheaper factors increase supply`
-* Other assumptions are considered more debatable:
-    *  An increase in supply _might_ pay for lost revenue, <br> under more or less extreme conditions
+* Other assumptions are more debatable:
+    *  An increase in supply _might_ pay for lost revenue, <br> under certain  conditions
     {: style="margin-left:3rem" .myclass }
 
 ### Thin corpus 1
@@ -153,7 +161,7 @@ for instance [Supply-side economics](https://en.wikipedia.org/wiki/Supply-side_e
 * Huge amounts of material about [Hamlet](https://en.wikipedia.org/wiki/Hamlet) 
 * Little material on the German novel [Effi Briest](https://en.wikipedia.org/wiki/Effi_Briest)
 
-=> Questions about _details_ about the romantic relationship <br> between protagonists (Hamlet and Ophelia)  
+=> Questions about _details_ about the romantic relationship <br> between protagonists Hamlet and Ophelia  
    are answered with enormous breadth 
 
 => Similar questios about "Effi and Crampas" are answered  <br>
@@ -165,7 +173,7 @@ Huge productivity gains for _standard_ programming task
 
 Prolonged detours for peripheral tasks
 
-* Svelte version 5
+* Svelte version 5 
 * Streaming a HTML response using flask
 * Coding template with more than <br> three functional dimensions
 
@@ -176,8 +184,8 @@ Prolonged detours for peripheral tasks
 
 1. Extract numbers with _conditions_  
     * Business tax rate for Hintertupfingen for 2023
-    * Previous  rate for 2023, 2022
-    * Business tax rate of adjacent municipality
+    * Previous tax rates  - for 2023, 2022
+    * Tax rate of adjacent municipality
 2. Validation
     * Outsource validation of extracted data  
       to platforms like Mechanical Turk
@@ -341,12 +349,30 @@ Showing embeddings and similarity as charts
 
 ## Stage two: Chat completion
 
-By directly engaging with a chatbot, we can get more insight into how the chatbot interprets the meaning and implications of a statement within the broader context of economics and government policies.
+Going beyond embeddings
 
-Setting the `temperature` to zero, hallucinations practically disappear
+Using the _generative_ faculty of LLMs
+
+Setting a context: "economics and government policy"
+
+Setting `temperature` to zero => hallucinations practically disappear
+
+### Distinction over vector distance of embeddings 
+
+The `chat completion` stage provides additional refinement (over vector distance).
+
+Subject to same considerations of the corpus.
+
+Some internal dialogue - some wider context scope.
+
+To some extent incomprehensible.
+
+Very good results - inside the domains of the corpus.
+
+Every researcher needs to draw a subjective line here.
 
 
-## Hallucinations are not a problem
+### Hallucinations are not a problem
 
 * Embeddings are deteministic anyway
 * _Generative_ AI has some probabilistic element,  
@@ -362,13 +388,11 @@ Setting the `temperature` to zero, hallucinations practically disappear
 * Vector embeddings capture general relationship between two texts  
   but lack deep understanding of higher concepts
 * Vector embeddings are immune to hallucinations
-* Stable and reliable results.  <br>
+* Stable and reliable results.
 * Small variations, depending on LLM vendor and LLM training details
 * Dimensionality of 3078 is a limiting factor for capturing meaning
 * If LLM companies can increase dimensionality, <br> 
   the quality of analysis can increase further. 
-
-
 
 
 ## Sources
