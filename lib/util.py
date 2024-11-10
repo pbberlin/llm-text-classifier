@@ -7,6 +7,7 @@ import traceback, sys
 import re
 from pprint import pprint
 
+import hashlib
 
 import nltk
 from nltk import sent_tokenize
@@ -632,3 +633,9 @@ def templateSuffix():
 </html>
 """
     return bodySuffix
+
+
+def strHash(s):
+    hashObject = hashlib.md5(s.encode())
+    hsh = hashObject.hexdigest()
+    return hsh

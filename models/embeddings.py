@@ -11,7 +11,6 @@ import sys
 import re
 import json
 
-import hashlib
 
 from datetime import datetime
 
@@ -25,6 +24,8 @@ import requests
 
 import pandas as pd
 import numpy  as np
+
+from lib.util import strHash
 np.set_printoptions(threshold=sys.maxsize)
 
 import matplotlib.pyplot as plt
@@ -83,12 +84,6 @@ def ell(s, x=16):
     if len(s) < 2*x:
         return s
     return f"{s[:x]} … {s[-x:]}"
-
-def strHash(s):
-    hashObject = hashlib.md5(s.encode())
-    hsh = hashObject.hexdigest()
-    return hsh
-
 
 # print list of floats
 def pfl(lst, x=3, digits=3, showLength=True):
@@ -657,6 +652,8 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
         except Exception as exc:
             errStr = f"error during embeddings retrieval: {exc}"
             print(errStr)
+            for s in stmtsNotInC:
+                print(f"\tfail: \t{s}")
             return ([], errStr)
 
         # add newly retrieved to return and cache

@@ -20,7 +20,6 @@ import signal
 import argparse
 import markdown
 
-import flask
 from   flask import Flask, request, Response
 from   flask import redirect, url_for
 from   flask import session
@@ -33,6 +32,12 @@ from   flask import make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy import inspect
+
+
+from db import db, Embedding, dummyRecordEmbedding, ifNotExistTable
+if False:
+    # dont - we need to import db from db
+    db  = SQLAlchemy()
 
 
 # modules with model
@@ -90,7 +95,7 @@ def signalHandler(signal, frame):
 
 # we need this two at the top
 app = Flask(__name__)
-db  = SQLAlchemy()
+
 
 
 # global error handler for any exception
@@ -121,6 +126,11 @@ def indexH():
         if not apiKeyValid:
             return redirect( url_for("configH") )
 
+
+    if "smplID" in session:
+        del session["smplID"]
+    # for k in session:
+    #     print(f"key {k:12}  - {session[k]}")
 
     return render_template(
         'main.html',
@@ -534,6 +544,10 @@ def configH():
         old = config.get("dataset")
 
         if datasetNew != old:
+
+            if "smplID" in session:
+                del session["smplID"]
+
             saveAll(force=True) # before switching
 
             # now switch
@@ -1140,45 +1154,6 @@ def loadAll(args):
 
 
 
-class Embedding(db.Model):
-    __tablename__ = 'embeddings'
-    id         = db.Column(db.Integer,  primary_key=True, autoincrement=True)
-    datetime   = db.Column(db.DateTime, default=datetime.utcnow)
-    hash       = db.Column(db.String,   unique=True, nullable=False, index=True)
-    text       = db.Column(db.Text,     nullable=False)
-    embeddings = db.Column(JSON)  # SQLite > 3.9.
-
-    modelmajor = db.Column(db.String,    nullable=False)
-    modelminor = db.Column(db.String,    nullable=False)
-    promptversion = db.Column(db.String, nullable=False, default="1.0")
-    role       = db.Column(db.String,    nullable=False)
-
-    def __repr__(self):
-        return f"<Embedding {self.id} - {self.hash}>"
-
-
-
-def dummyRecordEmbedding(idx):
-
-    from models.embeddings import strHash
-
-    tNow = datetime.now()
-    myText = f"For the {idx+0}th time. How strong is inflation? - \nAsked at {tNow}."
-
-    strJson = '''{  "prompt": "Alice", "response": 30 }'''
-    oJson = json.loads(strJson)
-
-    embd0 = Embedding(
-        modelmajor = "GPT-4o",
-        modelminor = "-2024-08-06",
-        role =  config.get("role"),
-        text = myText,
-        hash = strHash(myText),
-        embeddings = oJson,
-    )
-    return embd0
-
-
 
 
 def saveAll(force=False):
@@ -1203,13 +1178,6 @@ def saveAll(force=False):
 
 
 
-def ifNotExistTable(tableName):
-    inspector = inspect(db.engine)
-    if tableName not in inspector.get_table_names():
-        print(f"Table '{tableName}' does not exist. Creating tables...")
-        db.create_all()
-    else:
-        print(f"Table '{tableName}' already exists. Skipping creation.")
 
 
 
@@ -1262,14 +1230,12 @@ def createAndRun(app2):
 
     app2.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///embeddings-mostly.db'
     app2.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
     db.init_app(app2)
 
-
-
-    # from .models import Embedding
     with app2.app_context():
         # db.create_all()
-        ifNotExistTable('embedding')
+        ifNotExistTable('embeddings')
 
     # insert dummy records
     with app2.app_context():
