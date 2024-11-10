@@ -10,10 +10,8 @@ from flask import current_app
 
 cfg = {}
 
-appInstance = None
 
-
-def copyToAppState():
+def copyToAppState(appInstance):
 
     '''
         intricate: we have to import current_app from flask
@@ -53,8 +51,6 @@ def load(argApp):
 
     global cfg, appInstance  # in order to _write_ to module variable
 
-    appInstance=argApp
-
     cfg = loadJson("config", "cfg", onEmpty="dict")
     if len(cfg)== 0:
         cfg = loadJson("config", "init", onEmpty="dict")
@@ -70,7 +66,7 @@ def load(argApp):
             print(f"\t  {k:24} {cfg[k]}")
 
 
-    copyToAppState()
+    copyToAppState(argApp)
 
 
 def save():
