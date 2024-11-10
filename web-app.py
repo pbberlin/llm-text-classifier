@@ -30,6 +30,10 @@ from   flask import send_from_directory
 from   flask import make_response
 
 
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import inspect
+
 
 # modules with model
 import models.contexts   as contexts
@@ -61,26 +65,202 @@ import models.embeddings as embeddings
 logTimeSince(f"python script - imports stop")
 
 
-# https://dev.to/fullstackstorm/working-with-sessions-in-flask-a-comprehensive-guide-525k
+app = None
+db = SQLAlchemy()
+UPLOAD_FOLDER = ""
 
+
+def loadAll(args):
+
+    logTimeSince(f"loading data start", startNew=True)
+
+    if "ecb" in args and  len(args.ecb) > 0:
+        default =  [1, 2, 4, 8, 500]
+        numStcs = default
+        try:
+            numStcs = json.loads(args.ecb)
+            if not type(numStcs) is list:
+                print(f" cannot parse into a list: '{args.ecb}'")
+                numStcs = default
+        except Exception as exc:
+            numStcs = default
+            print(f" {exc} - \n\t cannot parse {args.ecb}")
+            print(f" assuming default {numStcs} \n")
+
+
+        # smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=10, filterBy="Asset purchase")
+        smplsNew = ecbSpeechesCSV2Json(numStcs, earlyBreakAt=3, filterBy="Asset purchase" )
+        samples.update(smplsNew)
+        samples.save()
+        quit()
+
+    if "upl" in args and args.upl:
+        smplsNew = uploadedToSamples()
+        samples.update(smplsNew)
+        samples.save()
+        quit()
+
+
+    loadEnglishStopwords()
+    loadDomainSpecificWords()
+
+    embeddings.load()
+    contexts.load()
+    benchmarks.load()
+    samples.load()
+
+    logTimeSince(f"loading data stop")
+
+
+
+def saveAll(force=False):
+
+    logTimeSince(f"saving  data start", startNew=True)
+
+    if force:
+        embeddings.cacheDirty = True
+        contexts.cacheDirty = True
+        benchmarks.cacheDirty = True
+        samples.cacheDirty = True
+
+
+    embeddings.save()
+    contexts.save()
+    benchmarks.save()
+    samples.save()
+
+    logTimeSince(f"saving  data stop")
+
+
+class Embedding(db.Model):
+    __tablename__ = 'embeddings'
+    id         = db.Column(db.Integer,  primary_key=True, autoincrement=True)
+    datetime   = db.Column(db.DateTime, default=datetime.utcnow)
+    hash       = db.Column(db.String,   unique=True, nullable=False, index=True)
+    text       = db.Column(db.Text,     nullable=False)
+    embeddings = db.Column(JSON)  # SQLite > 3.9.
+
+    modelmajor = db.Column(db.String,    nullable=False)
+    modelminor = db.Column(db.String,    nullable=False)
+    promptversion = db.Column(db.String, nullable=False, default="1.0")
+    role       = db.Column(db.String,    nullable=False)
+
+    def __repr__(self):
+        return f"<Embedding {self.id} - {self.hash}>"
+
+def getDummy(idx):
+
+    from models.embeddings import strHash
+
+    tNow = datetime.now()
+    myText = f"For the {idx+0}th time. How strong is inflation? - \nAsked at {tNow}."
+
+    strJson = '''{  "prompt": "Alice", "response": 30 }'''
+    oJson = json.loads(strJson)
+
+    embd0 = Embedding(
+        modelmajor = "GPT-4o",
+        modelminor = "-2024-08-06",
+        role =  config.get("role"),
+        text = myText,
+        hash = strHash(myText),
+        embeddings = oJson,
+    )
+    return embd0
+
+
+
+def ifNotExistTable(table_name):
+    inspector = inspect(db.engine)
+    if table_name not in inspector.get_table_names():
+        print(f"Table '{table_name}' does not exist. Creating tables...")
+        db.create_all()
+    else:
+        print(f"Table '{table_name}' already exists. Skipping creation.")
+
+
+# https://dev.to/fullstackstorm/working-with-sessions-in-flask-a-comprehensive-guide-525k
 def create_app():
+
+    parser = argparse.ArgumentParser("LLM classifier args")
+    parser.add_argument(
+        "-cntr", "--counter",
+        help="help for command line arg",
+        default=0      , type=int,
+    )
+    parser.add_argument(
+        "-ecb" , "--ecb",
+        help="import ECB - num sentences - [1, 2, 4, 500]",
+        default=""    , type=str,
+    )
+    parser.add_argument(
+        "-upl" , "--upl",
+        help="import uploaded files",
+        default=False  , type=bool,
+    )
+
+    args = parser.parse_args()
+
+    dummy = args.counter + 1
+
     app = Flask(__name__)
     app.secret_key = b'32168'
     app.permanent_session_lifetime = timedelta(minutes=30)
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
     app.static_folder='static'  # only source for static files in templates?
+    print(f"  app.instance_path {app.instance_path} - change to 'data'")
+    app.instance_path='data'    # default is "instance" - sqlite file go here
+    app.debug=True
+
+    config.load(app)
+
+
+    UPLOAD_FOLDER = os.path.join(app.root_path, 'uploaded-files')
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(  os.path.join(app.root_path, "data"), exist_ok=True )
+    os.makedirs(  os.path.join(app.root_path, "data",   "set1" ), exist_ok=True )
+    os.makedirs(  os.path.join(app.root_path, "static" ), exist_ok=True )
+    os.makedirs(  os.path.join(app.root_path, "static", "img"), exist_ok=True )
+    os.makedirs(  os.path.join(app.root_path, "static", "img", "dynamic"), exist_ok=True )
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///embeddings-mostly.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
+
+
+
+    # from .models import Embedding
+    with app.app_context():
+        # db.create_all()
+        ifNotExistTable('embedding')
+
+    # insert dummy records
+    with app.app_context():
+        for idx in [1,2,3]:
+            db.session.add( getDummy(idx) )
+        db.session.commit()
+
+
+    loadAll(args)
+
+    app.run(
+        host='0.0.0.0',
+        debug=True,
+        port=8001,
+        use_reloader=False,
+    )
+
+    config.save()
+    saveAll()
 
     return app
 
-app = create_app()
 
-UPLOAD_FOLDER = os.path.join(app.root_path, 'uploaded-files')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(  os.path.join(app.root_path, "data"), exist_ok=True )
-os.makedirs(  os.path.join(app.root_path, "data",   "set1" ), exist_ok=True )
-os.makedirs(  os.path.join(app.root_path, "static" ), exist_ok=True )
-os.makedirs(  os.path.join(app.root_path, "static", "img"), exist_ok=True )
-os.makedirs(  os.path.join(app.root_path, "static", "img", "dynamic"), exist_ok=True )
+
+
+if __name__ == '__main__':
+    app = create_app()
+
 
 def addPreflightCORS():
     rsp = make_response()
@@ -277,7 +457,7 @@ def serveSlides2(fileName):
     htmlContent = htmlContent.replace("<p ",   '<p class="fragment" ')
     htmlContent = htmlContent.replace("<p>",   '<p class="fragment" >')
 
-    htmlContent = htmlContent.replace("<li class=\"", '<li  class="fragment ')  # two spaces - to prevent subsequent 
+    htmlContent = htmlContent.replace("<li class=\"", '<li  class="fragment ')  # two spaces - to prevent subsequent
     # htmlContent = htmlContent.replace("<li ", '<li class="fragment" ')
     htmlContent = htmlContent.replace("<li>", '<li class="fragment" >')
 
@@ -1101,109 +1281,4 @@ def embeddingsSimilarityH():
         cntTable=sTable,
     )
 
-
-
-
-
-
-def loadAll(args):
-
-    logTimeSince(f"loading data start", startNew=True)
-
-    if "ecb" in args and  len(args.ecb) > 0:
-        default =  [1, 2, 4, 8, 500]
-        numStcs = default
-        try:
-            numStcs = json.loads(args.ecb)
-            if not type(numStcs) is list:
-                print(f" cannot parse into a list: '{args.ecb}'")
-                numStcs = default
-        except Exception as exc:
-            numStcs = default
-            print(f" {exc} - \n\t cannot parse {args.ecb}")
-            print(f" assuming default {numStcs} \n")
-
-
-        # smplsNew = ecbSpeechesCSV2Json(earlyBreakAt=10, filterBy="Asset purchase")
-        smplsNew = ecbSpeechesCSV2Json(numStcs, earlyBreakAt=3, filterBy="Asset purchase" )
-        samples.update(smplsNew)
-        samples.save()
-        quit()
-
-    if "upl" in args and args.upl:
-        smplsNew = uploadedToSamples()
-        samples.update(smplsNew)
-        samples.save()
-        quit()
-
-
-    loadEnglishStopwords()
-    loadDomainSpecificWords()
-
-    embeddings.load()
-    contexts.load()
-    benchmarks.load()
-    samples.load()
-
-    logTimeSince(f"loading data stop")
-
-
-
-def saveAll(force=False):
-
-    logTimeSince(f"saving  data start", startNew=True)
-
-    if force:
-        embeddings.cacheDirty = True
-        contexts.cacheDirty = True
-        benchmarks.cacheDirty = True
-        samples.cacheDirty = True
-
-
-    embeddings.save()
-    contexts.save()
-    benchmarks.save()
-    samples.save()
-
-    logTimeSince(f"saving  data stop")
-
-
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser("LLM classifier args")
-    parser.add_argument(
-        "-cntr", "--counter",
-        help="help for command line arg",
-        default=0      , type=int,
-    )
-    parser.add_argument(
-        "-ecb" , "--ecb",
-        help="import ECB - num sentences - [1, 2, 4, 500]",
-        default=""    , type=str,
-    )
-    parser.add_argument(
-        "-upl" , "--upl",
-        help="import uploaded files",
-        default=False  , type=bool,
-    )
-
-    args = parser.parse_args()
-
-    dummy = args.counter + 1
-
-    config.load(app)
-
-
-    loadAll(args)
-
-    app.run(
-        host='0.0.0.0',
-        debug=True,
-        port=8001,
-        use_reloader=False,
-    )
-
-    config.save()
-    saveAll()
 

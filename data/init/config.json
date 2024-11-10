@@ -10,5 +10,6 @@
     ],
     "tokens_max": 2000,
     "temperature": 0,
+    "role": "You are an economic policy analyst.",
     "last-item": "no-comma"
 }

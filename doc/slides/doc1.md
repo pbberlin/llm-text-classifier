@@ -196,7 +196,7 @@ Prolonged detours for peripheral tasks
 #### Detailed questions cont'd
 
 3. Can we use LLM embeddings to quantify text <br>
- against more avanced concepts? 
+ against more advanced concepts? 
     * Not just `favorable`  vs `unfavorable`.
     * How much `alignment` between a benchmark <br> and some piece of text
 
@@ -381,6 +381,60 @@ Every researcher needs to draw a subjective line here.
     * Changing seed
     * => The concept classifications show only tiny variation
 
+## Todo
+
+### Ensemble approach
+
+* Give me three variations
+* Rank the results
+
+### Few shots
+
+* Proide schema for JSON output 
+* also provide few shots
+* also give reasoning steps - "thinking steps"
+
+### Context from vector database
+
+* Get similar chunks
+* Include as context
+
+Integrate a bunch of documents into an LLM vector database
+
+### Chunk size for embeddings index
+
+Too small chunks => too little context
+
+Too large => Relevant results get diluted with irrelevant parts
+
+Chunk size: 2-4 sentences.
+
+For conceptual search: Bigger chunks
+
+### Make database results into a nice answer
+
+Send the initial question as chat completion query
+
+Embed the embedding results as context 
+
+```
+You are an expert assistant. Based on the following retrieved information, answer the user's query:
+
+Context: 
+- [Chunk 1: ...]
+- [Chunk 2: ...]
+- [Chunk 3: ...]
+
+Question: [User's original query]
+
+Provide a clear and concise response based on the context.
+```
+
+### Indexing
+
+pip install faiss-cpu
+pip install faiss-gpu
+
 
 
 ## Conclusions
@@ -388,11 +442,11 @@ Every researcher needs to draw a subjective line here.
 * Vector embeddings capture general relationship between two texts  
   but lack deep understanding of higher concepts
 * Vector embeddings are immune to hallucinations
-* Stable and reliable results.
+* Stable and reliable results
 * Small variations, depending on LLM vendor and LLM training details
 * Dimensionality of 3078 is a limiting factor for capturing meaning
 * If LLM companies can increase dimensionality, <br> 
-  the quality of analysis can increase further. 
+  the quality of analysis can increase further
 
 
 ## Sources
@@ -405,7 +459,6 @@ Every researcher needs to draw a subjective line here.
 ## Technical documentation
 
 * Purely technical - for software engineers and programmers
-
 * Webserver setup for [production ](./production-setup.md)
 
 ### Indexing embeddings 

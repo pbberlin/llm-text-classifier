@@ -21,7 +21,7 @@ def copyToAppState():
             either per import or as function parameter
         => then we can do following
             config settings being stored in app context
-            possible only once - "staticValue" can never changed
+            possible only once - "staticValue" can never be changed
             => dynamic stuff needs to be written as function: exampleFunc(...)
 
         see documentation, esp. the examples that *dont work*
@@ -80,6 +80,9 @@ def save():
 
 
 def get(key):
+    if len(cfg) < 1:
+        raise ValueError('config not initialized yet')
+
     if key in cfg:
         return cfg[key]
     return None

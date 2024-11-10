@@ -9,3 +9,6 @@ nltk
 pandas
 openai
 matplotlib
+
+SQLAlchemy
+flask-sqlalchemy

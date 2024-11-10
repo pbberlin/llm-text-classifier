@@ -863,7 +863,7 @@ def correlationsXY(
 
 def designPrompt(beliefStatement, speech):
 
-    role = "You are an economic policy analyst."
+    role = get("role")
 
     # Optional prompt enhancements:
     #   "Which specific arguments or parts of the speech support or contradict the belief?"
