@@ -24,19 +24,22 @@ import requests
 
 import pandas as pd
 import numpy  as np
-
-from lib.util import strHash
 np.set_printoptions(threshold=sys.maxsize)
+
+
+import openai
+
 
 import matplotlib.pyplot as plt
 
 
+from lib.init   import logTimeSince
+from lib.util   import strHash
 from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
-from lib.init import logTimeSince
+from  .embeddings_db2 import getEmbeddingsDB
 
-import openai
 
 
 
@@ -575,6 +578,46 @@ def createClient():
         return (None, errStr)
 
 
+def embedsFromOpenAI(stmts):
+
+    embdsByK = {}
+
+    clnt, errStr = createClient()
+    if errStr != "":
+        return ([], errStr)
+
+    try:
+        response = clnt.embeddings.create(
+            input=stmts,
+            model=get("modelNameEmbeddings"),
+        )
+    except Exception as exc:
+        errStr = f"error during embeddings retrieval: {exc}"
+        print(errStr)
+        for s in stmts:
+            print(f"\tfail: \t{s}")
+        return ([], errStr)
+
+    # add newly retrieved to return and cache
+    for idx2, record in enumerate(response.data):
+        stmt = stmts[idx2]
+        embdsByK[stmt] = record.embedding
+        print(f"     ffor-b {ell(stmt,x=32)}")
+        print(f"     embs from openai {pfl( record.embedding,x=5) }")
+        # arr.append( np.array(record.embedding) )
+
+        # add to cache
+        c_embeddings[stmt] = record.embedding
+        global cacheDirty
+        cacheDirty = True
+
+    if False:
+        save()
+        print(f"   {len(stmts):2} new embs saved ")
+
+    return embdsByK
+
+
 # lst python list of statements or sentences,
 # for example ['inflation will be high', 'inflation will be low']
 # We get "loadings" for a principal components analysis (PCA).
@@ -621,6 +664,8 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
             print(" ")
 
 
+    getEmbeddingsDB(stmts)
+
     stmtsNotInC = [] # statements not in cache
     embdsByK    = {} # requested embeddings by statement - cached and newly retrieved
 
@@ -639,38 +684,8 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
     #       => retrieve from OpenAI
     #       => add to cache
     if len(stmtsNotInC)>0:
-
-        clnt, errStr = createClient()
-        if errStr != "":
-            return ([], errStr)
-
-        try:
-            response = clnt.embeddings.create(
-                input=stmtsNotInC,
-                model=get("modelNameEmbeddings"),
-            )
-        except Exception as exc:
-            errStr = f"error during embeddings retrieval: {exc}"
-            print(errStr)
-            for s in stmtsNotInC:
-                print(f"\tfail: \t{s}")
-            return ([], errStr)
-
-        # add newly retrieved to return and cache
-        for idx2, record in enumerate(response.data):
-            stmt = stmtsNotInC[idx2]
-            embdsByK[stmt] = record.embedding
-            print(f"     ffor-b {ell(stmt,x=32)}")
-            print(f"     embs from openai {pfl( record.embedding,x=5) }")
-            # arr.append( np.array(record.embedding) )
-
-            # add to cache
-            c_embeddings[stmt] = record.embedding
-            global cacheDirty
-            cacheDirty = True
-
-        # save()
-        print(f"   {len(stmtsNotInC):2} new embs saved ")
+        missing = embedsFromOpenAI(stmtsNotInC)
+        embdsByK.update(missing)
 
 
     # ---- retrieval stop

@@ -639,3 +639,10 @@ def strHash(s):
     hashObject = hashlib.md5(s.encode())
     hsh = hashObject.hexdigest()
     return hsh
+
+
+def strHashes(texts):
+    hshs = []
+    for txt in texts:
+        hshs.append(strHash(txt))
+    return hshs

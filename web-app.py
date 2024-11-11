@@ -34,7 +34,7 @@ from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy import inspect
 
 
-from db import db, Embedding, dummyRecordEmbedding, ifNotExistTable
+from models.embeddings_db import db, Embedding, dummyRecordEmbedding, ifNotExistTable
 if False:
     # dont - we need to import db from db
     db  = SQLAlchemy()
