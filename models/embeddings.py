@@ -44,8 +44,7 @@ from sqlalchemy.exc import IntegrityError
 from .embeddings_db import Embedding
 # not db = SQLAlchemy()
 from .embeddings_db import db
-from .embeddings_db import embeddingsCount, embeddingsAll
-# from .embeddings import embedsFromOpenAI
+from .embeddings_db import embeddingsCount, embeddingsAll, embeddingsWhereHash, embeddingsWhereDataset
 
 
 
@@ -114,8 +113,6 @@ def pfl(lst, x=3, digits=3, showLength=True):
 
     return ret
 
-# cache
-c_embeddings = {}
 cacheDirty = False
 
 
@@ -331,8 +328,13 @@ def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
 # compute significant data points for a embeddings in the module
 def significantsList():
     rng, lStr, lIdxVal, idxValByIdx, idxValByVal = {},{},{},{},{}
-    for idx, k in enumerate(c_embeddings):
-        rng[k], mn, mx , lStr[k], lIdxVal[k], idxValByIdx[k], idxValByVal[k] = significants(c_embeddings[k], idx, neighbors=0)
+    embdsAsList = embeddingsWhereDataset()
+    embdsByStmt = {}
+    for embd in embdsAsList:
+        embdsByStmt[embd.text] = embd.embeddings
+
+    for idx, k in enumerate(embdsByStmt):
+        rng[k], mn, mx , lStr[k], lIdxVal[k], idxValByIdx[k], idxValByVal[k] = significants(embdsByStmt[k], idx, neighbors=0)
     return (rng, lStr, lIdxVal, idxValByIdx, idxValByVal)
 
 
@@ -520,50 +522,24 @@ def checkAPIKeyOuter(apiKey):
 
 
 def load():
+    embdsAsList =  embeddingsWhereDataset()
+    embdsByStmt = {}
+    for embd in embdsAsList:
+        embdsByStmt[embd.text] = embd.embeddings
 
-    global c_embeddings  # in order to _write_ to module variable
-    if storageEngine == "dbStore":
-        c_embeddings = embeddingsAll()
-    else:
-        c_embeddings = loadJson("embeddings", subset=get("dataset"), onEmpty="dict")
-
-    if False:
-    # if True:
-        keysToDelete = []
-        for idx,k in enumerate(c_embeddings):
-            if "price" in k or "Price" in k :
-                keysToDelete.append(k)
-        for k in keysToDelete:
-            del( c_embeddings[k] )
-            print(f"deleting {k[:20]}")
-        global cacheDirty
-        cacheDirty = True
-
-
-    for idx,k in enumerate(c_embeddings):
-        print(f"  {ell(k,x=24) :>51} - embds { pfl(c_embeddings[k],showLength=False) }")
+    for idx,k in enumerate(embdsByStmt):
+        print(f"  {ell(k,x=24) :>51} - embds { pfl(embdsByStmt[k],showLength=False) }")
         if idx > 4:
             break
 
 
 
 def save():
-
-
-    if storageEngine == "dbStore":
-        print(f"\tembeddings in database  - {embeddingsCount()} entries. ")
-    else:
-        if not cacheDirty:
-            print(f"\tembeddings are unchanged ({len(c_embeddings):3} entries). ")
-            return
-
-    rng, lStr, _ ,  _ , _ = significantsList()
-    lStr["ranges"] = rng # add as additional info
-    saveJson(lStr, "embeddings-significant", subset=get("dataset"), tsGran=1)
-
-    if storageEngine != "dbStore":
-        saveJson(c_embeddings, "embeddings", subset=get("dataset"))
-
+    print(f"\tembeddings in database    {embeddingsCount():3} entries. ")
+    if cacheDirty:
+        rng, lStr, _ ,  _ , _ = significantsList()
+        lStr["ranges"] = rng # add as additional info
+        saveJson(lStr, "embeddings-significant", subset=get("dataset"), tsGran=1)
 
 
 
@@ -654,7 +630,8 @@ def embedsFromOpenAI(stmts):
         # arr.append( np.array(record.embedding) )
 
         # add to cache
-        c_embeddings[stmt] = record.embedding
+        # c_embeddings[stmt] = record.embedding
+        
         global cacheDirty
         cacheDirty = True
 
@@ -704,10 +681,10 @@ def dbStore(stmts):
     embdsByK = {}
 
     # records stored in DB
-    storedAsList = Embedding.query.filter(Embedding.hash.in_(stmtsHshs)).all()
-    for embd in storedAsList:
+    embdsAsList = embeddingsWhereHash(stmtsHshs)
+    for embd in embdsAsList:
         print(f"     ffor-a2 {ell(embd.text,x=32)}")
-        print(f"     embs from datab  {pfl( embd.embeddings, x=5)}")
+        # print(f"     embs from datab  {pfl( embd.embeddings, x=5)}")
         embdsByK[embd.hash] = embd.embeddings
 
 
@@ -716,11 +693,14 @@ def dbStore(stmts):
         if hsh not in embdsByK:
             stmtsNotInC.append(stmt)
 
+    # print(f"   type(stmts) {type(stmts)}  -  type(stmtsNotInC) {type(stmtsNotInC)} ")
     print(f"   {len(stmts)} embs requested - {len(stmtsNotInC)} not in cache")
 
     if len(stmtsNotInC)>0:
 
         missEmbdsByK = embedsFromOpenAI(stmtsNotInC)
+
+        dataset = get("dataset")
 
         recsUpsert = []
         for stmt in missEmbdsByK:
@@ -732,9 +712,8 @@ def dbStore(stmts):
             print(f"     ffor-b2 {ell(stmt,x=32)}")
             # missByHash[strHash(stmt)] = embd
 
-
-
             rec = Embedding(
+                dataset=dataset,
                 hash=strHash(stmt),
                 text=stmt,
                 embeddings=embd,
@@ -784,67 +763,12 @@ def dbStore(stmts):
 #
 # Usage
 #   e1,s = lib_openai.getEmbeddings(statements, contexts)
-#
-#   getEmbeddingsado.com/destructuring-in-python/
-#
 # returns a List of np.arrays - containing embeddings as
 
 
-def jsonStore(stmts):
-
-    global c_embeddings  # in order to access module variable
-    # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
-
-    stmtsNotInC = [] # statements not in cache
-    embdsByK    = {} # requested embeddings by statement - cached and newly retrieved
-
-    for idx2, stmt in enumerate(stmts):
-        if stmt in c_embeddings:
-            embdsByK[stmt] = c_embeddings[stmt]  # take from cache
-            print(f"     ffor-a1 {ell(stmt,x=32)}")
-            # print(f"     embs from cache  {pfl( c_embeddings[stmt], x=5)}")
-        else:
-            # print(f"     embeddings for {stmt} not in cache")
-            stmtsNotInC.append(stmt)
-
-    print(f"   {len(stmts)} embs requested - {len(stmtsNotInC)} not in cache")
-
-    # not yet in cache
-    #       => retrieve from OpenAI
-    #       => add to cache
-    if len(stmtsNotInC)>0:
-        missEmbdsByK = embedsFromOpenAI(stmtsNotInC)
-        embdsByK.update(missEmbdsByK)
-
-
-    # ---- retrieval stop
-
-    # embdsByK *may* be ordered differently from stmts
-    embdsRet = []
-    for stmt in stmts:
-        embdsRet.append( embdsByK[stmt] )
-
-
-    # following operations expect a list of a numpy arrays
-    arrNp = []
-    for row in embdsRet:
-        arrNp.append(  np.array(row) )
-    # print(f"   {len(arrNp)} return vals converted {len(stmts)}")
-
-
-    return arrNp
-
-
-storageEngine="dbStore"
-
 def getEmbeddings(stmts, ctxs=[]):
-
     stmts = addContext2Statments(stmts, ctxs=ctxs)
-
-    if storageEngine == "dbStore":
-        return dbStore(stmts)
-    else:
-        return jsonStore(stmts)
+    return dbStore(stmts)
 
 
 

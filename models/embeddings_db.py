@@ -40,13 +40,34 @@ def embeddingsCount(tableName="embeddings"):
 
 def embeddingsAll(tableName="embeddings"):
     if False:
-        embedsAsList = Embedding.query.filter(Embedding.hash.in_(["hash01", "hash02"])).all()
-    embedsAsList = Embedding.query.all()
-    print(f"\tfound {len(embedsAsList)} embeddings total in the DB")
-    embdsByStmt = {}
-    for embd in embedsAsList:
-        embdsByStmt[embd.text] = embd.embeddings
-    return embdsByStmt
+        embdsAsList = Embedding.query.filter(Embedding.hash.in_(["hash01", "hash02"])).all()
+    embdsAsList = Embedding.query.all()
+    print(f"\tfound {len(embdsAsList)} embeddings total in the DB")
+    return embdsAsList
+
+
+def embeddingsWhereDataset(   tableName="embeddings"):
+    ds = config.get("dataset")
+    datasets = [ds, ""] # legcacy - dataset == ""
+    embdsAsList = Embedding.query.filter(Embedding.dataset.in_(datasets)).all()
+    print(f"\tfound {len(embdsAsList)} embeddings for dataset '{ds}' ")
+    return embdsAsList
+
+
+# stmtsHshs is a list of hashes
+def embeddingsWhereHash( stmtsHshs,  tableName="embeddings"):
+    embdsAsList = Embedding.query.filter(Embedding.hash.in_(stmtsHshs)).all()
+    print(f"\tfound {len(embdsAsList)} embeddings for given {len(stmtsHshs)} hashes")
+    return embdsAsList
+
+    if False:
+        embdsByStmt = {}
+        for embd in embdsAsList:
+            embdsByStmt[embd.text] = embd.embeddings
+        embdsByHash = {}
+        for embd in embdsAsList:
+            embdsByHash[embd.hash] = embd.embeddings
+
 
 def ifNotExistTable(tableName):
     inspector = inspect(db.engine)

@@ -1,18 +1,44 @@
 [
     {
-        "descr": "Embeddings for concepts - multilingual - sentence structure",
+        "descr": "Weights are dynamically derived by the LLM using the context and using 'attention'",
         "statements": [
             {
-                "long": "employment"
+                "short": "",
+                "long": "I am giving up  drinking until this is over."
             },
             {
+                "short": "",
+                "long": "I am giving up. Drinking until this is over."
+            }
+        ]
+    },
+    {
+        "descr": "Embeddings for basic concepts",
+        "statements": [
+            {
+                "short": "",
                 "long": "inflation"
             },
             {
+                "short": "",
                 "long": "stocks"
             },
             {
+                "short": "",
                 "long": "bubbles"
+            }
+        ]
+    },
+    {
+        "descr": "upper case is more pronounced",
+        "statements": [
+            {
+                "short": "",
+                "long": "price"
+            },
+            {
+                "short": "",
+                "long": "Price"
             }
         ]
     },
@@ -20,27 +46,64 @@
         "descr": "Multi-Lingual - different tokens, similar vector scope",
         "statements": [
             {
-                "long": "Price"
-            },
-            {
+                "short": "",
                 "long": "price"
             },
             {
-                "long": "prezzo"
-            },
-            {
+                "short": "",
                 "long": "Preis"
             }
         ]
     },
     {
-        "descr": "Weights are dynamically derived by the LLM using the context and using 'attention'",
+        "descr": "Multi-Lingual - different tokens, similar vector scope",
         "statements": [
             {
-                "long": "I am giving up  drinking until this is over."
+                "short": "",
+                "long": "price"
             },
             {
-                "long": "I am giving up. Drinking until this is over."
+                "short": "",
+                "long": "Prix"
+            }
+        ]
+    },
+    {
+        "descr": "Multi-Lingual - different tokens, similar vector scope",
+        "statements": [
+            {
+                "short": "",
+                "long": "price"
+            },
+            {
+                "short": "",
+                "long": "Prezzo"
+            }
+        ]
+    },
+    {
+        "descr": "price level seems more pronounced than price",
+        "statements": [
+            {
+                "short": "",
+                "long": "price"
+            },
+            {
+                "short": "",
+                "long": "price level"
+            }
+        ]
+    },
+    {
+        "descr": "more variation",
+        "statements": [
+            {
+                "short": "",
+                "long": "retail prices"
+            },
+            {
+                "short": "",
+                "long": "import prices"
             }
         ]
     },
@@ -74,54 +137,15 @@
         ]
     },
     {
-        "descr": "Dimensions of EU cohesion policy - border",
+        "descr": "EU monetary policy - euro bonds - expanded statement",
         "statements": [
             {
-                "short": "immigration",
-                "long": "The EU should get a stronger role in immigration policy."
+                "short": "Eurobonds pro 1",
+                "long": "All euro countries are jointly liable for Eurobonds and all euro countries pay the same interest."
             },
             {
-                "short": "defence",
-                "long": "A European army under the command of the EU and financed from its budget should take over duties from national armies regarding international conflict deployments."
-            }
-        ]
-    },
-    {
-        "descr": "Dimensions of EU cohesion policy - industry",
-        "statements": [
-            {
-                "short": "industrial policy",
-                "long": "For higher economic growth of the EMU it is essential that its member states increase their investment expenditures."
-            },
-            {
-                "short": "agricultural policy",
-                "long": "The common agricultural policy remains the central cohesive instrument."
-            }
-        ]
-    },
-    {
-        "descr": "EU fiscal rules",
-        "statements": [
-            {
-                "short": "fiscal rules 1",
-                "long": "The EU Stability and Growth Pact (SGP) defines deficit and debt limits for EU member states. The SGP inappropriately constrains fiscal policy in member states, and should be relaxed."
-            },
-            {
-                "short": "fiscal rules 2",
-                "long": "Fical rules are essential to maintain long term economic stability."
-            }
-        ]
-    },
-    {
-        "descr": "EU monetary policy - euro bonds",
-        "statements": [
-            {
-                "short": "Eurobonds pro",
-                "long": "All euro countries are jointly liable for Eurobonds and all euro countries pay the same interest. The EMU should issue Eurobonds."
-            },
-            {
-                "short": "Eurobonds con",
-                "long": "EU political unity is too weak. EU political institutions are not developed enough to restrain debt expansion."
+                "short": "Eurobonds pro 2",
+                "long": "All euro countries are jointly liable for Eurobonds and all euro countries pay the same interest. The EU should issue Eurobonds."
             }
         ]
     },
@@ -137,5 +161,5 @@
                 "long": "The European Central Bank (ECB) purchase programmes for sovereign bonds of euro countries will increase money supply and eventually increase expectations of the price level."
             }
         ]
-    }     
+    }
 ]
