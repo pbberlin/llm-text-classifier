@@ -453,6 +453,8 @@ pip install faiss-gpu
 
 [Sergio Correia - Unlocking Data with LLM](https://www.youtube.com/watch?v=quf6jlJ-Mvg&t=3100s&pp=ygUyU2VyZ2lvIENvcnJlaWEgb24gVW5sb2NraW5nIEVjb25vbWljIERhdGEgd2l0aCBMTE0%3D)
 
+[Kevin Bryan](https://youtu.be/LJGQjozWr0E)
+
 
 ---------------
 

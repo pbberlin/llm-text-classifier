@@ -1213,7 +1213,6 @@ def createAndRun(app2):
     app2.permanent_session_lifetime = timedelta(minutes=30)
     app2.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=230)
     app2.static_folder='static'  # only source for static files in templates?
-    print(f"  app.instance_path {app2.instance_path} - change to 'data'")
     app2.instance_path='data'    # default is "instance" - sqlite file go here
     app2.debug=True
 
@@ -1245,7 +1244,8 @@ def createAndRun(app2):
         db.session.commit()
 
 
-    loadAll(args)
+    with app2.app_context():
+        loadAll(args)
 
     app2.run(
         host='0.0.0.0',
@@ -1255,7 +1255,9 @@ def createAndRun(app2):
     )
 
     config.save()
-    saveAll()
+
+    with app2.app_context():
+        saveAll()
 
     return app2
 

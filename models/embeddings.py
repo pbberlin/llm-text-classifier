@@ -44,6 +44,7 @@ from sqlalchemy.exc import IntegrityError
 from .embeddings_db import Embedding
 # not db = SQLAlchemy()
 from .embeddings_db import db
+from .embeddings_db import embeddingsCount, embeddingsAll
 # from .embeddings import embedsFromOpenAI
 
 
@@ -194,7 +195,17 @@ def significants(embd, idx1=-1, band=significantBand, neighbors=globNeighbors):
     kvRaw = []
     for idx2, v in enumerate(embd):
         kvRaw.append( [idx2, v] )
-    kvSorted = sorted(kvRaw, key=lambda el: el[1])
+    if False:
+        kvSorted = sorted(kvRaw, key=lambda el: el[1])
+
+    '''
+        sort by value - then by by index;
+        so we have deterministic order for equal values:
+            "-0.050   22",
+            "-0.050  172",
+            "-0.050  475",
+    '''
+    kvSorted = sorted(kvRaw, key=lambda el: (el[1], el[0]))
 
 
     strsNeg = []
@@ -202,7 +213,7 @@ def significants(embd, idx1=-1, band=significantBand, neighbors=globNeighbors):
     ksVsNeg = []
     ksVsPos = []
 
-    lengthTail = 8
+    lengthTail =  8
     lengthTail = 16
     lengthTail = 32
     # first x elements
@@ -509,10 +520,12 @@ def checkAPIKeyOuter(apiKey):
 
 
 def load():
+
     global c_embeddings  # in order to _write_ to module variable
-
-    c_embeddings = loadJson("embeddings", subset=get("dataset"), onEmpty="dict")
-
+    if storageEngine == "dbStore":
+        c_embeddings = embeddingsAll()
+    else:
+        c_embeddings = loadJson("embeddings", subset=get("dataset"), onEmpty="dict")
 
     if False:
     # if True:
@@ -534,18 +547,22 @@ def load():
 
 
 
-# save embeddings
 def save():
-    if not cacheDirty:
-        print(f"\tembeddings are unchanged ({len(c_embeddings):3} entries). ")
-        return
+
+
+    if storageEngine == "dbStore":
+        print(f"\tembeddings in database  - {embeddingsCount()} entries. ")
+    else:
+        if not cacheDirty:
+            print(f"\tembeddings are unchanged ({len(c_embeddings):3} entries). ")
+            return
 
     rng, lStr, _ ,  _ , _ = significantsList()
     lStr["ranges"] = rng # add as additional info
     saveJson(lStr, "embeddings-significant", subset=get("dataset"), tsGran=1)
 
-
-    saveJson(c_embeddings, "embeddings", subset=get("dataset"))
+    if storageEngine != "dbStore":
+        saveJson(c_embeddings, "embeddings", subset=get("dataset"))
 
 
 
@@ -681,12 +698,12 @@ def addContext2Statments(stmts, ctxs=[], ctxScalar=defaultContext):
     return stmts
 
 
-def getEmbeddingsDB(stmts):
+def dbStore(stmts):
 
     stmtsHshs = strHashes(stmts)
-    embdsByK = {} 
+    embdsByK = {}
 
-    # records stored in DB 
+    # records stored in DB
     storedAsList = Embedding.query.filter(Embedding.hash.in_(stmtsHshs)).all()
     for embd in storedAsList:
         print(f"     ffor-a2 {ell(embd.text,x=32)}")
@@ -773,7 +790,7 @@ def getEmbeddingsDB(stmts):
 # returns a List of np.arrays - containing embeddings as
 
 
-def getEmbeddingsJSON(stmts):
+def jsonStore(stmts):
 
     global c_embeddings  # in order to access module variable
     # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
@@ -818,13 +835,16 @@ def getEmbeddingsJSON(stmts):
     return arrNp
 
 
+storageEngine="dbStore"
+
 def getEmbeddings(stmts, ctxs=[]):
 
     stmts = addContext2Statments(stmts, ctxs=ctxs)
 
-    return getEmbeddingsDB(stmts)
-
-    # return getEmbeddingsJSON(stmts)
+    if storageEngine == "dbStore":
+        return dbStore(stmts)
+    else:
+        return jsonStore(stmts)
 
 
 
@@ -1101,6 +1121,7 @@ def generateChatCompletionChunks(beliefStatement, speech):
             logTimeSince(f"\tchat completion start {ident}", startNew=True)
 
             # https://platform.openai.com/docs/api-reference/chat/create
+            # https://platform.openai.com/docs/libraries
             respFmt = { "type": "json_object" }
             if model != "gpt-4o":
                 respFmt = openai.NOT_GIVEN

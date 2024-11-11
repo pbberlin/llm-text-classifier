@@ -61,9 +61,13 @@ def load(argApp):
     else:
         set("OpenAIKey", envOpenAIKey)
 
+
+    printKeys = ["OpenAIKey", "dataset", "tokens_max"]
+
     for idx, k in enumerate(cfg):
         if not k.endswith("_help") and not k.endswith("last-item")  :
-            print(f"\t  {k:24} {cfg[k]}")
+            if k in printKeys:
+                print(f"\t  {k:24} {cfg[k]}")
 
 
     copyToAppState(argApp)
