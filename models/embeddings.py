@@ -33,12 +33,20 @@ import openai
 import matplotlib.pyplot as plt
 
 
+from lib.util   import stackTrace
 from lib.init   import logTimeSince
-from lib.util   import strHash
+from lib.util   import strHash, strHashes
 from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
-from  .embeddings_db2 import getEmbeddingsDB
+
+from sqlalchemy.exc import IntegrityError
+from .embeddings_db import Embedding
+# not db = SQLAlchemy()
+from .embeddings_db import db
+# from .embeddings import embedsFromOpenAI
+
+
 
 
 
@@ -352,90 +360,96 @@ plotColors.extend(plotColors2)
 #  groupSize - color n rows in similar color
 def scatterPlot(lbl, idxs, vals, mnVls, mxVls, overlaps=[], groupSize=1):
 
-    # markerSize = 10
-    markerSize = 1
-    markerSize = 2
-    markerSize = 4
-
-    plt.figure(figsize=(16, 5))
-
     try:
 
-        for idx1, seriesIdxs in enumerate(idxs):
+        # markerSize = 10
+        markerSize = 1
+        markerSize = 2
+        markerSize = 4
 
-            # print(f" multi series {idx1} {len(idxs)}  {len(vals)}")
-            seriesVals = vals[idx1]
+        plt.figure(figsize=(16, 5))
 
-            # s=10 is the markers size
+        try:
 
-            # shift x-coords to see overlapp
-            seriesIdxsCX = []
-            dx = int(idx1*(0.8*markerSize)) # variable could be cx
-            for idx2, idxOld in enumerate(seriesIdxs):
-                idxNew = idxOld + dx
-                if idxNew < vectSize:
-                    seriesIdxsCX.append(idxNew)
-                else:
-                    seriesIdxsCX.append(idxOld)
+            for idx1, seriesIdxs in enumerate(idxs):
 
-            colr = plotColors[idx1+1]
-            if groupSize > 1:
-                colr = plotColors[int(idx1/groupSize)+1]
+                # print(f" multi series {idx1} {len(idxs)}  {len(vals)}")
+                seriesVals = vals[idx1]
 
+                # s=10 is the markers size
 
-            plt.scatter(seriesIdxsCX, seriesVals, color=colr, s=markerSize )
+                # shift x-coords to see overlapp
+                seriesIdxsCX = []
+                dx = int(idx1*(0.8*markerSize)) # variable could be cx
+                for idx2, idxOld in enumerate(seriesIdxs):
+                    idxNew = idxOld + dx
+                    if idxNew < vectSize:
+                        seriesIdxsCX.append(idxNew)
+                    else:
+                        seriesIdxsCX.append(idxOld)
 
-
-        plt.axhline(0, color='gray', linestyle='--', linewidth=1)
-
-        plt.xlim([    0, 3072])
-
-        plt.ylim([ -0.2,  0.2])
-        plt.ylim([ -0.12,  0.12])
-
-        floorDY = 0.12 # min height of chart Y-area - upwards and downwards
-        if mnVls > -floorDY:
-            mnVls = -floorDY
-        if mxVls < +floorDY:
-            mxVls = floorDY
-
-        plt.ylim([ mnVls-0.02, mxVls+0.02])
-
-        vertHalf =    -(mnVls-0.02) / ( (mxVls+0.02) -  (mnVls-0.02))
-        for xcoord in overlaps:
-            plt.axvline(x=xcoord, ymin=(vertHalf-0.03), ymax=(vertHalf+0.03), color='lightgrey',)
+                colr = plotColors[idx1+1]
+                if groupSize > 1:
+                    colr = plotColors[int(idx1/groupSize)+1]
 
 
-        # plt.ylabel('PCA')
-        # plt.xlabel('Idx')
+                plt.scatter(seriesIdxsCX, seriesVals, color=colr, s=markerSize )
 
-        # minimize horizontal margins
-        plt.subplots_adjust(left=0.04, right=0.99)
 
-        # vertical margins - *ATTENTION*  bottom up
-        plt.subplots_adjust( top=0.91,bottom=0.05)
+            plt.axhline(0, color='gray', linestyle='--', linewidth=1)
 
-        lblShrt = (lbl[:44] + " … " + lbl[-44:]) if len(lbl) > (2*44) else lbl
-        lblShrt = lblShrt.replace("\n"," ")
+            plt.xlim([    0, 3072])
 
-        overlapDensity = float(len(overlaps) / len(idxs[0])) * 100
+            plt.ylim([ -0.2,  0.2])
+            plt.ylim([ -0.12,  0.12])
 
-        plt.title(f"Significant embeds - {overlapDensity:5.0f}% overlaps \n-{lblShrt}- ")
+            floorDY = 0.12 # min height of chart Y-area - upwards and downwards
+            if mnVls > -floorDY:
+                mnVls = -floorDY
+            if mxVls < +floorDY:
+                mxVls = floorDY
 
-    except Exception as error:
-        print(f"ERROR plotting: {str(error)}")
+            plt.ylim([ mnVls-0.02, mxVls+0.02])
 
-    # fn = cleanFileName(lbl)
+            vertHalf =    -(mnVls-0.02) / ( (mxVls+0.02) -  (mnVls-0.02))
+            for xcoord in overlaps:
+                plt.axvline(x=xcoord, ymin=(vertHalf-0.03), ymax=(vertHalf+0.03), color='lightgrey',)
 
-    lblHash =  strHash(lbl)
-    fn = lblHash
 
-    plt.savefig(f'./static/img/dynamic/{lblHash}.jpg', format='jpg')
-    print(f"     plot saved for lbl '{lbl[:44]}'")
+            # plt.ylabel('PCA')
+            # plt.xlabel('Idx')
 
-    # Show plot for review
-    # plt.show()
-    plt.close()
+            # minimize horizontal margins
+            plt.subplots_adjust(left=0.04, right=0.99)
+
+            # vertical margins - *ATTENTION*  bottom up
+            plt.subplots_adjust( top=0.91,bottom=0.05)
+
+            lblShrt = (lbl[:44] + " … " + lbl[-44:]) if len(lbl) > (2*44) else lbl
+            lblShrt = lblShrt.replace("\n"," ")
+
+            overlapDensity = float(len(overlaps) / len(idxs[0])) * 100
+
+            plt.title(f"Significant embeds - {overlapDensity:5.0f}% overlaps \n-{lblShrt}- ")
+
+        except Exception as error:
+            print(f"ERROR plotting: {str(error)}")
+
+        # fn = cleanFileName(lbl)
+
+        lblHash =  strHash(lbl)
+        fn = lblHash
+
+        plt.savefig(f'./static/img/dynamic/{lblHash}.jpg', format='jpg')
+        # print(f"     plot saved for lbl '{lbl[:44]}'")
+
+        # Show plot for review
+        # plt.show()
+        plt.close()
+
+    except Exception as exc:
+        print(f"     plot generation failed for  '{lbl[:44]}'")
+        print( stackTrace(exc) )
 
 
 
@@ -447,11 +461,14 @@ def significantsAsPlots(lbls, embds, numCtxs):
     allIdxs, allVals, mn, mx, overlaps = significantsForPlot(embds)
 
 
+    print(f"    creating {len(embds)+1} plots ", end="")
     for idx1, embd in enumerate(embds):
         lbl = lbls[idx1]
         scatterPlot(lbl,  [allIdxs[idx1]] , [allVals[idx1]], min(allVals[idx1]), max(allVals[idx1]) )
+        print(". ", end="")
 
     scatterPlot( ", ".join(lbls), allIdxs, allVals, mn, mx, groupSize=numCtxs, overlaps=overlaps)
+    print(f".  - plot generation finished ")
 
 
 def checkAPIKeyOuter(apiKey):
@@ -587,9 +604,22 @@ def embedsFromOpenAI(stmts):
         return ([], errStr)
 
     try:
+        '''
+            https://platform.openai.com/docs/guides/embeddings
+
+
+            you can shorten embeddings (i.e. remove from the end)
+            without the embedding losing its concept-representing properties
+            by passing in the dimensions API parameter.
+            For example, on the MTEB benchmark,
+            a text-embedding-3-large embedding can be shortened
+            to a size of 256 while still outperforming
+            text-embedding-ada-002 embedding of size 1536.
+        '''
         response = clnt.embeddings.create(
             input=stmts,
             model=get("modelNameEmbeddings"),
+            # dimensions=3078,
         )
     except Exception as exc:
         errStr = f"error during embeddings retrieval: {exc}"
@@ -602,7 +632,7 @@ def embedsFromOpenAI(stmts):
     for idx2, record in enumerate(response.data):
         stmt = stmts[idx2]
         embdsByK[stmt] = record.embedding
-        print(f"     ffor-b {ell(stmt,x=32)}")
+        print(f"     ffor-b1 {ell(stmt,x=32)}")
         print(f"     embs from openai {pfl( record.embedding,x=5) }")
         # arr.append( np.array(record.embedding) )
 
@@ -618,24 +648,8 @@ def embedsFromOpenAI(stmts):
     return embdsByK
 
 
-# lst python list of statements or sentences,
-# for example ['inflation will be high', 'inflation will be low']
-# We get "loadings" for a principal components analysis (PCA).
-# There are 3072 'components' in ChatGPT-O.
-# Embeddings for a sequence of tokens (i.e. a sentence) is created by weighing the embeddings of each token.
-# Weights are dynamically derived by the LLM using the context and using "attention".
-#
-# Usage
-#   e1,s = lib_openai.getEmbeddings(statements, contexts)
-#
-#   https://blog.teclado.com/destructuring-in-python/
-#
-# returns a List of np.arrays - containing embeddings as
 defaultContext = {"short": "", "long": ""}
-def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
-
-    global c_embeddings  # in order to access module variable
-    # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
+def addContext2Statments(stmts, ctxs=[], ctxScalar=defaultContext):
 
     # append context to requested input sentences
     if len(ctxs) == 0:
@@ -664,7 +678,105 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
             print(" ")
 
 
-    getEmbeddingsDB(stmts)
+    return stmts
+
+
+def getEmbeddingsDB(stmts):
+
+    stmtsHshs = strHashes(stmts)
+    embdsByK = {} 
+
+    # records stored in DB 
+    storedAsList = Embedding.query.filter(Embedding.hash.in_(stmtsHshs)).all()
+    for embd in storedAsList:
+        print(f"     ffor-a2 {ell(embd.text,x=32)}")
+        print(f"     embs from datab  {pfl( embd.embeddings, x=5)}")
+        embdsByK[embd.hash] = embd.embeddings
+
+
+    stmtsNotInC = []
+    for stmt, hsh in zip(stmts, stmtsHshs):
+        if hsh not in embdsByK:
+            stmtsNotInC.append(stmt)
+
+    print(f"   {len(stmts)} embs requested - {len(stmtsNotInC)} not in cache")
+
+    if len(stmtsNotInC)>0:
+
+        missEmbdsByK = embedsFromOpenAI(stmtsNotInC)
+
+        recsUpsert = []
+        for stmt in missEmbdsByK:
+
+            embd = missEmbdsByK[stmt]
+
+            embdsByK[ strHash(stmt)] = embd
+
+            print(f"     ffor-b2 {ell(stmt,x=32)}")
+            # missByHash[strHash(stmt)] = embd
+
+
+
+            rec = Embedding(
+                hash=strHash(stmt),
+                text=stmt,
+                embeddings=embd,
+                modelmajor=get("modelNameEmbeddings"),
+                modelminor="v1",
+            )
+            recsUpsert.append(rec)
+
+        try:
+            db.session.bulk_save_objects(recsUpsert)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            print(" ERROR storing ")
+            raise Exception("Error inserting embeds into database")
+
+
+    # ---- retrieval stop
+
+    # embdsByK *may* be ordered differently from stmts
+    embdsRet = []
+    for idx, stmt in  enumerate(stmts):
+        embd = embdsByK[ stmtsHshs[idx] ]
+        embdsRet.append( embd )
+    print(f"embdsRet {len(embdsRet)}")
+
+
+    # following operations expect a list of a numpy arrays
+    arrNp = []
+    for row in embdsRet:
+        arrNp.append(  np.array(row) )
+    # print(f"   {len(arrNp)} return vals converted {len(stmts)}")
+
+    return arrNp
+
+
+
+
+
+
+# lst python list of statements or sentences,
+# for example ['inflation will be high', 'inflation will be low']
+# We get "loadings" for a principal components analysis (PCA).
+# There are 3072 'components' in ChatGPT-O.
+# Embeddings for a sequence of tokens (i.e. a sentence) is created by weighing the embeddings of each token.
+# Weights are dynamically derived by the LLM using the context and using "attention".
+#
+# Usage
+#   e1,s = lib_openai.getEmbeddings(statements, contexts)
+#
+#   getEmbeddingsado.com/destructuring-in-python/
+#
+# returns a List of np.arrays - containing embeddings as
+
+
+def getEmbeddingsJSON(stmts):
+
+    global c_embeddings  # in order to access module variable
+    # print(f"cached embeddings 'embeddings' - size {len(c_embeddings)} - type {type(c_embeddings)}   ")
 
     stmtsNotInC = [] # statements not in cache
     embdsByK    = {} # requested embeddings by statement - cached and newly retrieved
@@ -672,8 +784,8 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
     for idx2, stmt in enumerate(stmts):
         if stmt in c_embeddings:
             embdsByK[stmt] = c_embeddings[stmt]  # take from cache
-            print(f"     ffor-a {ell(stmt,x=32)}")
-            print(f"     embs from cache  {pfl( c_embeddings[stmt], x=5)}")
+            print(f"     ffor-a1 {ell(stmt,x=32)}")
+            # print(f"     embs from cache  {pfl( c_embeddings[stmt], x=5)}")
         else:
             # print(f"     embeddings for {stmt} not in cache")
             stmtsNotInC.append(stmt)
@@ -684,26 +796,37 @@ def getEmbeddings(stmts, ctxs=[], ctxScalar=defaultContext):
     #       => retrieve from OpenAI
     #       => add to cache
     if len(stmtsNotInC)>0:
-        missing = embedsFromOpenAI(stmtsNotInC)
-        embdsByK.update(missing)
+        missEmbdsByK = embedsFromOpenAI(stmtsNotInC)
+        embdsByK.update(missEmbdsByK)
 
 
     # ---- retrieval stop
 
     # embdsByK *may* be ordered differently from stmts
-    embds = []
+    embdsRet = []
     for stmt in stmts:
-        embds.append( embdsByK[stmt] )
+        embdsRet.append( embdsByK[stmt] )
 
 
     # following operations expect a list of a numpy arrays
     arrNp = []
-    for row in embds:
+    for row in embdsRet:
         arrNp.append(  np.array(row) )
-    print(f"   {len(arrNp)} return vals converted {len(stmts)}")
+    # print(f"   {len(arrNp)} return vals converted {len(stmts)}")
 
 
     return arrNp
+
+
+def getEmbeddings(stmts, ctxs=[]):
+
+    stmts = addContext2Statments(stmts, ctxs=ctxs)
+
+    return getEmbeddingsDB(stmts)
+
+    # return getEmbeddingsJSON(stmts)
+
+
 
 
 def getEmbeddingsHTML(stmts, embds, ctxs, strFormat="simple", ):
@@ -921,7 +1044,7 @@ def resDummy():
         "agreement":         "-",
         "alignment":          0,
         "textual_analysis":  "-"
-    } 
+    }
     return dummy
 
 
@@ -952,7 +1075,7 @@ def generateChatCompletionChunks(beliefStatement, speech):
     if len(results) > 0:
         for result in results:
             yield result
-        
+
         logTimeSince(f"\tchat completion - cache", startNew=True)
         yield  "end-of-func"
         return
@@ -1050,7 +1173,7 @@ def generateChatCompletionChunks(beliefStatement, speech):
 
 
 # makes request to OpenAI
-# returns result as dict - read for usage as JSON 
+# returns result as dict - read for usage as JSON
 def chatCompletion(model, prompt, role, seed=100):
 
     # load from file cache
@@ -1136,7 +1259,7 @@ def chatCompletion(model, prompt, role, seed=100):
     saveJson(res, f"chat-completion-{model}-{hsh}-{ts}",  subset=get("dataset"))
     saveJson(res, f"chat-completion-{model}-{hsh}", subset=get("dataset"))
 
-    return res    
+    return res
 
 
 

@@ -19,8 +19,8 @@ class Embedding(db.Model):
 
     modelmajor = db.Column(db.String,    nullable=False)
     modelminor = db.Column(db.String,    nullable=False)
-    promptversion = db.Column(db.String, nullable=False, default="1.0")
-    role       = db.Column(db.String,    nullable=False)
+    # promptversion = db.Column(db.String, nullable=False, default="1.0")
+    # role       = db.Column(db.String,    nullable=False, default="")
 
     def __repr__(self):
         return f"<Embedding {self.id} - {self.hash}>"

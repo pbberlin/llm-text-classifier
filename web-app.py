@@ -1240,7 +1240,8 @@ def createAndRun(app2):
     # insert dummy records
     with app2.app_context():
         for idx in [1,2,3]:
-            db.session.add( dummyRecordEmbedding(idx) )
+            pass
+            # db.session.add( dummyRecordEmbedding(idx) )
         db.session.commit()
 
 
