@@ -2,42 +2,46 @@
 
 ## Overview
 
-* High level overview
-* Provide intuition
-* Provide inspiration
+* Provide inspiration within your research
 {: #an_id .a_class somekey='some value' }
+* Cutoff: What is useful, possible - what is illusory
+* Details during projects - or dept in follow up?
 
 
-### Summary 1
+#### Overview cont'd - 1
 
-* Use cheap `embeddings` for coarse pre-selection of text by relevance
-* Use `embeddings` to measure basic concepts
-* Use expensive `LLM chat-completion` to _measure_ advanced concepts
-* Find the cutoff, where LLMs can still "reason" reliably
-* The rest is human work
+* Extracting tagged tax rates from large texts
+    * Might require preprocessing of texts
+    * Advanced techniques for self-validation
+* Extracting contextual tax rates 
+    * For instance: previous, suggested, competing rates
+    * Might require preparatory stage 
+        1. Explain concept `reference municipality`
+        2. Ask if text contains `tax rates` from `reference municipality`
 
-#### Summary 1 cont'd
+#### Overview cont'd - 2
 
-Cutoff will depend on your research area; for example:
+Where is the cutoff - another research area:
 
-* All things inflation - "How inflationary is statement `x`"?
-    * Will work well.
-* Effects of inflation going into an ISLM model economy - <br> all the channels and effects.
-    * Will work somewhat - <br> if the corpus is thick on "ISLM model"
-* More than two degrees of freedom => Confusion
-* Improvement on existing methods <br> such as [bag of words](https://en.wikipedia.org/wiki/Bag-of-words_model)?
-{: .small }
+* Simple macro concept: "How inflationary is statement `x`"?
+    * Will work well
+* Effects of inflation on demand - assuming ISLM model economy - <br> all the channels and effects.
+    * Will work somewhat 
+    * Corpus must be thick on "ISLM model"
+    * Requires advanced prompting techniques
+
+<!-- * Improvement on existing methods <br> such as [bag of words](https://en.wikipedia.org/wiki/Bag-of-words_model)?
+{: .small } -->
 
 
-
-### Summary 2
+#### Overview cont'd - 3
 
 If extracting numbers and measuring content was largely successful: 
 
 * Restructure the remaining work, so that humans can do it as easy as possible
-* Validation
-* Robustness, fireproofing, scientific documentation 
-* Reproducibility
+    * Validation by crowd workers
+    * Robustness, fireproofing, scientific documentation 
+    * Reproducibility
 
 <!-- I built some piece of software for quick testing and prototyping -->
 
@@ -84,7 +88,7 @@ Financial markets dept
 => Time to establish some foundations
 
 
-## Cross sectional solution
+## Cross sectional solution - generic solutions
 
 <table>
     <tr>
@@ -93,13 +97,14 @@ Financial markets dept
         <td style="width:33%" >Business tax</td>
     </tr><tr><td colspan="3" style="text-align: center">crawling</td>
     </tr><tr><td colspan="3" style="text-align: center">PDF extraction, cleansing</td>
-    </tr><tr><td colspan="3" style="text-align: center">number extraction</td>
+    </tr><tr><td colspan="3" style="text-align: center">number  extraction</td>
     </tr><tr><td colspan="3" style="text-align: center">concept extraction</td>
+    </tr><tr><td colspan="3" style="text-align: center">validation</td>
     </tr>
 </table>
 
 
-### Finding the cutoff
+### Corpus thickness - sentiment
 
 * LLMs are formidable at _sentiment analysis_ <br>
   categorization as `positive` and `negative` is excellent  
@@ -111,7 +116,6 @@ Financial markets dept
     {: .small }
     * Deliberately ambiguous and not in English.
     {: .small }
-
 
 
 #### Sentiment for unknown concepts cont'd
@@ -132,14 +136,16 @@ Consider following two realms
 * Reality 
 * The language corpus of the entire Internet
 
+<!-- 
 There are all kinds of differences between  
 reality and the language corpus  
 
 Linguistics researches this
 
 Also [philosophy](https://en.wikipedia.org/wiki/Ludwig_Wittgenstein)
+ -->
 
-### Corpus biases
+<!--  Corpus biases -->
 
 * We _cannot_ derive any statement about the relationship  
    between the LLM corpus and actual reality 
@@ -169,38 +175,21 @@ for instance [Supply-side economics](https://en.wikipedia.org/wiki/Supply-side_e
 
 ### Thin corpus 2
 
-Huge productivity gains for _standard_ programming task
+Ask for "Krone verschluckt".
 
-Prolonged detours for peripheral tasks
+Result is 95% from a single news source
 
-* Svelte version 5 
+### Thin corpus 3
+
+* Huge productivity gains for smaller _standard_ programming task
+
+* Scaffolding, templating, rewriting
+
+Wasting several hours -  misleading, non-working:
+
+* Svelte version 5 component 
 * Streaming a HTML response using flask
-* Coding template with more than <br> three functional dimensions
-
-
-
-
-### Generic solution - detailed questions
-
-1. Extract numbers with _conditions_  
-    * Business tax rate for Hintertupfingen for 2023
-    * Previous tax rates  - for 2023, 2022
-    * Tax rate of adjacent municipality
-2. Validation
-    * Outsource validation of extracted data  
-      to platforms like Mechanical Turk
-    * Cost?
-
-
-
-#### Detailed questions cont'd
-
-3. Can we use LLM embeddings to quantify text <br>
- against more advanced concepts? 
-    * Not just `favorable`  vs `unfavorable`.
-    * How much `alignment` between a benchmark <br> and some piece of text
-
-
+* SQLAlchemy count of records from table
 
 
 
@@ -381,27 +370,136 @@ Every researcher needs to draw a subjective line here.
     * Changing seed
     * => The concept classifications show only tiny variation
 
-## Todo
 
-### Ensemble approach
+## Techniques
 
-* Give me three variations
-* Rank the results
+### Increase precision 1 - give template
 
-### Few shots
+* Provide schema for JSON output 
+    * See web app
+* Provide `few shots`
+    * Question A - Answer A 
+    * Question B - Answer B
+    * ...
+      * Scope the maximum variety 
+      * Edge cases
+    * The actual question 
 
-* Proide schema for JSON output 
-* also provide few shots
-* also give reasoning steps - "thinking steps"
+### Increase precision 2 - multi-stage
 
-### Context from vector database
+Give reasoning steps - "thinking steps"
 
-* Get similar chunks
-* Include as context
+* Give me the effects of `ECB bond purchases` on `aggregate demand`.
+* Dont ask directly instead:
+    * Ask `ECB bond purchases` effect on `interest rates`
+    * `Interest rates` changes caused by ... what is effect on `mortgages`
+    * `Interest rates` changes caused by ... what is effect on `stocks`
+    * `Mortgages` effect on demand
+    * `Stocks` effect on demand
 
-Integrate a bunch of documents into an LLM vector database
+* Also for when asking for programming template <br> 
+  with three or more functional dimensions
+    * Break it down into several steps
 
-### Chunk size for embeddings index
+
+### Math
+
+* LLMs cannot do math
+
+Instead
+
+* Send question: Are there any things that need to be computed in [prompt]?
+* Response:  [verbal-description] of computation
+* Write me Python code to do that computation
+* Execute Python on your computer
+
+#### Example for Math
+
+* We have 233345322132 organisms with 49224224233 cells.  
+  Tell my the multiplication you want to do
+
+### Questions on contents of large documents
+
+* Break docs into chunks
+* Compute embedding of chunks
+* Compute embedding of question
+* Select chunks similar to question by embedding
+* Send 
+
+### Include most recent data
+
+* Articulate [Hypothesis]
+* Programm Google web search for [Hypothesis]
+* Concatenate [results] into [list-of-paragraphs]
+* Ask LLM: Is [Hypothesis] confirmed by list of [list-of-paragraphs]?
+
+
+### Validation 1 - ensemble approach
+
+* Ask three distinct variations of [question] - separately
+* Go for maximum variation
+* Collect three [results]
+* Send the three [results] for voting
+
+### Validation 2 - follow up
+
+Using follow up questions
+
+* "Give me the authors from this [paragraph]
+* Answer: Jane Brown, Joe Black, Kathrin Halucinatorix
+* A user tells me, following autors are in that [paragraph] [Quote previous] -  is this true?
+    * Yes / No
+* No implies failed validation
+
+### Validation 3 - follow up
+
+Using follow up questions
+
+* Give me tax rate from [paragraph]s
+*  40%
+* A user tells me, following tax rate is in that [paragraph]: "40%" -  is this true?
+    * Yes / No
+* No implies failed validation
+
+### OCR 
+
+* Extracting text from pictures, images
+* Superior to `tesseract`
+
+### Deceive fraud detection
+
+* Rewrite this, so the content is the same, but it does not look like it comes from an LLM
+
+* Better: Agree on a code word that is not on the internet to include into your communication
+
+* Cheating detection is impossible
+
+### Use in academia
+
+* Spell check
+
+* Content of lectures as "Teaching Assistant"
+
+* Create exam questions from content of lectures
+
+* Not just multiple-choice
+
+* For generic teaching: [Khan academy](https://www.khanacademy.org/)
+
+
+### Context dynamically from vector database
+
+<!-- Integrate a bunch of documents into an LLM vector database -->
+
+* Collect texts containing your reasoning
+   * Fiscal Dominance
+   * Narratives
+* Compute embeddings
+* Get similar chunks 
+* Include as context for question
+
+
+### Chunk size for your vector database 
 
 Too small chunks => too little context
 
@@ -411,30 +509,31 @@ Chunk size: 2-4 sentences.
 
 For conceptual search: Bigger chunks
 
+
 ### Make database results into a nice answer
 
-Send the initial question as chat completion query
+Send initial question as chat completion query
 
 Embed the embedding results as context 
 
 ```
-You are an expert assistant. Based on the following retrieved information, answer the user's query:
+You are an expert assistant. 
+Based on the following retrieved information, answer the user's query:
 
-Context: 
-- [Chunk 1: ...]
-- [Chunk 2: ...]
-- [Chunk 3: ...]
-
+Context:  
+- [Chunk 1: ...]  
+- [Chunk 2: ...]  
+- [Chunk 3: ...]  
 Question: [User's original query]
-
 Provide a clear and concise response based on the context.
 ```
+
+
 
 ### Indexing
 
 pip install faiss-cpu
 pip install faiss-gpu
-
 
 
 ## Conclusions
@@ -509,6 +608,14 @@ If needed, a distributed index across several server machines needs to be built.
 * LLMs are in many ways not well understood
 
 
+### Embeddings vs Chat Completion
+
+* Use cheap `embeddings` for coarse pre-selection of text by relevance
+* Use `embeddings` to measure basic concepts
+* Use expensive `LLM chat-completion` to _measure_ advanced concepts
+* Find the cutoff, where LLMs can still "reason" reliably
+
+
 ## Context
 
 * Sometimes necessary.  
@@ -556,4 +663,27 @@ If needed, a distributed index across several server machines needs to be built.
     Model is weak for differences between categories
 * Visualizing embeddings in reduced dimensionality (e.g., using t-SNE or PCA),  
   embeddings should ideally form distinct clusters.
+
+
+### Generic solution - detailed questions
+
+1. Extract numbers with _conditions_  
+    * Business tax rate for Hintertupfingen for 2023
+    * Previous tax rates  - for 2023, 2022
+    * Tax rate of adjacent municipality
+2. Validation
+    * Outsource validation of extracted data  
+      to platforms like Mechanical Turk
+    * Cost?
+
+
+
+#### Detailed questions cont'd
+
+3. Can we use LLM embeddings to quantify text <br>
+ against more advanced concepts? 
+    * Not just `favorable`  vs `unfavorable`.
+    * How much `alignment` between a benchmark <br> and some piece of text
+
+
 
