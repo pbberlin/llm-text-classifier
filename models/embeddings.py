@@ -1015,7 +1015,7 @@ def generateChatCompletionChunks(beliefStatement, speech):
 
     # load from file cache
     hsh = strHash(prompt)
-    results = loadJson(f"chat-completion-{hsh}", subset=get("dataset"))
+    results = loadJson(f"chat-completion-a-{hsh}", subset=get("dataset"))
     if len(results) > 0:
         for result in results:
             yield result
@@ -1108,9 +1108,7 @@ def generateChatCompletionChunks(beliefStatement, speech):
 
 
     ts = f"-{datetime.now():%m-%d-%H-%M}"
-    saveJson(results, f"chat-completion-{ts}", subset=get("dataset"))
-
-    saveJson(results, f"chat-completion-{hsh}", subset=get("dataset"))
+    saveJson(results, f"chat-completion-a-{hsh}", subset=get("dataset"))
 
 
     yield  "end-of-func"
@@ -1123,7 +1121,7 @@ def chatCompletion(model, prompt, role, seed=100):
 
     # load from file cache
     hsh = strHash(prompt)
-    res = loadJson(f"chat-completion-{model}-{hsh}", subset=get("dataset"), onEmpty="dict")
+    res = loadJson(f"chat-completion-b-{model}-{hsh}", subset=get("dataset"), onEmpty="dict")
     if "model" in res   and   res["model"] == model:
         return res
 
@@ -1201,8 +1199,8 @@ def chatCompletion(model, prompt, role, seed=100):
 
 
     ts = f"-{datetime.now():%m-%d-%H-%M}"
-    saveJson(res, f"chat-completion-{model}-{hsh}-{ts}",  subset=get("dataset"))
-    saveJson(res, f"chat-completion-{model}-{hsh}", subset=get("dataset"))
+    saveJson(res, f"chat-completion-b-{model}-{hsh}-{ts}",  subset=get("dataset"))
+    saveJson(res, f"chat-completion-b-{model}-{hsh}", subset=get("dataset"))
 
     return res
 

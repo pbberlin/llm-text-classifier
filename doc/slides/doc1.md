@@ -1,33 +1,40 @@
-# Text classification using LLMs
+# Using LLMs in our research
+
+## 
+
+![conquer unknown land](./img/conquer-unkown-land.jpg){: style="width:80%"}  <br>
+Research an unknown land
 
 ## Overview
 
-* Provide inspiration within your research
+* Provide inspiration along your research
 {: #an_id .a_class somekey='some value' }
 * Cutoff: What is useful, possible - what is illusory
-* Details during projects - or dept in follow up?
+* Develop the details during projects
+* Limited overview
 
 
 #### Overview cont'd - 1
 
-* Extracting tagged tax rates from large texts
-    * Might require preprocessing of texts
-    * Advanced techniques for self-validation
-* Extracting contextual tax rates 
-    * For instance: previous, suggested, competing rates
-    * Might require preparatory stage 
-        1. Explain concept `reference municipality`
-        2. Ask if text contains `tax rates` from `reference municipality`
+* Extracting `tagged` numbers from large texts
+    * Requires preprocessing of texts
+    * Techniques for self-validation
+* Extracting `contextual` tax rates 
+    * i.e. previous, suggested or competing rates
+    * Requires preparatory stage<br>
+        * Explain concept  <br>
+          `reference municipality` 
+        * Ask if text contains `tax rates` <br> from `reference municipality`
 
 #### Overview cont'd - 2
 
-Where is the cutoff - another research area:
+Where is the cutoff? - Example from another research area:
 
 * Simple macro concept: "How inflationary is statement `x`"?
     * Will work well
-* Effects of inflation on demand - assuming ISLM model economy - <br> all the channels and effects.
+* Effects of inflation on demand - assuming ISLM model economy - <br> channels and effects
     * Will work somewhat 
-    * Corpus must be thick on "ISLM model"
+    * Corpus must be `thick` on `ISLM model`
     * Requires advanced prompting techniques
 
 <!-- * Improvement on existing methods <br> such as [bag of words](https://en.wikipedia.org/wiki/Bag-of-words_model)?
@@ -38,10 +45,11 @@ Where is the cutoff - another research area:
 
 If extracting numbers and measuring content was largely successful: 
 
-* Restructure the remaining work, so that humans can do it as easy as possible
+* Restructure the remaining work, so that humans can do easily
     * Validation by crowd workers
-    * Robustness, fireproofing, scientific documentation 
-    * Reproducibility
+* Robustness 
+* Scientific documentation 
+* Reproducibility
 
 <!-- I built some piece of software for quick testing and prototyping -->
 
@@ -51,16 +59,16 @@ If extracting numbers and measuring content was largely successful:
 
 
 
-### Projects with potential use for LLMs
+### Projects benefitting from LLMs
 
-1.  GuW project<br>
+1.  GuW project - <br> 
     mining speeches on central bank policies 
 1.  CbCR projects  - extracting   
 taxation parameters from weakly structured texts 
 2.  Municipal taxation - council minutes - <br>
   extracting
     * Business tax rates
-    * Period in time
+    * Periods in time
     * Own municipality vs. other municipalities
 
 #### Municipal taxation cont'd
@@ -85,10 +93,10 @@ Financial markets dept
   capturing `financial calculus` with LLMs
 
 
-=> Time to establish some foundations
+### => Time to establish some foundations
 
 
-## Cross sectional solution - generic solutions
+## Cross sectional solution - generic solution
 
 <table>
     <tr>
@@ -103,6 +111,26 @@ Financial markets dept
     </tr>
 </table>
 
+#### Solution cont'd
+
+* `pbu` has created some foundational tools <br>
+  (demo below)
+* Extend these tools -  <br> 
+  in cooperation with the researchs <br>
+   along the projects
+
+## Fundamental instructions <br> for researchers
+
+* Some capabilities of LLMs are so staggering,  
+  that one assumes, they are capable at everything
+* Strenght and limitations below
+
+## Corpus
+
+* Corpus is a major determinant of what LLMs can and cannot do
+* It helps to ask: <br> How much material is out there on a specific concept?
+* `Sentiment` is a positive example
+* `Number extraction` is a positive example
 
 ### Corpus thickness - sentiment
 
@@ -118,23 +146,22 @@ Financial markets dept
     {: .small }
 
 
-#### Sentiment for unknown concepts cont'd
+#### Sentiment cont'd - some extended prompt design
 
 ![sentiment for unknown things 1](./img/prompt-1.jpg){: style="width:80%"}
 
-#### Sentiment for unknown concepts cont'd
+#### Sentiment cont'd - "answer" by the LLM 
 
 ![sentiment for unknown things 2](./img/prompt-2.jpg){: style="width:90%"}
 
-Every nuance and ambiguity is precisely captured
+Nuance and ambiguity is precisely captured
 
 
-### Corpus
+#### Corpus cont'd
 
-Consider following two realms
-
-* Reality 
-* The language corpus of the entire Internet
+* Two realms
+    * Reality 
+    * The language corpus of the entire Internet
 
 <!-- 
 There are all kinds of differences between  
@@ -143,18 +170,20 @@ reality and the language corpus
 Linguistics researches this
 
 Also [philosophy](https://en.wikipedia.org/wiki/Ludwig_Wittgenstein)
- -->
 
-<!--  Corpus biases -->
+
+ Corpus biases
 
 * We _cannot_ derive any statement about the relationship  
    between the LLM corpus and actual reality 
+ -->
+
 * LLMs can only make claims about the corpus
-* Results reflect the preferences and biases of the corpus
+* Results reflect the depth, <br> the distribution and biases of the corpus
 
 #### Corpus cont'd
 
-* Consider controversial concepts, <br>
+* Consider  less popular concepts, <br>
 for instance [Supply-side economics](https://en.wikipedia.org/wiki/Supply-side_economics)
 * Supply-side economics contains some more realistic assumptions<br> 
   such as `cheaper factors increase supply`
@@ -175,37 +204,61 @@ for instance [Supply-side economics](https://en.wikipedia.org/wiki/Supply-side_e
 
 ### Thin corpus 2
 
-Ask for "Krone verschluckt".
+Ask for "dental crown swallowed" <br> or (German:)  "Krone verschluckt".
 
-Result is 95% from a single news source
+Result is  95%  verbatim  <br> from a  _single_ [ news source](https://praxistipps.focus.de/krone-verschluckt-das-sollten-sie-beachten_109630)
+
+
 
 ### Thin corpus 3
 
-* Huge productivity gains for smaller _standard_ programming task
-
+* _Standard_ programming task
 * Scaffolding, templating, rewriting
+* Huge productivity gains
 
-Wasting several hours -  misleading, non-working:
+As soon as one  <span class="fragment"> - unwittingly  </span>   <span class="fragment"> - strays off - </span>
 
-* Svelte version 5 component 
-* Streaming a HTML response using flask
-* SQLAlchemy count of records from table
+one gets misleading, non-working, time-wasting stuff
+
+* <small>Svelte version 5 component   </small>
+* <small>Streaming a HTML response using flask  </small>
+* <small>SQLAlchemy count of records from table  </small>
 
 
 
-## Tokenization
+## Limitation 2
+
+* Second perspective of LLM limitation
+* "Dimensions of Meaning"
+
+## Granularity - tokenization
 
 * Limited granularity<br>
   ![Granularity](./img/embeddings-granularity.jpg)
 * `2023` is not encoded as a singular entity
+
+## Internal represenation of tokens
+
+* Each token has a "vector of meanings" - an `embedding`
+* LLMs cannot go very far beyond these dimensions
+* Illustration below
 
 
 ## On Embeddings
 
 * Each embeddings consists of 3078 numbers  -   
 each in the range of one trillon.
-* Embeddings for the word [`price`](./img/embeddings-price-compr.json) -  
-    <small> 20 sheets of pages. </small><br>
+* Embeddings for the word  
+  <a  target="embeds" href="../embeddings-price-compr.json" > price   </a> <br>
+    * 20 pages
+    * -1  to  +1
+    * few > |0.2|
+    * 16 digits precision, seems only the first 5 matter
+
+## Skip 
+
+* We skip some explanations and go straight towards
+* [Examples](./slides/#/29) (URL + 4)
 
 #### On Embeddings cont'd
 
@@ -247,10 +300,10 @@ such as "positivity" or "short term future", "long term future"
     * I am giving up. Drinking until this is over.
     {: .small-2}
 * ![considerably different](./img/embeddings-drinking-until.jpg) <br>
- Chart: "Significant" positive and negative [embedding] values - 32 values of biggest magnitude.<br>
+ "Significant" positive and negative `embedding` values - 32 values of biggest magnitude.<br>
  Short grey bars indicate identical dimensions (48%) - 52% are _distinct_.<br>
  Even identical dimensions have different values. <br>
- Data points of  _second_ series are shifted right by two pixels, in order to make the almost perfect overlap visible.  
+  <small>Second and third series are shifted right by two pixels, to make  overlap visible</small>
 {: .small-2 .nobullet }
 
  
@@ -268,14 +321,27 @@ such as "positivity" or "short term future", "long term future"
 {: .nobullet }
 * All load highly negative on dimension 87, <br>
 and highly positive on dimensions 528 and 57
-* Maybe, these is the cluster for the concept of a price in the context of economics?  
+    * The cluster for the concept of `price` ?  
+    * The rest is other nuances: good, bad - near future, distant future...
 
 
+### How much meaning can be captured?
 
+Given this internal representaion: 
 
-### Similarity of advanced concepts - using embeddings only
+How well can LLM capture our  _concepts of research_? 
 
-How well can LLMs capture  _advanced concepts of research_ . 
+We have explore and test. 
+
+### Skipping to prompt techniques
+
+I skip further instructions on embeddings  - and continue with the third major dimension.
+
+=> Prompt techniques
+
+(Slide 38)
+
+### Example for exploring the cutoff
 
 Example: Purchase of government bonds by the EU
 
@@ -300,82 +366,15 @@ Take two statements around the concept of `central bank`, `central bank interven
 
 
 
-## Web application
-
-The web application can be downloaded from [ZEW git](https://git.zew.de/ub-public-finance/ecb-speeches-flask)
-
-It can be executed on your notebooks
-
-The web application is written in `Python`
-
-The core is advanced (web server stuff...)
-
-But periphery is extendable by researchers <br> and by student workers with IT affinity
-
-<!--pagebreak-->
-
-Web application connects to OpenAI ChatGPT 4
-
-It requires an API key from OpenAI inc
-
-If you request many embeddings, OpenAI may require money for it
-
-At least, embeddings are stored locally; <br> 
-openAI is only asked _once_ per text-element
-
-<!--pagebreak-->
-
-Convenient uploading and arranging  <br> various elements of text classification
-
-* Contexts
-* Benchmark statements (goal posts) 
-* Texts to be classified
-
-Some default data is loaded. <br>
-Change according to your reserch.
-
-Showing embeddings and similarity as charts
-
-## Stage two: Chat completion
-
-Going beyond embeddings
-
-Using the _generative_ faculty of LLMs
-
-Setting a context: "economics and government policy"
-
-Setting `temperature` to zero => hallucinations practically disappear
-
-### Distinction over vector distance of embeddings 
-
-The `chat completion` stage provides additional refinement (over vector distance).
-
-Subject to same considerations of the corpus.
-
-Some internal dialogue - some wider context scope.
-
-To some extent incomprehensible.
-
-Very good results - inside the domains of the corpus.
-
-Every researcher needs to draw a subjective line here.
 
 
-### Hallucinations are not a problem
+## Prompt techniques
 
-* Embeddings are deteministic anyway
-* _Generative_ AI has some probabilistic element,  
-  that can lead to erroneous results
-    * Setting temperature to 0
-    * Changing seed
-    * => The concept classifications show only tiny variation
-
-
-## Techniques
+* Advanced prompt strategies for science
 
 ### Increase precision 1 - give template
 
-* Provide schema for JSON output 
+* Provide JSON schema for output 
     * See web app
 * Provide `few shots`
     * Question A - Answer A 
@@ -390,14 +389,17 @@ Every researcher needs to draw a subjective line here.
 Give reasoning steps - "thinking steps"
 
 * Give me the effects of `ECB bond purchases` on `aggregate demand`.
-* Dont ask directly instead:
-    * Ask `ECB bond purchases` effect on `interest rates`
+* Instead of asking directly, ask along  
+    * `ECB bond purchases` effect on `interest rates`
     * `Interest rates` changes caused by ... what is effect on `mortgages`
     * `Interest rates` changes caused by ... what is effect on `stocks`
     * `Mortgages` effect on demand
     * `Stocks` effect on demand
 
-* Also for when asking for programming template <br> 
+#### Increase precision 2 - multi-stage - cont'd
+
+
+* Also when asking for programming template <br> 
   with three or more functional dimensions
     * Break it down into several steps
 
@@ -408,15 +410,15 @@ Give reasoning steps - "thinking steps"
 
 Instead
 
-* Send question: Are there any things that need to be computed in [prompt]?
-* Response:  [verbal-description] of computation
+* Send question: Are there any things  <br> that need to be computed in `statement`?
+* Response:  `verbal description` of computation
 * Write me Python code to do that computation
-* Execute Python on your computer
+* Execute Python on _your_ computer
 
 #### Example for Math
 
-* We have 233345322132 organisms with 49224224233 cells.  
-  Tell my the multiplication you want to do
+* We have 233345322132 organisms <br> with 49224224233 cells
+* Tell my the multiplication you want to do
 
 ### Questions on contents of large documents
 
@@ -428,26 +430,26 @@ Instead
 
 ### Include most recent data
 
-* Articulate [Hypothesis]
-* Programm Google web search for [Hypothesis]
-* Concatenate [results] into [list-of-paragraphs]
-* Ask LLM: Is [Hypothesis] confirmed by list of [list-of-paragraphs]?
+* Articulate `Hypothesis`
+* Programm Google web search for `Hypothesis`
+* Concatenate `results` into `list-of-paragraphs`
+* Ask LLM: Is `Hypothesis` confirmed by list of `list of paragraphs`?
 
 
 ### Validation 1 - ensemble approach
 
-* Ask three distinct variations of [question] - separately
+* Ask three distinct variations of `question` - separately
 * Go for maximum variation
-* Collect three [results]
-* Send the three [results] for voting
+* Collect three `results`
+* Send the three `results` for voting
 
 ### Validation 2 - follow up
 
 Using follow up questions
 
-* "Give me the authors from this [paragraph]
+* "Give me the authors from this `paragraph`
 * Answer: Jane Brown, Joe Black, Kathrin Halucinatorix
-* A user tells me, following autors are in that [paragraph] [Quote previous] -  is this true?
+* A user tells me, following autors are <br> in that `paragraph` (Quote previous answer) -  is this true?
     * Yes / No
 * No implies failed validation
 
@@ -455,9 +457,9 @@ Using follow up questions
 
 Using follow up questions
 
-* Give me tax rate from [paragraph]s
+* Give me tax rate from `paragraph`s
 *  40%
-* A user tells me, following tax rate is in that [paragraph]: "40%" -  is this true?
+* A user tells me, following tax rate is <br> in that `paragraph`: "40%" -  is this true?
     * Yes / No
 * No implies failed validation
 
@@ -466,25 +468,24 @@ Using follow up questions
 * Extracting text from pictures, images
 * Superior to `tesseract`
 
-### Deceive fraud detection
-
-* Rewrite this, so the content is the same, but it does not look like it comes from an LLM
-
-* Better: Agree on a code word that is not on the internet to include into your communication
-
-* Cheating detection is impossible
-
-### Use in academia
+### Use in academia teaching
 
 * Spell check
-
 * Content of lectures as "Teaching Assistant"
-
 * Create exam questions from content of lectures
-
 * Not just multiple-choice
-
 * For generic teaching: [Khan academy](https://www.khanacademy.org/)
+
+### Deceive fraud detection
+
+* Rewrite this, so the content is the same, <br> but it does not look like it comes from an LLM
+* Better: Agree on a code word that is <br>  not on the internet to include into your communication
+* Cheating detection is impossible
+
+### Demo web application
+
+[Demo](./web-application.md)
+
 
 
 ### Context dynamically from vector database
@@ -497,6 +498,12 @@ Using follow up questions
 * Compute embeddings
 * Get similar chunks 
 * Include as context for question
+
+### Context size
+
+* Claims on context size are false
+
+* GPT-4o is [not reliable](https://www.heise.de/news/GPT-4-Turbos-bestes-neues-Feature-funktioniert-nicht-besonders-toll-9528751.html) beyond 7000 letters.
 
 
 ### Chunk size for your vector database 
