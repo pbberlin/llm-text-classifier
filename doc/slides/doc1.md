@@ -267,6 +267,24 @@ each in the range of one trillon.
 * ![embeddings](./img/embeddings-text.jpg){: style="width:90%" }
 {: .nobullet  }
 
+#### On Embeddings cont'd
+
+* Core Concepts (~1000) 
+* Essentially a "vocabulary of thought" 
+
+* Dimensions seem to differ
+    * If we ask for "Pasta, Nudeln, Spaghetti",  <br> 
+    85 might represent the egg ingredient
+
+
+#### On Embeddings cont'd
+
+* Advanced concepts have `distributed representations`
+    * For instance embeddings of `inflation in economics`  
+    * Associated with  `price levels`, `money supply` and  `interest rates` ...
+    * These core concepts in turn have stable representations
+    * => Embedding for `inflation in economics` is robust
+
 
 #### On Embeddings cont'd
 
@@ -368,9 +386,31 @@ Take two statements around the concept of `central bank`, `central bank interven
 
 
 
+## Chat completion
+
+* `Chat completion` is what you know from ChatGPT website
+* Signifant step beyond embeddings
+
+### Embeddings vs Chat Completion
+
+* Embeddings only `pool` the tokens
+* Chat completion adds `positional vector` to each token
+
+#### Chat completion cont'd
+
+* Enriched embeddings are fed into the huge transformer model
+* => `inference` step
+
+#### Chat completion cont'd
+
+* The researcher should enrich the prompt before inference
+* => `prompt techniques`
+
 ## Prompt techniques
 
 * Advanced prompt strategies for science
+
+<!-- todo: role and context -->
 
 ### Increase precision 1 - give template
 
@@ -397,7 +437,6 @@ Give reasoning steps - "thinking steps"
     * `Stocks` effect on demand
 
 #### Increase precision 2 - multi-stage - cont'd
-
 
 * Also when asking for programming template <br> 
   with three or more functional dimensions
