@@ -39,6 +39,8 @@ from lib.util   import strHash, strHashes
 from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
+from models.templates import getByID
+
 
 from sqlalchemy.exc import IntegrityError
 from .embeddings_db import Embedding
@@ -942,38 +944,23 @@ def correlationsXY(
 
 def designPrompt(beliefStatement, speech):
 
-    role = get("role")
+    tplID = get("template_id", 0)
+    tpl  = getByID(tplID)
 
-    # Optional prompt enhancements:
-    #   "Which specific arguments or parts of the speech support or contradict the belief?"
-    #   "Does the speech include any caveats or conditions that modify the central argument?"
+    role = tpl["role"]
 
+    stageTemplate = tpl["stages"][0]["long"]
 
-    prompt = f"""
-{role}
+    print(stageTemplate)
 
-The belief statement is: "{beliefStatement}"
-
-The speech text is: "{speech}"
-
-Make sure to give an objective analysis based on the content of the speech.
-
-I need a thorough textual analysis on how much the speech aligns with the belief statement.
-
-Determine whether the speech agrees, disagrees, or remains neutral on the belief.
-
-Provide a percentage score for alignment.
-
-Use the following json format for your response:
-
-{{
-    "agreement":        "<agrees/disagrees/neutral>",
-    "alignment":         <percentage_score>
-    "textual_analysis":  <text>
-}}
-    """
+    prompt = stageTemplate.format(
+        role=role, 
+        beliefStatement=beliefStatement, 
+        speech=speech,
+    )
 
     prompt = prompt.strip()
+
 
     if len(beliefStatement.strip()) < 5 or len(speech.strip()) < 5:
         return prompt, role, "too short"
@@ -996,7 +983,7 @@ def resDummy():
 #   the chunking is not used
 def generateChatCompletionChunks(beliefStatement, speech):
 
-    prompt, role, err = designPrompt(beliefStatement, speech)
+    prompt, role , err = designPrompt(beliefStatement, speech)
     if err != "":
         yield prompt
         results = []

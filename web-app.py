@@ -41,9 +41,10 @@ if False:
 
 
 # modules with model
-import models.contexts   as contexts
-import models.benchmarks as benchmarks
-import models.samples    as samples
+import models.contexts     as contexts
+import models.benchmarks   as benchmarks
+import models.samples      as samples
+import models.templates    as templates
 import routes.embeddings_basics as embeddings_basics
 import routes.embeddings_similarity as embeddings_similarity
 
@@ -829,6 +830,96 @@ def samplesEditH():
 
 
 
+@app.route('/templates-edit', methods=['GET','POST'])
+def templatesEditH():
+
+    # GET + POST params
+    kvGet  = request.args.to_dict()
+    kvPost = request.form.to_dict()
+
+    # extract and process POST params
+    reqTemplates = []
+    if len(kvPost) > 0:
+
+        for i1 in range(0,100):
+            descK = f"template{i1+1:d}_descr"  # starts with 1
+            roleK = f"template{i1+1:d}_role" 
+            deleK = f"template{i1+1:d}_del"
+
+            if descK not in kvPost:
+                break
+
+            if descK in kvPost and deleK in kvPost and  kvPost[deleK] != "":
+                print(f"  input template '{descK}' to be deleted")
+                continue
+            if kvPost[descK].strip() == "":
+                print(f"  input template '{descK}' is empty")
+                continue
+
+            stages = []
+            for i2 in range(0,100):
+                sh = f"stage{i1+1:d}_st{i2+1}_shrt"
+                lg = f"stage{i1+1:d}_st{i2+1}_long"
+                rm = f"stage{i1+1:d}_st{i2+1}_rem"
+                if lg not in kvPost:
+                    break
+                if kvPost[lg].strip() == "":
+                    print(f"    bm {i1+1} stage {i2+1} is empty")
+                else:
+                    stages.append(
+                        {  
+                            "short": kvPost[sh], 
+                            "long":  kvPost[lg],
+                            "remark":  kvPost[rm],
+                        }
+                    )
+
+            reqTemplates.append(
+                {
+                    "descr":  kvPost[descK],
+                    "role":   kvPost[roleK],
+                    "stages": stages,
+                }
+            )
+            print(f"  input template '{descK}' - {len(stages)} stages - {kvPost[descK]}")
+
+        print(f"post request contained {len(reqTemplates)} templates")
+
+
+    else:
+        pass
+        # print("post request is empty")
+
+
+    newTemplates = templates.update(reqTemplates)
+
+    print(f"overall number of templates {len(newTemplates) } ")
+
+
+    for tpl in newTemplates:
+        stages = tpl["stages"]
+        if len(stages) == 0  or  stages[-1]["long"].strip() != "":
+            nwSt = templates.newStage()
+            stages.append( nwSt )
+
+
+    if len(newTemplates)>0 and newTemplates[-1]["descr"].strip() != "" :
+        newTemplates.append( samples.dummy() )
+
+    tplUI, _  = templates.PartialUI(request, session)
+
+
+    return render_template(
+        'main.html',
+        HTMLTitle="Edit templates",
+        cntBefore=f'''
+            {len(newTemplates)} templates found
+            <br>
+            {tplUI}
+            ''',
+        contentTpl="templates",
+        listTemplates=newTemplates,
+    )
 
 
 
@@ -1001,7 +1092,7 @@ def chatCompletionJsonH():
         if "speech" in kvPost:
             speech =  kvPost["speech"]
 
-        prompt, role, _ = embeddings.designPrompt(beliefStatement, speech)
+        prompt, _, _ = embeddings.designPrompt(beliefStatement, speech)
 
 
     if "model" in kvPost:
@@ -1059,7 +1150,7 @@ def chatCompletionJSH():
         speech =  kvPost["speech"]
 
 
-    prompt, role, err = embeddings.designPrompt(beliefStatement, speech)
+    prompt, role , err = embeddings.designPrompt(beliefStatement, speech)
     if err != "":
         prompt = f"Error designing prompt: {err}"
 
@@ -1147,6 +1238,7 @@ def loadAll(args):
     contexts.load()
     benchmarks.load()
     samples.load()
+    templates.load()
 
     logTimeSince(f"loading data stop")
 
@@ -1171,6 +1263,7 @@ def saveAll(force=False):
     contexts.save()
     benchmarks.save()
     samples.save()
+    templates.save()
 
     logTimeSince(f"saving  data stop")
 

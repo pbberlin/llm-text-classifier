@@ -79,13 +79,14 @@ def save():
 
 
 
-def get(key):
+def get(key, default=None):
     if len(cfg) < 1:
         raise ValueError('config not initialized yet')
 
     if key in cfg:
         return cfg[key]
-    return None
+    return default
+
 
 def set(key, val):
     global cfg

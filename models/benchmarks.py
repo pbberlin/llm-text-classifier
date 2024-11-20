@@ -158,7 +158,8 @@ def PartialUI(req, session, showSelected=True):
     reqArgs = req.form.to_dict()
 
 
-    bmrkID = f"{len(c_benchmarks)-0}" # defaulting to last - jinja indexes are one-based
+    # todo: make this similar to samples and templates
+    bmrkID = f"{len(c_benchmarks)-0}" 
     if "action" in reqArgs and reqArgs["action"] == "select_benchmark":
         bmrkID = reqArgs["bmrkID"]
         # print(f"new benchmark ID is {bmrkID}")

@@ -10,6 +10,9 @@
     ],
     "tokens_max": 2000,
     "temperature": 0,
-    "role": "You are an economic policy analyst.",
+    "context_id":     0,
+    "benchmark_id":   0,
+    "sample_id":      0,
+    "template_id":    0,
     "last-item": "no-comma"
 }

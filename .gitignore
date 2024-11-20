@@ -12,3 +12,5 @@ static/img/dynamic/**
 tmp*
 
 **/.venv/**
+
+pocketbase.exe

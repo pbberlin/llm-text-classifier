@@ -12,44 +12,38 @@ c_samples = []
 cacheDirty = False
 
 # new statement - part of new sample
-def newSt():
+def newSt(lg=""):
     st = {
         "short":"",
-        "long": "",
+        "long": lg,
     }
     return st
 
 
 def new():
+    st = newSt()
     nw = {  "descr": "",
         "statements": [
-            {
-                "short":"",
-                "long":"",
-            },
+            st,
         ]
     }
     return nw
 
 
 def dummy():
+    st1 = newSt("dummy sample 1")
+    st2 = newSt("dummy sample 2")
+
     dmmy = {
         "descr": "",
         "statements": [
-            {
-                "short":"",
-                "long":"dummy sample 1",
-            },
-            {
-                "short":"",
-                "long":"dummy sample 2",
-            },
+            st1,
+            st2,
         ]
     }
     return dmmy
 
 
-# unused
 def toHTMLShort(smpl):
     s  = ""
     s += f"<div>\n"
@@ -144,9 +138,9 @@ def selectSingle(selectedStr):
         if item["descr"].strip() == "":
             continue
         sel = ""
-        if (idx+1) == selected:
+        if (idx+0) == selected:
             sel = "selected"
-        s += f"\t<option {sel} value='{idx+1}' >{item['descr'].strip()}</option>\n"
+        s += f"\t<option {sel} value='{idx+0}' >{item['descr'].strip()}</option>\n"
 
     s += f"</select>\n"
     return s
@@ -163,16 +157,10 @@ def PartialUI(req, session, showSelected=True):
     reqArgs = req.form.to_dict()
 
 
-    smplID = f"{len(c_samples)-0}" # defaulting to last - jinja indexes are one-based
+    smplID = get("sample_id", len(c_samples)-1) # defaulting to last
     if "action" in reqArgs and reqArgs["action"] == "select_sample":
-        smplID = reqArgs["smplID"]
-        # print(f"new sample ID is {smplID}")
-        session["smplID"] = smplID
-    else:
-        if "smplID" in session:
-            smplID = session["smplID"]
-            print(f"sample ID from session is {smplID}")
-
+        smplID = int(reqArgs["smplID"]) - 0 # jinja indexes are one-based
+        set("sample_id", smplID)
 
 
     s  = ""
