@@ -191,36 +191,6 @@ def flagSpecialChars(s):
 
 
 
-#                       two spaces
-#                              end of line
-RE_MD_WRAP = re.compile(r'[ ]{2,3}\r?\n')    # LF or CRLF
-def markdownLineWrap(s: str):
-    return RE_MD_WRAP.sub("<br>\n", s )
-
-
-def splitByMarkownHeaders(s: str, hdrLvl: int):
-
-    # LF or CRLF - optional trailing white space -
-    #    x times '#' followed by space
-
-    tpl = r'\r?\n[\s]{0,3}[#]{2}[\s]+'
-    tpl = r'\r?\n[\s]{0,3}[#]{    2              }[\s]+'
-    eff = r'\r?\n[\s]{0,3}[#]{'+ str(hdrLvl) + r'}[\s]+'
-
-    RE_SECTION = re.compile(eff)
-    parts = RE_SECTION.split(s)
-    print(f"\tfound {len(parts)-1:2} headers of level {hdrLvl} => {len(parts)} parts")
-    return parts
-
-RE_LINEBREAK = re.compile(r'\r?\n')    # LF or CRLF
-def splitByLineBreak(s: str):
-    # lines = RE_LINEBREAK.split(s)
-    lines = s.splitlines()
-    return lines
-
-
-
-
 
 RE_CONDENSE_SP = re.compile(r' +')   # condense spaces
 RE_CONDENSE_NL = re.compile(r"\s+")  # also newlines and tabs

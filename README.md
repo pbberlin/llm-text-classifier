@@ -17,7 +17,23 @@ Import ECB speeches
 cls && python web-app.py --ecb=True
 ```
 
-## Ideas - Pocketbase
+
+## Svelte component
+
+..\js\llm-query-svelte\
+
+
+### JSONForms
+
+[Vue seed](https://github.com/eclipsesource/jsonforms-vue-seed)
+
+..\js\jsonforms-vue-seed\
+
+
+
+## Ideas
+
+### Pocketbase
 
 * Use pocketbase for config, contexts, prompts, benchmarks, templates
 * `pocketbase.exe serve  --dir=./data/pb_data  --migrationsDir=./data/pb_migrations`
@@ -25,15 +41,16 @@ cls && python web-app.py --ecb=True
 * Nice UI - but onerous to ORM the data into JSON
     * We would have to use the Javascript API and serialize the JSON into Pydantic class instances
 
-## FastAPI
+### FastAPI
 
 * Endpoint Doc
 * Comfort funcs to extract request data into objects
 
-## Ideas - Pydantic
+### Ideas - Pydantic
 
 * Use Pydantic classes for contexts, prompts, benchmarks, templates
 * Easy database ORM 
 * Pydantic classes => create JSON schema  
 * Use [JSONForms](https://jsonforms.io/) to generate the HTML forms
 * JSONForms needs to be a separate project
+

@@ -951,7 +951,7 @@ def designPrompt(beliefStatement, speech):
 
     stageTemplate = tpl["stages"][0]["long"]
 
-    print(stageTemplate)
+    # print(stageTemplate)
 
     prompt = stageTemplate.format(
         role=role, 

@@ -12,3 +12,7 @@ matplotlib
 
 SQLAlchemy
 flask-sqlalchemy
+
+fastapi[standard]
+uvicorn[standard]
+jinja2

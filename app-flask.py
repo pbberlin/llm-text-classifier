@@ -54,9 +54,8 @@ from lib.util import loadDomainSpecificWords
 from lib.util import cleanFileName
 from lib.util import stackTrace
 from lib.util import mainTemplateHeadForChunking, templateSuffix
-from lib.util import splitByMarkownHeaders
-from lib.util import markdownLineWrap
-from lib.util import splitByLineBreak
+
+from lib.markdown_ext import renderToRevealHTML
 
 import  lib.config          as config
 
@@ -168,16 +167,6 @@ def docImages(fileName):
 @app.route('/slides/<path:fileName>')
 def serveSlides2(fileName):
 
-    '''
-        Page break for every header 1-3
-          # Heading 1
-          ## Heading 2...
-
-        In addition: Explicit page break can be set using
-            <!--pagebreak-->
-
-    '''
-
     dr = os.path.join(".", "doc", "slides")
     fn = os.path.join(dr, f"{fileName}" )
     if not fn.lower().endswith(".md"):
@@ -186,125 +175,7 @@ def serveSlides2(fileName):
         mdContent = inFile.read()
         print(f"\tloaded markdown '{fileName}' - {len(mdContent)} bytes - from {dr}")
 
-
-    pbInner = "<!--pagebreak-->"
-    pbOuter = f"\r\n{pbInner}\r\n"
-
-    # wrapping into <section> tags _after_ conversion to HTML proved impossible:
-    # found no comfy document tree parser to wrap subtrees into <section>.
-    # Instead we insert user-defined string <!--pagebreak--> before headings.
-    # <!--pagebreak--> can be inserted in original markdown too.
-    for hdrLvl in [2,3,4]:
-        sections = splitByMarkownHeaders(mdContent, hdrLvl)
-        mdContent = f"{pbOuter}{ '#'*hdrLvl } ".join(sections)
-
-
-    if False:
-        # auto split long text without headings
-        splitThreshold = 12
-        sections = mdContent.split(pbInner)
-        for idx1, sect in enumerate(sections):
-            lines = splitByLineBreak(sect)
-            nonEmpty =  [ln for ln in lines if ln]
-
-            if len(nonEmpty) > splitThreshold:
-                linesNew = []
-                lastInsert = 0
-                for idx2, line in enumerate(lines):
-                    if lastInsert > splitThreshold:
-                        if not line.startswith(" "):
-                            lastInsert = 0
-                            linesNew.append("\r\n<!-- automatic pagebreak insertion -->")
-                            linesNew.append(pbOuter)
-                            print(f"\tsect{idx1} - pb before after {idx2}")
-                    linesNew.append(line)
-                    lastInsert += 1
-                sections[idx1] = "\n".join(linesNew)
-
-        mdContent = pbOuter.join(sections)
-
-    mdContent = markdownLineWrap(mdContent)
-
-
-    # https://python-markdown.github.io/extensions/
-    # https://python-markdown.github.io/extensions/attr_list/
-    # we can add CSS classes, element IDs and key-value attributes to markdown
-    # using syntax   {: #myid .myclass   key='val' }
-    from markdown.extensions.attr_list import AttrListExtension
-
-    # note: dont use the mermaid extension
-    #   instead write mermaid elements as <div class="mermaid">...
-    #   and import the necessary javascript.
-    #   examples in doc2.md
-
-    htmlContent = markdown.markdown(
-        mdContent,
-        extensions=[AttrListExtension()],
-        extension_configs="",
-        tab_length=4,
-    )
-
-
-    # replacing  <!--pagebreak--> from above
-    #  turning it into <section> nodes
-    openSect = "\t<section>\n"
-    closSect = "\n\t</section>"
-
-    # replace inner
-    htmlContent = htmlContent.replace( pbInner, f"{closSect}{openSect}")
-    # enclose outer
-    htmlContent = f"{openSect}<!--outer-->\n{htmlContent}\n<!--outer-->{closSect}"
-
-    '''
-     negative: ol counter will now be reset across sections.
-      How do we preserve order list numbers across sections?
-        	<ol start="3"> ?
-      Using attr_list extension - we manually insert
-           {: start='3' }
-      Remember: separate line after markdown element
-      But documentation says 'implied elements ... ul, ol ... no way'
-      We have to set an explicit value with each li:
-
-        3.  content of list item 3
-        {: value='3' }
-            * sub-list 1
-        4.  content of list item 4
-        {: value='4' }
-            * sub-list 1
-            * sub-list 2
-
-
-          '''
-
-
-    # there might be <p> and <p key=val>
-    htmlContent = htmlContent.replace("<p ",   '<p class="fragment" ')
-    htmlContent = htmlContent.replace("<p>",   '<p class="fragment" >')
-
-    htmlContent = htmlContent.replace("<li class=\"", '<li  class="fragment ')  # two spaces - to prevent subsequent
-    # htmlContent = htmlContent.replace("<li ", '<li class="fragment" ')
-    htmlContent = htmlContent.replace("<li>", '<li class="fragment" >')
-
-    htmlContent = htmlContent.replace("<tr ", '<tr class="fragment" ')
-    htmlContent = htmlContent.replace("<tr>", '<tr class="fragment" >')
-
-    htmlContent = htmlContent.replace("<blockquote ", '<blockquote class="fragment" ')
-    htmlContent = htmlContent.replace("<blockquote>", '<blockquote class="fragment" >')
-
-    if False:
-        # images always inside list items
-        htmlContent = htmlContent.replace("<img ", '<img class="fragment" ')
-
-    # htmlContent = htmlContent.replace("<blockquote class=\"", '<blockquote class="fragment ')
-
-    #  src="./img/xyz.jpg
-    #       to
-    #  src="/img/doc/xyz.jpg
-
-    # image handler for doc
-    htmlContent = htmlContent.replace("src=\"./img/", "src=\"/doc/img/")
-
-
+    htmlContent = renderToRevealHTML(mdContent)
 
     # dump file for debug
     fnOut = os.path.join(dr, f"tmp-{fileName}-rendered.html" )
