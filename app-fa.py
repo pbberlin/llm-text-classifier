@@ -3,12 +3,16 @@
 # pip install jinja2
 
 from fastapi import FastAPI
-from fastapi import Request, Depends, HTTPException, Form, File, UploadFile
+from fastapi import Header, Request, Depends, HTTPException, Form, File, UploadFile
+
 
 from fastapi.responses   import Response, HTMLResponse, JSONResponse, StreamingResponse, FileResponse
+from fastapi.responses   import RedirectResponse
+
 from fastapi.templating  import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
+from typing import List
 
 
 import asyncio
@@ -16,23 +20,27 @@ import asyncio
 from contextlib import asynccontextmanager
 
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
 
 
 import markdown
 import time
 import os
 from pathlib import Path
+
+
+
+from    lib.markdown_ext import renderToRevealHTML
+
+import  lib.config as cfg
+import  models.embeddings as embeddings
+
+
+from models2.db import dbGet, dbInit, engine
+
+
+
+
 import logging
-
-from pydantic import BaseModel
-from typing import List, Dict
-
-from lib.markdown_ext import renderToRevealHTML
-
-
 logging.basicConfig(
     level=logging.INFO,
     # format="%(asctime)s - %(levelname)s - %(message)s",
@@ -42,33 +50,6 @@ lg = logging.getLogger(__name__)
 
 
 
-# database setup
-DATABASE_URL = "sqlite+aiosqlite:///./data/embeddings-mostly-fastapi.db"
-engine = create_async_engine(DATABASE_URL, echo=True)
-async_session = sessionmaker(
-    engine, 
-    class_=AsyncSession, 
-    expire_on_commit=False,
-)
-
-# models
-class EmbeddingX(BaseModel):
-    id: int
-    data: Dict
-
-async def init_db():
-    async with engine.begin() as conn:
-        # from models import Base  
-        # Ensure models have shared base class
-        if False:
-            await conn.run_sync(EmbeddingX.metadata.create_all)
-
-
-async def get_db():
-    async with async_session() as session:
-        yield session
-
-
 
 
 
@@ -76,7 +57,7 @@ async def get_db():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    await init_db()
+    await dbInit()
     print("\tdb init")
 
     yield  # application runs here
@@ -86,19 +67,48 @@ async def lifespan(app: FastAPI):
     print("\tdb connection disposed")
 
 
+
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.static_dir = Path("static")  
+app.dir_img_slides = Path("./doc/img")  
+app.dir_uploads = Path("./uploaded-files")  
+
+cfg.load(app, isFlaskApp=False)
+
+# DIR_STATIC = Path("./static")
+# DIR_IMG_SLIDES = Path("./doc/img")
+# DIR_UPLOADS = "uploaded-files"
+# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+
 templates = Jinja2Templates(directory="templates")
 
 # custom template functions
 def templateFunc01(value: str) -> str:
     return f"<p>templateFunc01 says: -{value}-</p>\n"
+def exampleFunc(amount, currency="€"):
+    return f"{amount:.2f}{currency}"
+def datasetDyn():
+    return cfg.get('dataset')
 
 # register custom function to Jinja environment
 templates.env.globals["templateFunc01"] = templateFunc01
+templates.env.globals["exampleFunc"] = exampleFunc
+templates.env.globals["datasetDyn"] = datasetDyn
 
 
 
+async def addCorsHeaders(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    return response
+
+
+
+# if False:
 @app.middleware("http")
 async def log_requests(request: Request, nextReq):
 
@@ -106,9 +116,7 @@ async def log_requests(request: Request, nextReq):
     # print(f"Headers: {dict(request.headers)}")
     
     tStart = time.time()
-
     response: Response = await nextReq(request)
-    
     delta = time.time() - tStart
 
     print(f"\t\t{request.url.path}  {delta:.2f}"  )
@@ -116,28 +124,45 @@ async def log_requests(request: Request, nextReq):
     return response
 
 
+@app.middleware("http")
+async def cors_middleware(request: Request, nextReq):
+    response: Response = await nextReq(request)
+    response = await addCorsHeaders(response)
+    return response
 
 
-if False:
-    async def addCorsHeaders(response):
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        return response
+# convenience upload files
+@app.post("/upload-file")
+async def upload_file(files: List[UploadFile] = File(...)):
+    responses = []
+    for file in files:
+        fPath = os.path.join(app.dir_uploads, file.filename)
+        with open(fPath, "wb") as bufWrite:
+            bufWrite.write(await file.read())
+        responses.append(f"{file.filename} uploaded successfully!")
+    return {"messages": responses}
 
 
-    @app.middleware("http")
-    async def cors_middleware(request: Request, call_next):
-        response = await call_next(request)
-        return await addCorsHeaders(response)
+
+@app.get("/generate-stream-example", response_class=StreamingResponse)
+async def generate_stream_example():
+    async def generateChunks():
+        yield "Starting stream...\n"
+        yield f"{ " " * 2000 }\n"
+        for i in range(20):
+            yield f"chunk {i}\n"
+            await asyncio.sleep(0.5)
+        yield "Stream complete!"
+    return StreamingResponse(generateChunks(), media_type="text/plain")
 
 
-DIR_STATIC = Path("./static")
+
+
 
 
 @app.get("/static-explicit/{fName:path}", response_class=FileResponse)
 async def serve_file(fName: str):
-    loc = DIR_STATIC / fName
+    loc = app.static_dir / fName
     # print(f"{fName=} {loc=}")
     if not loc.exists() or not loc.is_file():
         raise HTTPException(status_code=404, detail=f"File not found {loc}")
@@ -147,7 +172,7 @@ async def serve_file(fName: str):
 
 @app.get("/favicon.ico", response_class=FileResponse)
 async def favicon():
-    loc = DIR_STATIC / "favicon.svg"
+    loc = app.static_dir / "favicon.svg"
     if not loc.exists() or not loc.is_file():
         raise HTTPException(status_code=404, detail=f"File not found {loc}")
 
@@ -163,13 +188,11 @@ async def favicon():
     )
 
 
-DIR_IMG_SLIDES = Path("./doc/img")
-
 
 # special image handler for slides, doc
 @app.get("/doc/img/{fName:path}", response_class=FileResponse)
 def docImages(fName):
-    loc = DIR_IMG_SLIDES / fName
+    loc = app.dir_img_slides / fName
     if not loc.exists() or not loc.is_file():
         raise HTTPException(status_code=404, detail=f"doc img file not found {loc}")
     return FileResponse(
@@ -183,17 +206,8 @@ def docImages(fName):
 
 
 
-'''
-    Page break for every header 1-3
-        # Heading 1
-        ## Heading 2...
-
-    In addition: Explicit page break can be set using
-        <!--pagebreak-->
-
-'''
 @app.get("/slides/{fName:path}", response_class=HTMLResponse)
-async def serve_slides(fName:str ="doc1" ):
+async def serveSlides(fName:str ="doc1" ):
 
     if fName == "":
         fName = "doc1"
@@ -232,50 +246,39 @@ async def serve_slides(fName:str ="doc1" ):
 
 
 
-
+# home, index
 @app.get("/", response_class=HTMLResponse)
 async def readRoot(request: Request):
-  return templates.TemplateResponse(
-        "tmp-main-fa.html", 
+  
+    apiKey = cfg.get('OpenAIKey')
+
+    successMsg = ""
+    referrer = request.headers.get("referer", None)    
+    if referrer is None:
+        apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+        if not apiKeyValid:
+            url1 = request.url_for("serveSlides", fName="doc2")
+            return RedirectResponse( url=url1 )
+
+
+    return templates.TemplateResponse(
+        "main.html", 
         {
             "request": request, 
-            "HTMLTitle": "HTMLTitle ",
-            "cntBefore": "<p> before  </p> ",
-            "cntAfter":  "<p> after   </p>",
+            "HTMLTitle": "Main page",
+            "contentTpl": "main-body",
+            "cntBefore": f"<p>{successMsg}</p>",
+            # "cntAfter":  "<p> after   </p>",
         },
     )
 
 
 
-@app.get("/generate-stream-example")
-async def generate_stream_example():
-    async def generator():
-        yield "Starting stream...\n"
-        for i in range(20):
-            yield f"chunk {i}\n"
-            await asyncio.sleep(0.5)
-        yield "Stream complete!"
-    return StreamingResponse(generator(), media_type="text/plain")
 
 
 
 
 
-
-@app.post("/upload-file")
-async def upload_file(files: List[UploadFile] = File(...)):
-
-    UPLOAD_FOLDER = "uploaded-files"
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-    responses = []
-    for file in files:
-        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-        with open(file_path, "wb") as buffer:
-            buffer.write(await file.read())
-        responses.append(f"{file.filename} uploaded successfully!")
-
-    return {"messages": responses}
 
 
 
@@ -285,8 +288,9 @@ async def upload_file(files: List[UploadFile] = File(...)):
 
 
 if __name__ == "__main__":
-    # command line:
-    #       uvicorn app-fa:app --reload
+    # reload or workers can only be used from the command line:
+    #       uvicorn [module-filename]:[instance-name-of-app] 
+    #       uvicorn app-fa:app 
     #       uvicorn app-fa:app --reload   --port 8200
     if True:
         import uvicorn

@@ -57,7 +57,7 @@ from lib.util import mainTemplateHeadForChunking, templateSuffix
 
 from lib.markdown_ext import renderToRevealHTML
 
-import  lib.config          as config
+import  lib.config          as cfg
 
 
 from lib.uploaded2samples import uploadedToSamples
@@ -116,7 +116,7 @@ def indexH():
     if 'api_key' in session:
         apiKey = session['api_key']
     else:
-        apiKey = config.get('OpenAIKey')
+        apiKey = cfg.get('OpenAIKey')
 
     referrer = request.referrer
     # print(f"referrer {referrer}")
@@ -361,7 +361,7 @@ def listBoxDataset():
         if os.path.isdir(os.path.join(base_path, item)) and item not in exclude and not item.startswith("tmp-"):
             dirs.append(item)
 
-    selected = config.get("dataset")
+    selected = cfg.get("dataset")
 
     s  = '<label for="dataset">Choose a dataset:</label> '
     s += '<select name="dataset" id="dataset">'
@@ -396,7 +396,7 @@ def configH():
         if 'api_key' in session:
             apiKey = session['api_key']
         else:
-            apiKey = config.get("OpenAIKey")
+            apiKey = cfg.get("OpenAIKey")
 
     apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
 
@@ -413,7 +413,7 @@ def configH():
     datasetNew = None
     if 'dataset' in kvPost:
         datasetNew = kvPost['dataset']
-        old = config.get("dataset")
+        old = cfg.get("dataset")
 
         if datasetNew != old:
 
@@ -423,8 +423,8 @@ def configH():
             saveAll(force=True) # before switching
 
             # now switch
-            config.set("dataset", datasetNew)
-            config.save()
+            cfg.set("dataset", datasetNew)
+            cfg.save()
 
             loadAll( {} )
 
@@ -969,7 +969,7 @@ def chatCompletionJsonH():
     if "model" in kvPost:
         model =  kvPost["model"].strip()
     if model == "":
-        models = config.get("modelNamesChatCompletion")
+        models = cfg.get("modelNamesChatCompletion")
         model =  models[0]
 
 
@@ -1180,7 +1180,7 @@ def createAndRun(app2):
     app2.instance_path='data'    # default is "instance" - sqlite file go here
     app2.debug=True
 
-    config.load(app2)
+    cfg.load(app2)
 
 
     UPLOAD_FOLDER = os.path.join(app2.root_path, 'uploaded-files')
@@ -1218,7 +1218,7 @@ def createAndRun(app2):
         use_reloader=False,
     )
 
-    config.save()
+    cfg.save()
 
     with app2.app_context():
         saveAll()

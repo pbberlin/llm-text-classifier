@@ -512,7 +512,7 @@ def checkAPIKeyOuter(apiKey):
             invalidMsg += msg + "<br>\n"
         else:
             successMsg += "connection to OpenAI API succeeded<br>\n"
-            session['api_key'] = apiKey
+            # session['api_key'] = apiKey
             set("OpenAIKey", apiKey)
 
     return (

@@ -47,7 +47,7 @@ def copyToAppState(appInstance):
 
 
 
-def load(argApp):
+def load(argApp, isFlaskApp=True):
 
     global cfg, appInstance  # in order to _write_ to module variable
 
@@ -70,7 +70,8 @@ def load(argApp):
                 print(f"\t  {k:24} {cfg[k]}")
 
 
-    copyToAppState(argApp)
+    if isFlaskApp:
+        copyToAppState(argApp)
 
 
 def save():

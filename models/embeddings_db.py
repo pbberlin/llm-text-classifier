@@ -4,7 +4,7 @@ import json
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.sqlite import JSON
 
-import  lib.config          as config
+import  lib.config          as cfg
 
 from sqlalchemy import select, func
 
@@ -47,7 +47,7 @@ def embeddingsAll(tableName="embeddings"):
 
 
 def embeddingsWhereDataset(   tableName="embeddings"):
-    ds = config.get("dataset")
+    ds = cfg.get("dataset")
     datasets = [ds, ""] # legcacy - dataset == ""
     embdsAsList = Embedding.query.filter(Embedding.dataset.in_(datasets)).all()
     print(f"\tfound {len(embdsAsList)} embeddings for dataset '{ds}' ")
@@ -90,7 +90,7 @@ def dummyRecordEmbedding(idx):
     oJson = json.loads(strJson)
 
     embd0 = Embedding(
-        dataset =  config.get("set"),
+        dataset =  cfg.get("set"),
         text = myText,
         hash = strHash(myText),
         embeddings = oJson,
