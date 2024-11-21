@@ -8,6 +8,16 @@ from typing import List, Dict, Optional
 from uuid import UUID, uuid4
 
 
+# database setup
+DATABASE_URL = "sqlite+aiosqlite:///./data/embeddings-mostly-fastapi.db"
+engine = create_async_engine(DATABASE_URL, echo=True)
+async_session = sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
+
 # models
 class EmbeddingX(BaseModel):
     id: int
@@ -25,27 +35,20 @@ class EmbeddingX(BaseModel):
 # 	return self.price * self.quantityS
 
 
-# database setup
-DATABASE_URL = "sqlite+aiosqlite:///./data/embeddings-mostly-fastapi.db"
-engine = create_async_engine(DATABASE_URL, echo=True)
-async_session = sessionmaker(
-    engine, 
-    class_=AsyncSession, 
-    expire_on_commit=False,
-)
-
-
-async def dbInit():
+async def init():
     async with engine.begin() as conn:
-        # from models import Base  
         # Ensure models have shared base class
         if False:
             await conn.run_sync(EmbeddingX.metadata.create_all)
 
 
-async def dbGet():
+async def get():
     async with async_session() as session:
         yield session
+
+
+async def dispose():
+    engine.dispose()
 
 
 

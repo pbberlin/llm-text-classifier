@@ -35,7 +35,7 @@ import  lib.config as cfg
 import  models.embeddings as embeddings
 
 
-from models2.db import dbGet, dbInit, engine
+import  models2.db as db
 
 
 
@@ -57,13 +57,16 @@ lg = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    await dbInit()
-    print("\tdb init")
+    cfg.load(app, isFlaskApp=False)
+
+
+    await db.init()
+    print("\tdb init stop")
 
     yield  # application runs here
 
 
-    await engine.dispose()
+    await db.dispose()
     print("\tdb connection disposed")
 
 
@@ -74,12 +77,6 @@ app.static_dir = Path("static")
 app.dir_img_slides = Path("./doc/img")  
 app.dir_uploads = Path("./uploaded-files")  
 
-cfg.load(app, isFlaskApp=False)
-
-# DIR_STATIC = Path("./static")
-# DIR_IMG_SLIDES = Path("./doc/img")
-# DIR_UPLOADS = "uploaded-files"
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 
@@ -245,7 +242,6 @@ async def serveSlides(fName:str ="doc1" ):
 
 
 
-
 # home, index
 @app.get("/", response_class=HTMLResponse)
 async def readRoot(request: Request):
@@ -274,6 +270,13 @@ async def readRoot(request: Request):
 
 
 
+
+
+# home, index
+@app.get("/db", response_class=HTMLResponse)
+async def handleDB(request: Request):
+    db1 = db.get()
+    return "<p>db fine</p>"
 
 
 
