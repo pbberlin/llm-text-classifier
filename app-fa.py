@@ -33,7 +33,9 @@ from    lib.markdown_ext import renderToRevealHTML
 
 import  lib.config as cfg
 
-import  models.db_fastapi as db1
+import  models.db5 as db5
+import  models.db1_embeddings as db1
+import  models.db6_embeddings as db6
 
 
 
@@ -74,7 +76,7 @@ async def lifespan(app: FastAPI):
     cfg.load(app, isFlaskApp=False)
 
 
-    await db1.init_db()
+    await db5.init_db()
     print("\tdb init stop")
 
 
@@ -83,20 +85,20 @@ async def lifespan(app: FastAPI):
     from contextlib import contextmanager
     @contextmanager
     def db_session():
-        db = db1.SessionLocal()
+        db = db5.SessionLocal()
         try:
             yield db
         finally:
             db.close()
     with db_session() as db:
         for idx in range(3):
-            db1.dummyRecordEmbedding(idx, db)
+            db1.dummyRecordEmbedding(db, idx)
 
 
     # application runs
     yield  
 
-    await db1.dispose_db()
+    await db5.dispose_db()
     print("\tdb connection disposed")
 
 
@@ -106,7 +108,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.static_dir = Path("static")  
 app.dir_img_slides = Path("./doc/img")  
 app.dir_uploads = Path("./uploaded-files")  
-app.include_router(db1.router)
+app.include_router(db6.router)
 
 
 
@@ -121,27 +123,27 @@ async def addCorsHeaders(response):
 
 
 
-# if False:
-@app.middleware("http")
-async def log_requests(request: Request, nextReq):
+if False:
+    @app.middleware("http")
+    async def log_requests(request: Request, nextReq):
 
-    # print(f"Incoming request: {request.method} {request.url}")
-    # print(f"Headers: {dict(request.headers)}")
-    
-    tStart = time.time()
-    response: Response = await nextReq(request)
-    delta = time.time() - tStart
+        # print(f"Incoming request: {request.method} {request.url}")
+        # print(f"Headers: {dict(request.headers)}")
+        
+        tStart = time.time()
+        response: Response = await nextReq(request)
+        delta = time.time() - tStart
 
-    print(f"\t\t{request.url.path}  {delta:.2f}"  )
+        print(f"\t\t{request.url.path}  {delta:.2f}"  )
 
-    return response
+        return response
 
 
-@app.middleware("http")
-async def cors_middleware(request: Request, nextReq):
-    response: Response = await nextReq(request)
-    response = await addCorsHeaders(response)
-    return response
+    @app.middleware("http")
+    async def cors_middleware(request: Request, nextReq):
+        response: Response = await nextReq(request)
+        response = await addCorsHeaders(response)
+        return response
 
 
 # convenience upload files
