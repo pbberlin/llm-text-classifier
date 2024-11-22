@@ -1,20 +1,23 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-import json
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.sqlite import JSON
 
+from sqlalchemy import select, func
+
+import json
+from   datetime import datetime
+
 import  lib.config          as cfg
 
-from sqlalchemy import select, func
 
 db = SQLAlchemy()
 
+# models
 class Embedding(db.Model):
     __tablename__ = 'embeddings'
     id         = db.Column(db.Integer,  primary_key=True, autoincrement=True)
     datetime   = db.Column(db.DateTime, default=datetime.utcnow)
-    dataset    = db.Column(db.String,    nullable=False, default="")
+    dataset    = db.Column(db.String,   nullable=False, default="")
     hash       = db.Column(db.String,   unique=True, nullable=False, index=True)
     text       = db.Column(db.Text,     nullable=False)
     embeddings = db.Column(JSON)  # SQLite > 3.9.
@@ -90,7 +93,7 @@ def dummyRecordEmbedding(idx):
     oJson = json.loads(strJson)
 
     embd0 = Embedding(
-        dataset =  cfg.get("set"),
+        dataset =  cfg.get("dataset"),
         text = myText,
         hash = strHash(myText),
         embeddings = oJson,

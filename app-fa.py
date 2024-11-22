@@ -32,10 +32,8 @@ from pathlib import Path
 from    lib.markdown_ext import renderToRevealHTML
 
 import  lib.config as cfg
-import  models.embeddings as embeddings
 
-
-import  models2.db as db
+import  models.db_fastapi as db1
 
 
 
@@ -47,35 +45,6 @@ logging.basicConfig(
     format="%(levelname)s: - %(message)s",
 )
 lg = logging.getLogger(__name__)
-
-
-
-
-
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-
-    cfg.load(app, isFlaskApp=False)
-
-
-    await db.init()
-    print("\tdb init stop")
-
-    yield  # application runs here
-
-
-    await db.dispose()
-    print("\tdb connection disposed")
-
-
-
-app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-app.static_dir = Path("static")  
-app.dir_img_slides = Path("./doc/img")  
-app.dir_uploads = Path("./uploaded-files")  
 
 
 
@@ -94,6 +63,53 @@ def datasetDyn():
 templates.env.globals["templateFunc01"] = templateFunc01
 templates.env.globals["exampleFunc"] = exampleFunc
 templates.env.globals["datasetDyn"] = datasetDyn
+
+
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    cfg.load(app, isFlaskApp=False)
+
+
+    await db1.init_db()
+    print("\tdb init stop")
+
+    # for idx in range(3):
+    #     db1.dummyRecordEmbedding(idx)
+
+    from contextlib import contextmanager
+    @contextmanager
+    def db_session():
+        db = db1.SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+    with db_session() as db:
+        for idx in range(3):
+            db1.dummyRecordEmbedding(idx, db)
+
+
+    # application runs
+    yield  
+
+    await db1.dispose_db()
+    print("\tdb connection disposed")
+
+
+
+app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.static_dir = Path("static")  
+app.dir_img_slides = Path("./doc/img")  
+app.dir_uploads = Path("./uploaded-files")  
+app.include_router(db1.router)
+
+
+
 
 
 
@@ -241,6 +257,9 @@ async def serveSlides(fName:str ="doc1" ):
         raise HTTPException(status_code=404, detail=f"File not found {loc}")
 
 
+def mock_EmbeddingsCheckAPIKeyOuter(apiKey):
+    return True, "mock verification success", ""
+
 
 # home, index
 @app.get("/", response_class=HTMLResponse)
@@ -251,7 +270,8 @@ async def readRoot(request: Request):
     successMsg = ""
     referrer = request.headers.get("referer", None)    
     if referrer is None:
-        apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+        # apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+        apiKeyValid, successMsg, invalidMsg = mock_EmbeddingsCheckAPIKeyOuter(apiKey)
         if not apiKeyValid:
             url1 = request.url_for("serveSlides", fName="doc2")
             return RedirectResponse( url=url1 )
@@ -272,30 +292,26 @@ async def readRoot(request: Request):
 
 
 
-# home, index
-@app.get("/db", response_class=HTMLResponse)
-async def handleDB(request: Request):
-    db1 = db.get()
-    return "<p>db fine</p>"
-
-
-
-
-
-
-
-
-
 
 
 
 
 if __name__ == "__main__":
-    # reload or workers can only be used from the command line:
-    #       uvicorn [module-filename]:[instance-name-of-app] 
-    #       uvicorn app-fa:app 
-    #       uvicorn app-fa:app --reload   --port 8200
-    if True:
+
+    '''
+taskkill /im  Python.exe  /F
+cls && fastapi dev app-fa.py
+fastapi run app-fa.py
+
+reload or workers can only be used from the command line:
+        uvicorn [module-filename]:[instance-name-of-app] 
+        uvicorn app-fa:app 
+        uvicorn app-fa:app --reload   --port 8200
+    '''
+
+    if False:
+        # run without reload
+        # cls && python app-fa.py
         import uvicorn
         uvicorn.run(
             app, 
