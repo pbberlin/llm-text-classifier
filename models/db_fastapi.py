@@ -97,7 +97,7 @@ if False:
 
 
 
-from dataclasses import dataclass, asdict
+from dataclasses      import dataclass, asdict
 from dataclasses_json import dataclass_json
 from dataclasses_json import Undefined
 
@@ -135,16 +135,23 @@ class Embedding(Base):
             "modelminor": self.modelminor,
         }
 
-   # generic serialization
+   # serialization generic 
     def asDictInner1(self):
             return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-    # using extensions from  dataclasses lib
+   # serialization using dataclasses.asdict
     def asDictInner2(self):
         return asdict(self)
 
+   # serialization using dataclass_json.to_dict
     def asDictInner3(self):
+        return self.to_dict()
+
+   # serialization using dataclass_json.to_json
+    def asDictInner4(self):
         return self.to_json()
+
+
 
     def createNoValidation(self):
         newEmbedding = Embedding.from_json( '{id:2, dataset: "ds"}' )
@@ -172,7 +179,8 @@ async def dispose_db():
     engine.dispose()
 
 
-# get a DB session for endpoints or anywhere in the application
+# get a DB session for endpoints
+# 
 async def get_db():
     db = SessionLocal()
     try:
@@ -201,12 +209,6 @@ def ifNotExistTable(tableName, db: Session = Depends(get_db)):
 
 
 
-# utils for Embedding
-def embedToJSON(e: Embedding):
-    return e.asDictInner1()
-    return e.asDictInner2()
-    return e.asDictInner3()
-
 
 
 def embeddingsCount(db: Session = Depends(get_db)):
@@ -217,7 +219,7 @@ def embeddingsAll(db: Session = Depends(get_db)):
     embeds = db.query(Embedding).all()
     ret = []
     for e in embeds:
-        ret.append( embedToJSON(e) )
+        ret.append( e.to_json() )
     print(f"\tfound {len(embeds)} embeddings total in the DB")
     return ret
 
@@ -227,7 +229,7 @@ def embeddingsWhereDataset(dataset: str = "", db: Session = Depends(get_db)):
     embeds = db.query(Embedding).filter(Embedding.dataset.in_(datasets)).all()
     ret = []
     for e in embeds:
-        ret.append( embedToJSON(e) )
+        ret.append( e.to_json() )
     print(f"\tfound {len(embeds)} embeddings for dataset '{dataset}' ")
     return ret
 
@@ -236,13 +238,13 @@ def embeddingsWhereHash(hashes: list[str], db: Session = Depends(get_db)):
     embeds = db.query(Embedding).filter(Embedding.hash.in_(hashes)).all()
     ret = []
     for e in embeds:
-        ret.append( embedToJSON(e) )
+        ret.append( e.to_json() )
     print(f"\tfound {len(embeds)} embeddings for hashes '{hashes}' ")
     return ret
 
 
 # Depend is only for endpoints
-#  "standalone code require... see usage of dummyRecordEmbedding in main module "
+#  "standalone code requires... see usage of dummyRecordEmbedding in main module "
 from lib.util import strHash
 # def dummyRecordEmbedding(idx: int, db: Session = Depends(get_db)):
 def dummyRecordEmbedding(idx: int, db: Session):
@@ -259,7 +261,7 @@ def dummyRecordEmbedding(idx: int, db: Session):
     db.add(e)
     db.commit()
     db.refresh(e)
-    return embedToJSON(e)
+    return e.to_json()
 
 
 

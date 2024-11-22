@@ -77,9 +77,9 @@ async def lifespan(app: FastAPI):
     await db1.init_db()
     print("\tdb init stop")
 
-    # for idx in range(3):
-    #     db1.dummyRecordEmbedding(idx)
 
+    # database access outside an endpoint
+    # even with fastapi - we still need this  d------g complexity
     from contextlib import contextmanager
     @contextmanager
     def db_session():
