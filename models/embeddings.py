@@ -450,7 +450,6 @@ def scatterPlot(lbl, idxs, vals, mnVls, mxVls, overlaps=[], groupSize=1):
         except Exception as error:
             print(f"ERROR plotting: {str(error)}")
 
-        # fn = cleanFileName(lbl)
 
         lblHash =  strHash(lbl)
         fn = lblHash

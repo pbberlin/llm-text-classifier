@@ -92,7 +92,7 @@ def cleanFileName(fn):
 
     # Replace all non a-z and 0-9, '.'  characters
     #    we may add   '\-'
-    fn = re.sub(r'[^a-z0-9\.]', ' ', fn, flags=re.IGNORECASE)
+    fn = re.sub(r'[^a-z0-9\.]', '-', fn, flags=re.IGNORECASE)
 
     fn = fn.replace(' separator ',' - ') # restore ' - '
 
@@ -109,6 +109,9 @@ def cleanFileName(fn):
     fn = fn.lower()
 
     return fn
+
+
+
 '''
 generic save as JSON.
 

@@ -26,8 +26,9 @@ import markdown
 import time
 import os
 from pathlib import Path
+from   pprint   import pformat
 
-
+import lib.util as util
 
 from    lib.markdown_ext import renderToRevealHTML
 
@@ -36,6 +37,7 @@ import  lib.config as cfg
 import  models.db5 as db5
 import  models.db1_embeddings as db1
 import  models.db6_embeddings as db6
+
 
 
 
@@ -112,18 +114,22 @@ app.include_router(db6.router)
 
 
 
+def addPreflightCORS():
+    rsp = Response()
+    rsp.headers["Access-Control-Allow-Origin"]  = "*"
+    rsp.headers["Access-Control-Allow-Headers"] = "*"
+    rsp.headers["Access-Control-Allow-Methods"] = "*"
+    return rsp
+
+def addActualCORS(rsp):
+    rsp.headers["Access-Control-Allow-Origin"]  = "*"
+    return rsp
 
 
 
-async def addCorsHeaders(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    return response
 
-
-
-if False:
+# if False:
+if True:
     @app.middleware("http")
     async def log_requests(request: Request, nextReq):
 
@@ -142,20 +148,11 @@ if False:
     @app.middleware("http")
     async def cors_middleware(request: Request, nextReq):
         response: Response = await nextReq(request)
-        response = await addCorsHeaders(response)
+        # response = await addActualCORS(response)
+        response = addActualCORS(response)
         return response
 
 
-# convenience upload files
-@app.post("/upload-file")
-async def upload_file(files: List[UploadFile] = File(...)):
-    responses = []
-    for file in files:
-        fPath = os.path.join(app.dir_uploads, file.filename)
-        with open(fPath, "wb") as bufWrite:
-            bufWrite.write(await file.read())
-        responses.append(f"{file.filename} uploaded successfully!")
-    return {"messages": responses}
 
 
 
@@ -293,7 +290,72 @@ async def readRoot(request: Request):
 
 
 
+'''
+two endpoint for same URL - GET and POST
 
+curl -X POST "http://127.0.0.1:8000/upload-file" \
+  -F "uploaded_files=@2014-15.PNG" \
+  -F "uploaded_files=@berenberg-2015.pdf"
+
+
+
+'''
+@app.get('/upload-file')
+async def uploadFileGetH(request: Request, msg: str | None = None):
+
+    content = ""
+    content += "<br>\n"
+
+    if msg:
+        content += f"{msg}<br>\n"
+    else:
+        content += "No multi files<br>\n"
+
+    content += "<br>\n"
+
+    return templates.TemplateResponse(
+        "main.html", 
+        {
+            "request": request, 
+            "HTMLTitle": "Upload file",
+            "contentTpl": "upload-file",
+            "cntAfter": content,
+        },
+    )
+
+
+
+@app.post("/upload-file")
+async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = File(...)):
+
+    cnt = ""
+    for idx, f in enumerate(uploaded_files):
+        if f and f.filename:
+            cnt += f"processing file {idx+1} of {len(uploaded_files)}. {f.size/1024:.2f} kB  <br>\n"
+            # cnt += f" -{pformat(f.size)}- <br>\n"
+            fn = util.cleanFileName(f.filename)
+            filepath = os.path.join(app.dir_uploads, fn)
+
+            checkExisting = Path(filepath)
+            if checkExisting.is_file():
+                cnt += f"  {idx+1:3} - '{f.filename}' => '{fn}' already exists. Will overwrite. <br>\n"
+
+            with open(filepath, "wb") as bufWrite:
+                bufWrite.write(await f.read())
+
+            cnt += f"  {idx+1:3} - '{f.filename}' => '{fn}' uploaded successfully <br>\n"
+        else:
+            cnt += f"  {idx+1:3} - no file contents in multiple   input  {pformat(f)} <br>\n"
+
+    # print(f"{cnt}")
+
+    url1 = request.url_for( f"uploadFileGetH")
+    url1 = str(request.url_for("uploadFileGetH")) + f"?msg={cnt}"
+    '''
+        By default, RedirectResponse uses a 307 Temporary Redirect, which preserves the original HTTP method (in this case, POST). 
+        To force the redirection to use GET, you can set the status code to 303 'See Other'    
+    '''
+    return RedirectResponse( url=url1, status_code=303 )
 
 
 

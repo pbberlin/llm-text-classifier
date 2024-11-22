@@ -99,6 +99,11 @@ class Embedding(Base):
    # serialization using dataclass_json.to_json
     def asDictInner4(self):
         return self.to_json()
+    
+    # json SCHEMA - to generate edit forms - input for JSONForms
+    def schema(self):
+        return self.json_schema()
+
 
 
 

@@ -1,30 +1,3 @@
-'''
-we have several options
-
-Pydantic vs Dataclasses
-https://medium.com/@danielwume/exploring-pydantic-and-dataclasses-in-python-a-comprehensive-comparison-c3269eb606af
-=> Pydantic is slightly better
-
-Pydantic models vs. sqlalchemy models:
-We would need *both*. And we would need a mapper back and forth for each entity.
-And the mapping is not even trivial. Especially for composite objects.
-And the Pydantic classes need to be two-pronged -  Embeddings(EmbeddingsBase),
-  where the outer class contains the database cols (id, lastchanged..)
-  and the inner contains the idiosyncratic entity fields.
-  We would have four classes for each entity to content with.
-  There is some mapper lib "SQLObjects" - but this does not reduce complexity.
-  Even if we would go with pydantic classes close to FastAPI endpoints,
-  there is a lot of syntactic complexity and logic even for minimal REST stuff.
-  Pydantic only offer some comfort in validation. We reject Pydantic.
-
-Use sqlalchemy models only.
-No support for JSON serializaton. No support for validation.
-
-=> Decision: use dataclasses and  [dataclasses-json](https://pypi.org/project/dataclasses-json/)
-
-
-'''
-
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, func, desc
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import sessionmaker, Session
