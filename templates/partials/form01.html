@@ -1,0 +1,26 @@
+
+
+{% if msg %}
+
+<p>     {{ msg      |safe }}  </p>
+<p>     {{ data1    |safe }}  </p>
+<p>     {{ data2    |safe }}  </p>
+
+{% endif %}
+
+<form 
+    action="/form01?msg=val"  
+    method="post"
+    enctype="multipart/form-data"
+>
+
+    <input type="text" name="key1" value="val 01"  > <br>
+    <input type="text" name="key2" value="val 02"  > <br>
+    <input type="text" name="key3[0]" value="3-0"  > <br>
+    <input type="text" name="key3[1]" value="3-2"  > <br>
+
+    <button name="submit" value="submitted"  accesskey="s">
+        submit
+    </button>
+
+</form>

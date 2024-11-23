@@ -9,10 +9,13 @@ from fastapi import Header, Request, Depends, HTTPException, Form, File, UploadF
 from fastapi.responses   import Response, HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.responses   import RedirectResponse
 
+from starlette.middleware.sessions import SessionMiddleware
+
+
 from fastapi.templating  import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from typing import List
+from typing import Any, Dict, List
 
 
 import asyncio
@@ -98,7 +101,7 @@ async def lifespan(app: FastAPI):
 
 
     # application runs
-    yield  
+    yield
 
     await db5.dispose_db()
     print("\tdb connection disposed")
@@ -107,10 +110,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.static_dir = Path("static")  
-app.dir_img_slides = Path("./doc/img")  
-app.dir_uploads = Path("./uploaded-files")  
+app.static_dir = Path("static")
+app.dir_img_slides = Path("./doc/img")
+app.dir_uploads = Path("./uploaded-files")
 app.include_router(db6.router)
+app.add_middleware(SessionMiddleware, secret_key="32168")
 
 
 
@@ -135,7 +139,7 @@ if True:
 
         # print(f"Incoming request: {request.method} {request.url}")
         # print(f"Headers: {dict(request.headers)}")
-        
+
         tStart = time.time()
         response: Response = await nextReq(request)
         delta = time.time() - tStart
@@ -156,16 +160,6 @@ if True:
 
 
 
-@app.get("/generate-stream-example", response_class=StreamingResponse)
-async def generate_stream_example():
-    async def generateChunks():
-        yield "Starting stream...\n"
-        yield f"{ " " * 2000 }\n"
-        for i in range(20):
-            yield f"chunk {i}\n"
-            await asyncio.sleep(0.5)
-        yield "Stream complete!"
-    return StreamingResponse(generateChunks(), media_type="text/plain")
 
 
 
@@ -196,7 +190,7 @@ async def favicon():
         headers={
             "Cache-Control": "public, max-age=31536000",    # Cache 1 year
             "Content-Type": "image/svg+xml"                 # Ensure correct MIME type
-        },        
+        },
     )
 
 
@@ -211,8 +205,8 @@ def docImages(fName):
         loc,
         headers={
             "Cache-Control": "public, max-age=31536000",    # Cache 1 year
-        },   
-    )     
+        },
+    )
 
 
 
@@ -247,11 +241,11 @@ async def serveSlides(fName:str ="doc1" ):
         return templates.TemplateResponse(
             "reveal-js-adapter.html",
             {
-                "request": {}, 
+                "request": {},
                 "revealHTML": html,
             },
         )
-    
+
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"File not found {loc}")
 
@@ -263,11 +257,11 @@ def mock_EmbeddingsCheckAPIKeyOuter(apiKey):
 # home, index
 @app.get("/", response_class=HTMLResponse)
 async def readRoot(request: Request):
-  
+
     apiKey = cfg.get('OpenAIKey')
 
     successMsg = ""
-    referrer = request.headers.get("referer", None)    
+    referrer = request.headers.get("referer", None)
     if referrer is None:
         # apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
         apiKeyValid, successMsg, invalidMsg = mock_EmbeddingsCheckAPIKeyOuter(apiKey)
@@ -277,9 +271,9 @@ async def readRoot(request: Request):
 
 
     return templates.TemplateResponse(
-        "main.html", 
+        "main.html",
         {
-            "request": request, 
+            "request": request,
             "HTMLTitle": "Main page",
             "contentTpl": "main-body",
             "cntBefore": f"<p>{successMsg}</p>",
@@ -298,7 +292,6 @@ curl -X POST "http://127.0.0.1:8000/upload-file" \
   -F "uploaded_files=@berenberg-2015.pdf"
 
 
-
 '''
 @app.get('/upload-file')
 async def uploadFileGetH(request: Request, msg: str | None = None):
@@ -314,12 +307,12 @@ async def uploadFileGetH(request: Request, msg: str | None = None):
     content += "<br>\n"
 
     return templates.TemplateResponse(
-        "main.html", 
+        "main.html",
         {
-            "request": request, 
-            "HTMLTitle": "Upload file",
+            "request":    request,
+            "HTMLTitle":  "Upload file",
             "contentTpl": "upload-file",
-            "cntAfter": content,
+            "cntAfter":   content,
         },
     )
 
@@ -349,13 +342,74 @@ async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = F
 
     # print(f"{cnt}")
 
-    url1 = request.url_for( f"uploadFileGetH")
+    url1 = request.url_for("uploadFileGetH")
     url1 = str(request.url_for("uploadFileGetH")) + f"?msg={cnt}"
     '''
-        By default, RedirectResponse uses a 307 Temporary Redirect, which preserves the original HTTP method (in this case, POST). 
-        To force the redirection to use GET, you can set the status code to 303 'See Other'    
+        By default, RedirectResponse uses a 307 Temporary Redirect, which preserves the original HTTP method (in this case, POST).
+        To force the redirection to use GET, you can set the status code to 303 'See Other'
     '''
     return RedirectResponse( url=url1, status_code=303 )
+
+
+
+@app.get("/generate-stream-example", response_class=StreamingResponse)
+async def generate_stream_example():
+    async def generateChunks():
+        yield "Starting stream...\n"
+        yield f"{ " " * 2000 }\n"
+        for i in range(20):
+            yield f"chunk {i}\n"
+            await asyncio.sleep(0.5)
+        yield "Stream complete!"
+    return StreamingResponse(generateChunks(), media_type="text/plain")
+
+
+
+
+
+
+@app.get("/form01", response_class=HTMLResponse)
+async def renderForm01(request: Request):
+
+    msg   = request.session.pop("msg",   None)
+    data1 = request.session.pop("data1", None)
+    data2 = request.session.pop("data2", None)
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":    request,
+            "HTMLTitle":  "form 01",
+            "contentTpl": "form01",
+            "msg":   msg,
+            "data1": data1,
+            "data2": data2,
+        },
+    )
+
+
+
+@app.post("/form01")
+async def processForm01(request: Request):
+# async def processForm(field1: str = Form(...), field1: int = Form(...),  ):
+
+    formData = await request.form()      # key-values
+
+    queryData = request.query_params
+    queryData = dict(queryData)
+
+    request.session["msg"]   = "processing success"
+    request.session["data1"] = dict(formData)  # to make it json serializable
+    request.session["data2"] = queryData
+
+    url1 = request.url_for("renderForm01")
+    return RedirectResponse( url=url1, status_code=303 )
+
+    # return {"received_form_data": dict(formData)}
+
+
+
+
 
 
 
@@ -368,8 +422,8 @@ cls && fastapi dev app-fa.py
 fastapi run app-fa.py
 
 reload or workers can only be used from the command line:
-        uvicorn [module-filename]:[instance-name-of-app] 
-        uvicorn app-fa:app 
+        uvicorn [module-filename]:[instance-name-of-app]
+        uvicorn app-fa:app
         uvicorn app-fa:app --reload   --port 8200
     '''
 
@@ -378,9 +432,9 @@ reload or workers can only be used from the command line:
         # cls && python app-fa.py
         import uvicorn
         uvicorn.run(
-            app, 
-            host="127.0.0.1", 
+            app,
+            host="127.0.0.1",
             port=8200,
-            # workers=1, 
+            # workers=1,
             # reload=True,
         )
