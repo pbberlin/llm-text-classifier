@@ -1,5 +1,4 @@
-import models.embeddings as embeddings
-import pickle
+import models.embeds as embeds
 from   pprint import pprint, pformat
 
 from   copy     import deepcopy
@@ -54,7 +53,7 @@ def toHTMLShort(bmrk):
     s += f"<div>\n"
     s += f"    <p>  {bmrk['descr']} </p>\n"
     smtsFlat = f"{bmrk['statements']}"
-    s += f"    <p style='font-size: 85%; '>{embeddings.ell(smtsFlat,x=72)}</p>\n"
+    s += f"    <p style='font-size: 85%; '>{embeds.ell(smtsFlat,x=72)}</p>\n"
     s += f"</div>\n"
     return s
 

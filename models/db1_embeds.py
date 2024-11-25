@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, desc
+from sqlalchemy import Column, Integer, String, Text, DateTime, func, desc, Index
 
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,8 @@ from sqlalchemy.dialects.sqlite import JSON
 from datetime import datetime as datetimeFunc
 
 from models.db0_base import Base
+
+from fastapi import HTTPException, Depends
 
 
 if False:
@@ -68,6 +70,9 @@ class Embedding(Base):
     modelmajor: str        = Column(String, nullable=False)
     modelminor: str        = Column(String, nullable=False)
     # role       = db.Column(db.String,    nullable=False, default="")
+
+    __table_args__ = (Index('unique_set_hash', "hash", "dataset", "modelmajor", unique=True), )
+
 
     def __repr__(self):
         return f"<Embedding {self.id} - {self.hash}>"

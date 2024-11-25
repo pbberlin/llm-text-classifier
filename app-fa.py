@@ -19,6 +19,7 @@ from typing import Any, Dict, List
 
 
 import asyncio
+import functools
 
 from contextlib import asynccontextmanager
 
@@ -27,20 +28,39 @@ from contextlib import asynccontextmanager
 
 import markdown
 import time
+import json
 import os
-from pathlib import Path
+from   pathlib  import Path
 from   pprint   import pformat
 
 import lib.util as util
-
 from    lib.markdown_ext import renderToRevealHTML
 
 import  lib.config as cfg
 
-import  models.db5 as db5
-import  models.db1_embeddings as db1
-import  models.db6_embeddings as db6
+# import  models.db1_embeds      as db1embeds
+from models.db1_embeds import Embedding, dummyRecordEmbedding
 
+# import  models.db1_completions as db1compls
+from models.db1_completions import Completion, dummyRecordCompletion
+
+import  models.db5 as db5
+
+
+import  models.embeds_endpoints as embeds_endpoints
+
+
+# modules with model
+import models.contexts     as contexts
+import models.benchmarks   as benchmarks
+import models.samples      as samples
+import models.pipelines    as pipelines
+import models.embeds       as embeds
+import routes.embeddings_basics     as embeddings_basics
+import routes.embeddings_similarity as embeddings_similarity
+
+from lib.uploaded2samples import uploadedToSamples
+from lib.ecb2samples      import ecbSpeechesCSV2Json
 
 
 
@@ -53,6 +73,28 @@ logging.basicConfig(
 )
 lg = logging.getLogger(__name__)
 
+
+# profile
+def prof(func):
+    """decorator - for execution time of func"""
+    @functools.wraps(func)
+    async def async_wrapper(*args, **kwargs):
+        strt = time.perf_counter()
+        rslt = await func(*args, **kwargs)
+        stop = time.perf_counter()
+        lg.info(f"func {func.__name__!r} executed in {stop - strt:.4f}s")
+        return rslt
+
+    @functools.wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        strt = time.perf_counter()
+        rslt = func(*args, **kwargs)
+        stop = time.perf_counter()
+        lg.info(f"func {func.__name__!r} executed in {stop - strt:.4f}s")
+        return rslt
+
+    # wrap sync and async - accordingly
+    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
 
 
@@ -73,16 +115,78 @@ templates.env.globals["datasetDyn"] = datasetDyn
 
 
 
+@prof
+def loadAll(args, db):
+
+    if "ecb" in args and  len(args.ecb) > 0:
+        default =  [1, 2, 4, 8, 500]
+        numStcs = default
+        try:
+            numStcs = json.loads(args.ecb)
+            if not type(numStcs) is list:
+                print(f" cannot parse into a list: '{args.ecb}'")
+                numStcs = default
+        except Exception as exc:
+            numStcs = default
+            print(f" {exc} - \n\t cannot parse {args.ecb}")
+            print(f" assuming default {numStcs} \n")
+
+
+        smplsNew = ecbSpeechesCSV2Json(numStcs, earlyBreakAt=3, filterBy="Asset purchase" )
+        samples.update(smplsNew)
+        samples.save()
+        quit()
+
+
+    if "upl" in args and args.upl:
+        smplsNew = uploadedToSamples()
+        samples.update(smplsNew)
+        samples.save()
+        quit()
+
+
+
+    embeds.load(db)
+    contexts.load()
+    benchmarks.load()
+    samples.load()
+    pipelines.load()
+
+
+
+
+
+
+@prof
+def saveAll(db, force=False):
+
+    if force:
+        embeds.cacheDirty = True
+        contexts.cacheDirty = True
+        benchmarks.cacheDirty = True
+        samples.cacheDirty = True
+
+
+    embeds.save(db)
+    contexts.save()
+    benchmarks.save()
+    samples.save()
+    pipelines.save()
+
+
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
     cfg.load(app, isFlaskApp=False)
-
-
     await db5.init_db()
     print("\tdb init stop")
+
+    db = db5.SessionLocal()
+    loadAll({}, db )
+
 
 
     # database access outside an endpoint
@@ -96,8 +200,11 @@ async def lifespan(app: FastAPI):
         finally:
             db.close()
     with db_session() as db:
+        db5.ifNotExistTable('embeddings')
+        db5.ifNotExistTable('completions')
+
         for idx in range(3):
-            db1.dummyRecordEmbedding(db, idx)
+            dummyRecordEmbedding(db, idx)
 
 
     # application runs
@@ -106,6 +213,10 @@ async def lifespan(app: FastAPI):
     await db5.dispose_db()
     print("\tdb connection disposed")
 
+    saveAll(db)
+    cfg.save()
+
+
 
 
 app = FastAPI(lifespan=lifespan)
@@ -113,7 +224,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.static_dir = Path("static")
 app.dir_img_slides = Path("./doc/img")
 app.dir_uploads = Path("./uploaded-files")
-app.include_router(db6.router)
+app.include_router(embeds_endpoints.router)
 app.add_middleware(SessionMiddleware, secret_key="32168")
 
 
@@ -294,15 +405,23 @@ curl -X POST "http://127.0.0.1:8000/upload-file" \
 
 '''
 @app.get('/upload-file')
-async def uploadFileGetH(request: Request, msg: str | None = None):
+async def uploadFileGetH(request: Request, msg1: str | None = None):
 
     content = ""
     content += "<br>\n"
 
-    if msg:
-        content += f"{msg}<br>\n"
+    if msg1:
+        content += f"{msg1}<br>\n"
     else:
         content += "No multi files<br>\n"
+
+
+    msgs   = request.session.pop("fileUploadMsgs",   None)
+    if msgs:
+        content += f"{msgs}<br>\n"
+    else:
+        content += "No multi files<br>\n"
+
 
     content += "<br>\n"
 
@@ -321,34 +440,40 @@ async def uploadFileGetH(request: Request, msg: str | None = None):
 @app.post("/upload-file")
 async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = File(...)):
 
-    cnt = ""
+    msgs = []
     for idx, f in enumerate(uploaded_files):
         if f and f.filename:
-            cnt += f"processing file {idx+1} of {len(uploaded_files)}. {f.size/1024:.2f} kB  <br>\n"
-            # cnt += f" -{pformat(f.size)}- <br>\n"
+            msgs.append( f"processing file {idx+1} of {len(uploaded_files)}. {f.size/1024:.2f} kB  ")
+            # cnt.append( f" -{pformat(f.size)}- ")
             fn = util.cleanFileName(f.filename)
             filepath = os.path.join(app.dir_uploads, fn)
 
             checkExisting = Path(filepath)
             if checkExisting.is_file():
-                cnt += f"  {idx+1:3} - '{f.filename}' => '{fn}' already exists. Will overwrite. <br>\n"
+                msgs.append( f"  {idx+1:3} - '{f.filename}' => '{fn}' already exists. Will overwrite. ")
 
             with open(filepath, "wb") as bufWrite:
                 bufWrite.write(await f.read())
 
-            cnt += f"  {idx+1:3} - '{f.filename}' => '{fn}' uploaded successfully <br>\n"
+            msgs.append( f"  {idx+1:3} - '{f.filename}' => '{fn}' uploaded successfully ")
         else:
-            cnt += f"  {idx+1:3} - no file contents in multiple   input  {pformat(f)} <br>\n"
+            msgs.append( f"  {idx+1:3} - no file contents in multiple   input  {pformat(f)} ")
 
-    # print(f"{cnt}")
 
+    request.session["fileUploadMsgs"] = msgs  
+
+
+    msg = r'<br\>n'.join(msgs)
     url1 = request.url_for("uploadFileGetH")
-    url1 = str(request.url_for("uploadFileGetH")) + f"?msg={cnt}"
+    url1 = str(request.url_for("uploadFileGetH")) + f"?msg={msg}"
     '''
         By default, RedirectResponse uses a 307 Temporary Redirect, which preserves the original HTTP method (in this case, POST).
         To force the redirection to use GET, you can set the status code to 303 'See Other'
     '''
     return RedirectResponse( url=url1, status_code=303 )
+
+
+
 
 
 
@@ -371,9 +496,9 @@ async def generate_stream_example():
 @app.get("/form01", response_class=HTMLResponse)
 async def renderForm01(request: Request):
 
-    msg   = request.session.pop("msg",   None)
-    data1 = request.session.pop("data1", None)
-    data2 = request.session.pop("data2", None)
+    msg   = request.session.pop("frm01Msg",   None)
+    data1 = request.session.pop("frm01Data1", None)
+    data2 = request.session.pop("frm01Data2", None)
 
     return templates.TemplateResponse(
         "main.html",
@@ -393,14 +518,13 @@ async def renderForm01(request: Request):
 async def processForm01(request: Request):
 # async def processForm(field1: str = Form(...), field1: int = Form(...),  ):
 
-    formData = await request.form()      # key-values
+    # key-values, dict() to make it json serializable for session storage
+    kvPst  = await dict(request.form())      
+    kvGet = dict(request.query_params)
 
-    queryData = request.query_params
-    queryData = dict(queryData)
-
-    request.session["msg"]   = "processing success"
-    request.session["data1"] = dict(formData)  # to make it json serializable
-    request.session["data2"] = queryData
+    request.session["frm01Msg"]   = "processing success"
+    request.session["frm01Data1"] = kvPst  
+    request.session["frm01Data2"] = kvGet
 
     url1 = request.url_for("renderForm01")
     return RedirectResponse( url=url1, status_code=303 )
@@ -418,8 +542,8 @@ if __name__ == "__main__":
 
     '''
 taskkill /im  Python.exe  /F
-cls && fastapi dev app-fa.py
-fastapi run app-fa.py
+cls && fastapi dev  app-fa.py
+cls && fastapi prod app-fa.py
 
 reload or workers can only be used from the command line:
         uvicorn [module-filename]:[instance-name-of-app]

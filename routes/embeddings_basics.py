@@ -1,4 +1,4 @@
-import models.embeddings as embeddings
+import models.embeds as embeds
 import models.contexts as contexts
 from pprint import pprint, pformat
 
@@ -26,11 +26,11 @@ def model(req,session):
         for s in bmrk["statements"]:
             statementsLong.append(s["long"])
 
-        embeds = embeddings.getEmbeddings(statementsLong, ctxs=ctxs)
-        embeddings.getEmbeddingsPlot(statementsLong, embeds, ctxs)
+        embeds = embeds.getEmbeddings(statementsLong, ctxs=ctxs)
+        embeds.getEmbeddingsPlot(statementsLong, embeds, ctxs)
         print("  -----")
 
-        s = embeddings.getEmbeddingsHTML(statementsLong, embeds, ctxs, strFormat="extended")
+        s = embeds.getEmbeddingsHTML(statementsLong, embeds, ctxs, strFormat="extended")
         res += f"{s}"
 
 

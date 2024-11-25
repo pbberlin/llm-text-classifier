@@ -1,4 +1,4 @@
-import models.embeddings as embeddings
+import models.embeds as embeds
 import pickle
 from pprint import pprint, pformat
 
@@ -161,7 +161,7 @@ def PartialUI(req, session):
             if shrt.strip() == "":
                 shrt = "none"
             s += f"<li> {shrt} &nbsp;&nbsp;&nbsp; \n"
-            s += f"     <span style='font-size: 85%'>{embeddings.ell(ctxObj['long'],x=64)}</span>\n"
+            s += f"     <span style='font-size: 85%'>{embeds.ell(ctxObj['long'],x=64)}</span>\n"
             s += f"</li>\n"
         s += f"</ul>\n"
 

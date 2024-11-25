@@ -1,4 +1,4 @@
-import models.embeddings as embeddings
+import models.embeds as embeds
 
 from   copy     import deepcopy
 
@@ -6,7 +6,7 @@ from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
 
-c_templates = []
+c_pipelines = []
 cacheDirty = False
 
 # new statement - part of new template
@@ -50,7 +50,7 @@ def toHTMLShort(tpl):
     s += f"<div>\n"
     s += f"    <p>  {tpl['descr']} </p>\n"
     smtsFlat = f"{tpl['stages']}"
-    s += f"    <p style='font-size: 85%; '>{embeddings.ell(smtsFlat,x=72)}</p>\n"
+    s += f"    <p style='font-size: 85%; '>{embeds.ell(smtsFlat,x=72)}</p>\n"
     s += f"</div>\n"
     return s
 
@@ -72,16 +72,16 @@ def toHTML(tpl):
 
 
 def load():
-    global c_templates  # in order to _write_ to module variable
-    c_templates = loadJson("templates", subset=get("dataset"))
-    if len(c_templates)== 0:
-        c_templates = loadJson("templates", "init")
+    global c_pipelines  # in order to _write_ to module variable
+    c_pipelines = loadJson("pipelines", subset=get("dataset"))
+    if len(c_pipelines)== 0:
+        c_pipelines = loadJson("pipelines", "init")
 
 def save():
     if not cacheDirty:
-        print(f"\ttemplates  are unchanged ({len(c_templates):3} entries). ")
+        print(f"\tpipelines  are unchanged ({len(c_pipelines):3} entries). ")
         return
-    saveJson(c_templates, "templates", subset=get("dataset"))
+    saveJson(c_pipelines, "pipelines", subset=get("dataset"))
 
 
 
@@ -91,19 +91,19 @@ def save():
 # extension to handler
 def update(updated):
 
-    global c_templates  # in order to _write_ to module variable
+    global c_pipelines  # in order to _write_ to module variable
 
     if len(updated) > 0:
-        c_templates = updated
+        c_pipelines = updated
         global cacheDirty  
         cacheDirty = True
 
     # only the built in deepcopy function really isolates
-    return deepcopy(c_templates)
+    return deepcopy(c_pipelines)
 
 
 def getLast():
-    for item in reversed(c_templates):
+    for item in reversed(c_pipelines):
         if item["descr"].strip() == "":
             continue
         return item
@@ -115,7 +115,7 @@ def getLast():
 
 def getByID(tplID):
     tplID = int(tplID)
-    for idx, item in enumerate(c_templates):
+    for idx, item in enumerate(c_pipelines):
         if (idx) == tplID:
             return item
 
@@ -135,7 +135,7 @@ def selectSingle(selectedStr):
     #       <button  name='action'  value='select_template' ...
     s += f"<select  name='tplID'   >\n"
 
-    for idx, item in enumerate(c_templates):
+    for idx, item in enumerate(c_pipelines):
         if item["descr"].strip() == "":
             continue
         sel = ""
@@ -158,10 +158,10 @@ def PartialUI(req, session, showSelected=True):
     reqArgs = req.form.to_dict()
 
 
-    tplID = get("template_id", len(c_templates)-1) # defaulting to last
+    tplID = get("pipeline_id", len(c_pipelines)-1) # defaulting to last
     if "action" in reqArgs and reqArgs["action"] == "select_template":
         tplID = int(reqArgs["tplID"]) - 0  # jinja indexes are one-based
-        set("template_id", tplID)
+        set("pipeline_id", tplID)
 
 
     s  = ""

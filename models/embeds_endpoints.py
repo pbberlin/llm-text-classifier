@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.db5 import get_db
 
-from models.db1_embeddings import Embedding, embeddingsTop3, embeddingsWhereHash
+from models.db1_embeds import Embedding, embeddingsTop3, embeddingsWhereHash
 
 
 

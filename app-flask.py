@@ -34,18 +34,15 @@ from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy import inspect
 
 
-from models.embeddings_db import db, Embedding, dummyRecordEmbedding, ifNotExistTable
-if False:
-    # dont - we need to import db from db
-    db  = SQLAlchemy()
+from models.tmp_embeddings_db import db, Embedding, dummyRecordEmbedding, ifNotExistTable
 
 
 # modules with model
 import models.contexts     as contexts
 import models.benchmarks   as benchmarks
 import models.samples      as samples
-import models.templates    as templates
-import routes.embeddings_basics as embeddings_basics
+import models.pipelines    as pipelines
+import routes.embeddings_basics     as embeddings_basics
 import routes.embeddings_similarity as embeddings_similarity
 
 # modules generic logic
@@ -64,7 +61,7 @@ from lib.uploaded2samples import uploadedToSamples
 from lib.ecb2samples      import ecbSpeechesCSV2Json
 
 
-import models.embeddings as embeddings
+import models.embeds as embeds
 
 
 logTimeSince(f"python script - imports stop")
@@ -122,7 +119,7 @@ def indexH():
     # print(f"referrer {referrer}")
     successMsg = ""
     if referrer is None:
-        apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+        apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
         if not apiKeyValid:
             return redirect( url_for("configH") )
 
@@ -398,7 +395,7 @@ def configH():
         else:
             apiKey = cfg.get("OpenAIKey")
 
-    apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
+    apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
 
     invalidMsgExt = ""
     if not apiKeyValid:
@@ -762,7 +759,7 @@ def templatesEditH():
         # print("post request is empty")
 
 
-    newTemplates = templates.update(reqTemplates)
+    newTemplates = pipelines.update(reqTemplates)
 
     print(f"overall number of templates {len(newTemplates) } ")
 
@@ -770,14 +767,14 @@ def templatesEditH():
     for tpl in newTemplates:
         stages = tpl["stages"]
         if len(stages) == 0  or  stages[-1]["long"].strip() != "":
-            nwSt = templates.newStage()
+            nwSt = pipelines.newStage()
             stages.append( nwSt )
 
 
     if len(newTemplates)>0 and newTemplates[-1]["descr"].strip() != "" :
         newTemplates.append( samples.dummy() )
 
-    tplUI, _  = templates.PartialUI(request, session)
+    tplUI, _  = pipelines.PartialUI(request, session)
 
 
     return render_template(
@@ -841,7 +838,7 @@ def chatCompletionSynchroneousH():
     prompt = ""
     results = []
     idx1 = -1
-    for res in embeddings.generateChatCompletionChunks( beliefStatement, speech):
+    for res in embeds.generateChatCompletionChunks( beliefStatement, speech):
         idx1 += 1
         if idx1 == 0:
             prompt = res
@@ -963,7 +960,7 @@ def chatCompletionJsonH():
         if "speech" in kvPost:
             speech =  kvPost["speech"]
 
-        prompt, _, _ = embeddings.designPrompt(beliefStatement, speech)
+        prompt, _, _ = embeds.designPrompt(beliefStatement, speech)
 
 
     if "model" in kvPost:
@@ -984,7 +981,7 @@ def chatCompletionJsonH():
 
     try:
 
-        result = embeddings.chatCompletion(model, prompt, role)
+        result = embeds.chatCompletion(model, prompt, role)
         resp = Response(
             json.dumps(result, indent=4),
             mimetype='application/json',
@@ -1021,7 +1018,7 @@ def chatCompletionJSH():
         speech =  kvPost["speech"]
 
 
-    prompt, role , err = embeddings.designPrompt(beliefStatement, speech)
+    prompt, role , err = embeds.designPrompt(beliefStatement, speech)
     if err != "":
         prompt = f"Error designing prompt: {err}"
 
@@ -1105,11 +1102,11 @@ def loadAll(args):
     loadEnglishStopwords()
     loadDomainSpecificWords()
 
-    embeddings.load()
+    embeds.load()
     contexts.load()
     benchmarks.load()
     samples.load()
-    templates.load()
+    pipelines.load()
 
     logTimeSince(f"loading data stop")
 
@@ -1124,17 +1121,17 @@ def saveAll(force=False):
     logTimeSince(f"saving  data start", startNew=True)
 
     if force:
-        embeddings.cacheDirty = True
+        embeds.cacheDirty = True
         contexts.cacheDirty = True
         benchmarks.cacheDirty = True
         samples.cacheDirty = True
 
 
-    embeddings.save()
+    embeds.save()
     contexts.save()
     benchmarks.save()
     samples.save()
-    templates.save()
+    pipelines.save()
 
     logTimeSince(f"saving  data stop")
 

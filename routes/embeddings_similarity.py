@@ -1,4 +1,4 @@
-import models.embeddings as embeddings
+import models.embeds as embeds
 from pprint import pprint, pformat
 
 import markdown
@@ -224,11 +224,11 @@ def model(ctxs, bmrk, smpl ):
     bmrkSh = bmShTmp
 
 
-    embsBm = embeddings.getEmbeddings(bmrkLg, ctxs=ctxs)
+    embsBm = embeds.getEmbeddings(bmrkLg, ctxs=ctxs)
     # res += s
 
     # NO CONTEXT here
-    embsSp = embeddings.getEmbeddings(smplLg)
+    embsSp = embeds.getEmbeddings(smplLg)
     # res += s
 
 
@@ -236,7 +236,7 @@ def model(ctxs, bmrk, smpl ):
         return " no context or no benchmark selected"
 
     # compute similarity
-    coeffsMatr, s = embeddings.correlationsXY(
+    coeffsMatr, s = embeds.correlationsXY(
         bmrkSh, embsBm,
         smplSh, embsSp,
     )

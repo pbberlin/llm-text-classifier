@@ -39,14 +39,16 @@ from lib.util   import strHash, strHashes
 from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
-from models.templates import getByID
+from models.pipelines import getByID
 
 
 from sqlalchemy.exc import IntegrityError
-from .embeddings_db import Embedding
-# not db = SQLAlchemy()
-from .embeddings_db import db
-from .embeddings_db import embeddingsCount, embeddingsAll, embeddingsWhereHash, embeddingsWhereDataset
+
+from .db1_embeds import Embedding
+from .db1_embeds import embeddingsCount, embeddingsAll, embeddingsWhereHash, embeddingsWhereDataset
+
+from .db1_completions import Completion
+from .db1_completions import completionsCount, completionsAll, completionsWhereHash, completionsWhereDataset
 
 
 
@@ -522,8 +524,8 @@ def checkAPIKeyOuter(apiKey):
 
 
 
-def load():
-    embdsAsList =  embeddingsWhereDataset()
+def load(db):
+    embdsAsList =  embeddingsWhereDataset(db)
     embdsByStmt = {}
     for embd in embdsAsList:
         embdsByStmt[embd.text] = embd.embeddings
@@ -535,8 +537,8 @@ def load():
 
 
 
-def save():
-    print(f"\tembeddings in database    {embeddingsCount():3} entries. ")
+def save(db):
+    print(f"\tembeddings in database    {embeddingsCount(db):3} entries. ")
     if cacheDirty:
         rng, lStr, _ ,  _ , _ = significantsList()
         lStr["ranges"] = rng # add as additional info
@@ -943,7 +945,7 @@ def correlationsXY(
 
 def designPrompt(beliefStatement, speech):
 
-    tplID = get("template_id", 0)
+    tplID = get("pipeline_id", 0)
     tpl  = getByID(tplID)
 
     role = tpl["role"]
