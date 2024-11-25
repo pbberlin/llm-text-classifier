@@ -5,13 +5,13 @@ from pprint import pprint, pformat
 import models.benchmarks as benchmarks
 
 
-def model(req,session):
+async def model(db, request):
 
     res = ""
 
     res += f"<h3>Embeddings for concepts - multilingual - sentence structure</h3>\n"
 
-    ctxUI, ctxs  = contexts.PartialUI(req,session)
+    ctxUI, ctxs  = await contexts.PartialUI(request)
     res += ctxUI
 
     # bmrks = benchmarks.defaults
@@ -26,11 +26,12 @@ def model(req,session):
         for s in bmrk["statements"]:
             statementsLong.append(s["long"])
 
-        embeds = embeds.getEmbeddings(statementsLong, ctxs=ctxs)
-        embeds.getEmbeddingsPlot(statementsLong, embeds, ctxs)
+        embds = embeds.getEmbeddings(db, statementsLong, ctxs=ctxs)
+
+        embeds.getEmbeddingsPlot(statementsLong, embds, ctxs)
         print("  -----")
 
-        s = embeds.getEmbeddingsHTML(statementsLong, embeds, ctxs, strFormat="extended")
+        s = embeds.getEmbeddingsHTML(statementsLong, embds, ctxs, strFormat="extended")
         res += f"{s}"
 
 

@@ -12,40 +12,6 @@ from models.db0_base import Base
 from fastapi import HTTPException, Depends
 
 
-if False:
-    # pure sqlalchemy data class
-    class Embedding(Base):
-        __tablename__ = 'embeddings'
-
-        id:         int        = Column(Integer,  primary_key=True, autoincrement=True)
-        datetime:   datetimeFunc = Column(DateTime, default=datetimeFunc.utcnow)
-        dataset:    str        = Column(String,   nullable=False, default="")
-        hash:       str        = Column(String,   unique=True, nullable=False, index=True)
-        text:       str        = Column(Text,     nullable=False)
-        embeddings: dict       = Column(JSON)   # SQLite > 3.9.
-        modelmajor: str        = Column(String, nullable=False)
-        modelminor: str        = Column(String, nullable=False)
-        # role       = db.Column(db.String,    nullable=False, default="")
-
-        def __repr__(self):
-            return f"<Embedding {self.id} - {self.hash}>"
-
-        # explicit
-        def asDictInner0(self):
-            return {
-                "id":         self.id,
-                "dataset":    self.dataset,
-                "hash":       self.hash,
-                "text":       self.text,
-                "embeddings": self.embeddings,  # this will be expensive
-                "modelmajor": self.modelmajor,
-                "modelminor": self.modelminor,
-            }
-
-    # generic serialization
-        def asDictInner1(self):
-                return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
 
 
 from dataclasses      import dataclass, asdict
@@ -156,7 +122,7 @@ def embeddingsWhereDataset(db: Session, dataset: str = "") -> list[Embedding]:
 
 def embeddingsWhereHash(db: Session, hashes: list[str], ) -> list[Embedding]:
     embeds = db.query(Embedding).filter(Embedding.hash.in_(hashes)).all()
-    print(f"\tfound {len(embeds)} embeddings for hashes '{hashes}' ")
+    print(f"\tfound {len(embeds)} embeddings for hashes '{hashes[:3]}' ")
     return embeds
 
 
@@ -182,4 +148,44 @@ def dummyRecordEmbedding(db: Session, idx: int):
     db.commit()
     db.refresh(e)
     return e.to_json()
+
+
+
+
+
+
+
+if False:
+    # pure sqlalchemy data class
+    class Embedding(Base):
+        __tablename__ = 'embeddings'
+
+        id:         int        = Column(Integer,  primary_key=True, autoincrement=True)
+        datetime:   datetimeFunc = Column(DateTime, default=datetimeFunc.utcnow)
+        dataset:    str        = Column(String,   nullable=False, default="")
+        hash:       str        = Column(String,   unique=True, nullable=False, index=True)
+        text:       str        = Column(Text,     nullable=False)
+        embeddings: dict       = Column(JSON)   # SQLite > 3.9.
+        modelmajor: str        = Column(String, nullable=False)
+        modelminor: str        = Column(String, nullable=False)
+        # role       = db.Column(db.String,    nullable=False, default="")
+
+        def __repr__(self):
+            return f"<Embedding {self.id} - {self.hash}>"
+
+        # explicit
+        def asDictInner0(self):
+            return {
+                "id":         self.id,
+                "dataset":    self.dataset,
+                "hash":       self.hash,
+                "text":       self.text,
+                "embeddings": self.embeddings,  # this will be expensive
+                "modelmajor": self.modelmajor,
+                "modelminor": self.modelminor,
+            }
+
+    # generic serialization
+        def asDictInner1(self):
+                return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 

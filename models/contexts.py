@@ -5,7 +5,7 @@ from pprint import pprint, pformat
 from   copy     import deepcopy
 
 from lib.util   import saveJson, loadJson 
-from lib.config import get, set
+import  lib.config as cfg
 
 
 c_contexts = []
@@ -29,7 +29,7 @@ def dummy():
 
 def load():
     global c_contexts  # in order to _write_ to module variable
-    c_contexts = loadJson("contexts", subset=get("dataset"))
+    c_contexts = loadJson("contexts", subset=cfg.get("dataset"))
     if len(c_contexts)== 0:
         c_contexts = loadJson("contexts", "init")
     # pprint(c_contexts)
@@ -38,7 +38,7 @@ def save():
     if not cacheDirty:
         print(f"\tcontexts   are unchanged ({len(c_contexts):3} entries). ")
         return
-    saveJson(c_contexts, "contexts", subset=get("dataset"))
+    saveJson(c_contexts, "contexts", subset=cfg.get("dataset"))
 
 
 
@@ -71,13 +71,13 @@ def getLast():
 def getByID(idstr):
     id = int(idstr)
 
-    if id < 1:
+    if id < 0:
         nw = new()
         nw["short"] = "not found"
         return  nw
 
     for idx, item in enumerate(c_contexts):
-        if (idx+1) == id:
+        if (idx+0) == id:
             return item
 
     nw = new()
@@ -112,22 +112,17 @@ def selectMulti(selectedIds):
 
 
 
-def PartialUI(req, session):
+async def PartialUI(request):
 
-    # GET params
-    args = req.args
-    kvGet = args.to_dict()
+    kvGet = dict(request.query_params)
+    kvPstObj = await request.form()    # keep kvPstObj - to call "getlist()" on it
+    kvPst = dict(kvPstObj) # after async complete
 
-    # POST params
-    reqArgs = req.form.to_dict()
-
-    ctxIds = []
-    if "action" in reqArgs and reqArgs["action"] == "select_context":
-        ctxIds = req.form.getlist("ctxMulti") # flask specific - returns array of checkboxes
-        session["ctxs"] = ctxIds
-    else:
-        if "ctxs" in session:
-            ctxIds = session["ctxs"]
+    # read multi
+    ctxIds = cfg.get("context_id", [0])
+    if "action" in kvPst and kvPst["action"] == "select_context":
+        ctxIds = kvPstObj.getlist('ctxMulti')
+        cfg.set("context_id", ctxIds)
 
 
     s  = ""

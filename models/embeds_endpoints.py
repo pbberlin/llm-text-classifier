@@ -8,7 +8,7 @@ from models.db1_embeds import Embedding, embeddingsTop3, embeddingsWhereHash
 
 # in ..[app].py
 #    app.include_router(db.router)
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi import HTTPException, Depends
 from fastapi.responses   import Response, HTMLResponse, JSONResponse
 
@@ -40,9 +40,86 @@ def embeddingsTop3ObjH(db: Session = Depends(get_db)):
     return embeds
 
 
-# this leads to response validation error - because of list[dict] - needs to be list[Embedding]
+# list[dict] - needs to be list[Embedding]
+#  => response validation error - 
 @router.get("/embeddings/top3/dict", response_model=list[dict])
 def embeddingsTop3ObjDictH(db: Session = Depends(get_db)):
     embeds =  embeddingsTop3(db)
     return embeds
+
+
+
+
+
+
+
+import routes.embeddings_basics     as embeddings_basics
+import routes.embeddings_similarity as embeddings_similarity
+
+from models.jinja import templates
+
+
+async def embeddingsBasicsH(request: Request, db: Session = Depends(get_db)):
+
+    content = await embeddings_basics.model(db, request)
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":    request,
+            "HTMLTitle":  "Basic Embedding",
+            "cntBefore":  content,
+        },
+    )
+
+
+@router.get('/embeddings/basics')
+async def embeddingsBasicsHGet(request: Request, db: Session = Depends(get_db)):
+    return await embeddingsBasicsH(request, db)
+
+
+@router.post('/embeddings/basics')
+async def embeddingsBasicsHPost(request: Request, db: Session = Depends(get_db)):
+    return await embeddingsBasicsH(request, db)
+
+
+
+import models.contexts     as contexts
+import models.benchmarks   as benchmarks
+import models.samples      as samples
+
+
+@router.get('/embeddings/similarity')
+async def embeddingsSimilarityH(request: Request, db: Session = Depends(get_db)):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    ctxUI,  ctxs     = await contexts.PartialUI(request)
+    bmrkUI, bmSel    = await benchmarks.PartialUI(request, showSelected=False)
+    smplUI, smplSel  = await samples.PartialUI(request, showSelected=False)
+
+    print(f"{ctxs=}" )
+    print(f"{bmSel=}" )
+    # print(f"{smplSel=}" )
+
+
+    sTable = embeddings_similarity.model(request, db, ctxs, bmSel, smplSel)
+
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":     request,
+            "HTMLTitle":   "Embeddings - Similarity",
+            "contentTpl":  "embeddings-similarity",
+            "ctxUI":       ctxUI,
+            "bmrkUI":      bmrkUI,
+            "smplUI":      smplUI,
+            "cnt1":        benchmarks.toHTML(bmSel),
+            "cnt2":        samples.toHTML(smplSel),
+            "cntTable":    sTable,
+        },
+    )
 

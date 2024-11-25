@@ -267,21 +267,21 @@ def uploadFileH():
 def samplesImportH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     # extract and process POST params
     importedSmpls = []
-    if len(kvPost) > 0:
+    if len(kvPst) > 0:
 
-        if  "action" in kvPost and kvPost["action"] == "import_samples":
+        if  "action" in kvPst and kvPst["action"] == "import_samples":
 
             modeX = "none"
-            if  "import-distinct" in kvPost:       # stupid checkbox submits no value if unchecked
-                modeX = kvPost["import-distinct"]
+            if  "import-distinct" in kvPst:       # stupid checkbox submits no value if unchecked
+                modeX = kvPst["import-distinct"]
             print(f"post request => import samples, mode {modeX}")
 
-            filterBy = kvPost["filter"]
+            filterBy = kvPst["filter"]
 
             tmp = uploadedToSamples()
             importedSmpls.extend(tmp)
@@ -383,12 +383,12 @@ def saveAllH():
 def configH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     apiKey =  None
-    if 'api_key' in kvPost:
-        apiKey = kvPost['api_key']
+    if 'api_key' in kvPst:
+        apiKey = kvPst['api_key']
     else:
         if 'api_key' in session:
             apiKey = session['api_key']
@@ -408,8 +408,8 @@ def configH():
 
 
     datasetNew = None
-    if 'dataset' in kvPost:
-        datasetNew = kvPost['dataset']
+    if 'dataset' in kvPst:
+        datasetNew = kvPst['dataset']
         old = cfg.get("dataset")
 
         if datasetNew != old:
@@ -461,12 +461,12 @@ def configH():
 def contextsEditH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     # extract and process POST params
     reqCtxs = []
-    if len(kvPost) > 0:
+    if len(kvPst) > 0:
         # for i,k in enumerate(kvPost):
         #     print(f"  req key #{i:2d}  '{k}' - {openai.ell(kvPost[k][:20],x=12)}")
 
@@ -474,17 +474,17 @@ def contextsEditH():
             sh = f"ctx{i+1:d}sh"  # starts with 1
             lg = f"ctx{i+1:d}lg"
             dl = f"ctx{i+1:d}_del"
-            if lg not in kvPost:
+            if lg not in kvPst:
                 # print(f"input '{lg}' is unknown - breaking")
                 break
-            if dl in kvPost and  kvPost[dl] != "":
+            if dl in kvPst and  kvPst[dl] != "":
                 print(f"  input '{lg}' to be deleted")
                 continue
-            if kvPost[lg].strip() == "":
+            if kvPst[lg].strip() == "":
                 print(f"  input '{lg}' is empty")
                 continue
-            reqCtxs.append( {  "short": kvPost[sh], "long": kvPost[lg]  } )
-            print(f"  input '{lg}' - {kvPost[lg][0:15]}")
+            reqCtxs.append( {  "short": kvPst[sh], "long": kvPst[lg]  } )
+            print(f"  input '{lg}' - {kvPst[lg][0:15]}")
         print(f"post request contained {len(reqCtxs)} contexts")
     else:
         print("post request is empty")
@@ -514,25 +514,25 @@ def contextsEditH():
 def benchmarksEditH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
     # for k in kvPost:
     #     print(f"{k}")
 
     # extract and process POST params
     reqBenchmarks = []
-    if len(kvPost) > 0:
+    if len(kvPst) > 0:
         for i1 in range(0,100):
             descr = f"benchmark{i1+1:d}_descr"  # starts with 1
             delet = f"benchmark{i1+1:d}_del"
 
-            if descr not in kvPost:
+            if descr not in kvPst:
                 break
 
-            if descr in kvPost and delet in kvPost and  kvPost[delet] != "":
+            if descr in kvPst and delet in kvPst and  kvPst[delet] != "":
                 print(f"  input benchmark '{descr}' to be deleted")
                 continue
-            if kvPost[descr].strip() == "":
+            if kvPst[descr].strip() == "":
                 print(f"  input benchmark '{descr}' is empty")
                 continue
 
@@ -540,23 +540,23 @@ def benchmarksEditH():
             for i2 in range(0,100):
                 sh = f"benchmark{i1+1:d}_st{i2+1}_shrt"
                 lg = f"benchmark{i1+1:d}_st{i2+1}_long"
-                if lg not in kvPost:
+                if lg not in kvPst:
                     break
-                if kvPost[lg].strip() == "":
+                if kvPst[lg].strip() == "":
                     print(f"    bm {i1+1} stmt {i2+1} is empty")
                     # continue
                 else:
                     sts.append(
-                        {  "short": kvPost[sh], "long": kvPost[lg]  }
+                        {  "short": kvPst[sh], "long": kvPst[lg]  }
                     )
 
             reqBenchmarks.append(
                 {
-                    "descr": kvPost[descr],
+                    "descr": kvPst[descr],
                     "statements": sts,
                 }
             )
-            print(f"  input benchmark '{descr}' - {len(sts)} stmts - {kvPost[descr]}")
+            print(f"  input benchmark '{descr}' - {len(sts)} stmts - {kvPst[descr]}")
 
         print(f"post request contained {len(reqBenchmarks)} benchmarks")
     else:
@@ -608,26 +608,26 @@ def benchmarksEditH():
 def samplesEditH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
     # for k in kvPost:
     #     print(f"{k}")
 
     # extract and process POST params
     reqSamples = []
-    if len(kvPost) > 0:
+    if len(kvPst) > 0:
 
         for i1 in range(0,100):
             descr = f"sample{i1+1:d}_descr"  # starts with 1
             delet = f"sample{i1+1:d}_del"
 
-            if descr not in kvPost:
+            if descr not in kvPst:
                 break
 
-            if descr in kvPost and delet in kvPost and  kvPost[delet] != "":
+            if descr in kvPst and delet in kvPst and  kvPst[delet] != "":
                 print(f"  input sample '{descr}' to be deleted")
                 continue
-            if kvPost[descr].strip() == "":
+            if kvPst[descr].strip() == "":
                 print(f"  input sample '{descr}' is empty")
                 continue
 
@@ -635,23 +635,23 @@ def samplesEditH():
             for i2 in range(0,100):
                 sh = f"sample{i1+1:d}_st{i2+1}_shrt"
                 lg = f"sample{i1+1:d}_st{i2+1}_long"
-                if lg not in kvPost:
+                if lg not in kvPst:
                     break
-                if kvPost[lg].strip() == "":
+                if kvPst[lg].strip() == "":
                     print(f"    bm {i1+1} stmt {i2+1} is empty")
                     # continue
                 else:
                     sts.append(
-                        {  "short": kvPost[sh], "long": kvPost[lg]  }
+                        {  "short": kvPst[sh], "long": kvPst[lg]  }
                     )
 
             reqSamples.append(
                 {
-                    "descr": kvPost[descr],
+                    "descr": kvPst[descr],
                     "statements": sts,
                 }
             )
-            print(f"  input sample '{descr}' - {len(sts)} stmts - {kvPost[descr]}")
+            print(f"  input sample '{descr}' - {len(sts)} stmts - {kvPst[descr]}")
 
         print(f"post request contained {len(reqSamples)} samples")
 
@@ -702,25 +702,25 @@ def samplesEditH():
 def templatesEditH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     # extract and process POST params
     reqTemplates = []
-    if len(kvPost) > 0:
+    if len(kvPst) > 0:
 
         for i1 in range(0,100):
             descK = f"template{i1+1:d}_descr"  # starts with 1
             roleK = f"template{i1+1:d}_role" 
             deleK = f"template{i1+1:d}_del"
 
-            if descK not in kvPost:
+            if descK not in kvPst:
                 break
 
-            if descK in kvPost and deleK in kvPost and  kvPost[deleK] != "":
+            if descK in kvPst and deleK in kvPst and  kvPst[deleK] != "":
                 print(f"  input template '{descK}' to be deleted")
                 continue
-            if kvPost[descK].strip() == "":
+            if kvPst[descK].strip() == "":
                 print(f"  input template '{descK}' is empty")
                 continue
 
@@ -729,27 +729,27 @@ def templatesEditH():
                 sh = f"stage{i1+1:d}_st{i2+1}_shrt"
                 lg = f"stage{i1+1:d}_st{i2+1}_long"
                 rm = f"stage{i1+1:d}_st{i2+1}_rem"
-                if lg not in kvPost:
+                if lg not in kvPst:
                     break
-                if kvPost[lg].strip() == "":
+                if kvPst[lg].strip() == "":
                     print(f"    bm {i1+1} stage {i2+1} is empty")
                 else:
                     stages.append(
                         {  
-                            "short": kvPost[sh], 
-                            "long":  kvPost[lg],
-                            "remark":  kvPost[rm],
+                            "short": kvPst[sh], 
+                            "long":  kvPst[lg],
+                            "remark":  kvPst[rm],
                         }
                     )
 
             reqTemplates.append(
                 {
-                    "descr":  kvPost[descK],
-                    "role":   kvPost[roleK],
+                    "descr":  kvPst[descK],
+                    "role":   kvPst[roleK],
                     "stages": stages,
                 }
             )
-            print(f"  input template '{descK}' - {len(stages)} stages - {kvPost[descK]}")
+            print(f"  input template '{descK}' - {len(stages)} stages - {kvPst[descK]}")
 
         print(f"post request contained {len(reqTemplates)} templates")
 
@@ -820,16 +820,16 @@ def embeddingsBasicsH():
 def chatCompletionSynchroneousH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     beliefStatement =  ""
-    if "belief-statement" in kvPost:
-        beliefStatement =  kvPost["belief-statement"]
+    if "belief-statement" in kvPst:
+        beliefStatement =  kvPst["belief-statement"]
 
     speech          =  ""
-    if "speech" in kvPost:
-        speech =  kvPost["speech"]
+    if "speech" in kvPst:
+        speech =  kvPst["speech"]
 
 
     # requestChatCompletion is now a generator
@@ -897,8 +897,8 @@ def generateStreamExample(modeES=False):
 def generateStreamExampleH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
     # for k in kvPost:
     #     print(f"{k}")
 
@@ -906,7 +906,7 @@ def generateStreamExampleH():
     # 'text/plain', 'text/html; charset=UTF-8'
     mType = 'text/html'
 
-    if ("event-stream" in kvGet) or ("event-stream" in kvPost):
+    if ("event-stream" in kvGet) or ("event-stream" in kvPst):
         asEventStream = True
         mType = 'text/event-stream'
 
@@ -932,39 +932,39 @@ def chatCompletionJsonH():
         return addPreflightCORS()
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     model  =  ""
     prompt =  ""
     role   =  ""
 
     try:
-        kvPost = request.get_json(silent=False)
+        kvPst = request.get_json(silent=False)
 
-        if "prompt" in kvPost:
-            prompt =  kvPost["prompt"]
+        if "prompt" in kvPst:
+            prompt =  kvPst["prompt"]
 
         role          =  ""
-        if "role" in kvPost:
-            role =  kvPost["role"]
+        if "role" in kvPst:
+            role =  kvPst["role"]
 
     except Exception as exc:
         print(f"request body was not JSON - probably POST")
 
         beliefStatement          =  ""
-        if "belief-statement" in kvPost:
-            beliefStatement =  kvPost["belief-statement"]
+        if "belief-statement" in kvPst:
+            beliefStatement =  kvPst["belief-statement"]
 
         speech          =  ""
-        if "speech" in kvPost:
-            speech =  kvPost["speech"]
+        if "speech" in kvPst:
+            speech =  kvPst["speech"]
 
         prompt, _, _ = embeds.designPrompt(beliefStatement, speech)
 
 
-    if "model" in kvPost:
-        model =  kvPost["model"].strip()
+    if "model" in kvPst:
+        model =  kvPst["model"].strip()
     if model == "":
         models = cfg.get("modelNamesChatCompletion")
         model =  models[0]
@@ -1006,16 +1006,16 @@ def chatCompletionJsonH():
 def chatCompletionJSH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     beliefStatement =  ""
-    if "belief-statement" in kvPost:
-        beliefStatement =  kvPost["belief-statement"]
+    if "belief-statement" in kvPst:
+        beliefStatement =  kvPst["belief-statement"]
 
     speech          =  ""
-    if "speech" in kvPost:
-        speech =  kvPost["speech"]
+    if "speech" in kvPst:
+        speech =  kvPst["speech"]
 
 
     prompt, role , err = embeds.designPrompt(beliefStatement, speech)
@@ -1043,8 +1043,8 @@ def chatCompletionJSH():
 def embeddingsSimilarityH():
 
     # GET + POST params
-    kvGet  = request.args.to_dict()
-    kvPost = request.form.to_dict()
+    kvGet = request.args.to_dict()
+    kvPst = request.form.to_dict()
 
     ctxUI, ctxs  = contexts.PartialUI(request, session)
 

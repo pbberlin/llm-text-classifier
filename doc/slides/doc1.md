@@ -5,6 +5,13 @@
 ![conquer unknown land](./img/conquer-unkown-land.jpg){: style="width:80%"}  <br>
 Research an unknown land
 
+
+## 
+
+![clusters of concepts](./img/clusters-a/clusters-concepts-a-24.jpg){: style="width:80%"}  <br>
+Research an unknown land
+
+
 ## Overview
 
 * Provide inspiration along your research

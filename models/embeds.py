@@ -479,7 +479,7 @@ def significantsAsPlots(lbls, embds, numCtxs):
 
     print(f"    creating {len(embds)+1} plots ", end="")
     for idx1, embd in enumerate(embds):
-        lbl = lbls[idx1]
+        lbl = lbls[int(idx1/numCtxs)]
         scatterPlot(lbl,  [allIdxs[idx1]] , [allVals[idx1]], min(allVals[idx1]), max(allVals[idx1]) )
         print(". ", end="")
 
@@ -597,7 +597,8 @@ def embedsFromOpenAI(stmts):
 
     clnt, errStr = createClient()
     if errStr != "":
-        return ([], errStr)
+        print(errStr)
+        return embdsByK, errStr
 
     try:
         '''
@@ -622,7 +623,7 @@ def embedsFromOpenAI(stmts):
         print(errStr)
         for s in stmts:
             print(f"\tfail: \t{s}")
-        return ([], errStr)
+        return embdsByK, errStr
 
     # add newly retrieved to return and cache
     for idx2, record in enumerate(response.data):
@@ -638,15 +639,12 @@ def embedsFromOpenAI(stmts):
         global cacheDirty
         cacheDirty = True
 
-    if False:
-        save()
-        print(f"   {len(stmts):2} new embs saved ")
-
-    return embdsByK
+    return embdsByK, ""
 
 
 defaultContext = {"short": "", "long": ""}
 def addContext2Statments(stmts, ctxs=[], ctxScalar=defaultContext):
+
 
     # append context to requested input sentences
     if len(ctxs) == 0:
@@ -678,13 +676,13 @@ def addContext2Statments(stmts, ctxs=[], ctxScalar=defaultContext):
     return stmts
 
 
-def dbStore(stmts):
+def dbStore(db, stmts):
 
     stmtsHshs = strHashes(stmts)
     embdsByK = {}
 
     # records stored in DB
-    embdsAsList = embeddingsWhereHash(stmtsHshs)
+    embdsAsList = embeddingsWhereHash(db, stmtsHshs)
     for embd in embdsAsList:
         print(f"     ffor-a2 {ell(embd.text,x=32)}")
         # print(f"     embs from datab  {pfl( embd.embeddings, x=5)}")
@@ -701,10 +699,11 @@ def dbStore(stmts):
 
     if len(stmtsNotInC)>0:
 
-        missEmbdsByK = embedsFromOpenAI(stmtsNotInC)
+        missEmbdsByK, errMsg = embedsFromOpenAI(stmtsNotInC)
+        if errMsg != "":
+            raise(errMsg)
 
         dataset = get("dataset")
-
         recsUpsert = []
         for stmt in missEmbdsByK:
 
@@ -726,10 +725,10 @@ def dbStore(stmts):
             recsUpsert.append(rec)
 
         try:
-            db.session.bulk_save_objects(recsUpsert)
-            db.session.commit()
+            db.bulk_save_objects(recsUpsert)
+            db.commit()
         except IntegrityError:
-            db.session.rollback()
+            db.rollback()
             print(" ERROR storing ")
             raise Exception("Error inserting embeds into database")
 
@@ -766,12 +765,15 @@ def dbStore(stmts):
 #
 # Usage
 #   e1,s = lib_openai.getEmbeddings(statements, contexts)
-# returns a List of np.arrays - containing embeddings as
+# returns a List of np.arrays - containing embeddings as numpy array
+#
+def getEmbeddings(db, stmts, ctxs=[]):
 
+    if "" in stmts:
+        raise Exception("an empty statement in getEmbedding()")
 
-def getEmbeddings(stmts, ctxs=[]):
     stmts = addContext2Statments(stmts, ctxs=ctxs)
-    return dbStore(stmts)
+    return dbStore(db, stmts)
 
 
 

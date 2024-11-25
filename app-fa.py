@@ -48,6 +48,7 @@ import  models.db5 as db5
 
 
 import  models.embeds_endpoints as embeds_endpoints
+import  models.completions_endpoints as completions_endpoints
 
 
 # modules with model
@@ -61,6 +62,7 @@ import routes.embeddings_similarity as embeddings_similarity
 
 from lib.uploaded2samples import uploadedToSamples
 from lib.ecb2samples      import ecbSpeechesCSV2Json
+
 
 
 
@@ -98,20 +100,7 @@ def prof(func):
 
 
 
-templates = Jinja2Templates(directory="templates")
-
-# custom template functions
-def templateFunc01(value: str) -> str:
-    return f"<p>templateFunc01 says: -{value}-</p>\n"
-def exampleFunc(amount, currency="€"):
-    return f"{amount:.2f}{currency}"
-def datasetDyn():
-    return cfg.get('dataset')
-
-# register custom function to Jinja environment
-templates.env.globals["templateFunc01"] = templateFunc01
-templates.env.globals["exampleFunc"] = exampleFunc
-templates.env.globals["datasetDyn"] = datasetDyn
+from models.jinja import templates
 
 
 
@@ -205,6 +194,7 @@ async def lifespan(app: FastAPI):
 
         for idx in range(3):
             dummyRecordEmbedding(db, idx)
+            dummyRecordCompletion(db, idx)
 
 
     # application runs
@@ -222,9 +212,23 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.static_dir = Path("static")
+if False:
+    app.root_path
+    app.options
+app.debug = True
 app.dir_img_slides = Path("./doc/img")
-app.dir_uploads = Path("./uploaded-files")
+app.dir_uploads = "uploaded-files"
+app.dir_data    = "data"
+
+
+os.makedirs(  os.path.join(app.root_path, app.dir_data), exist_ok=True )
+os.makedirs(  os.path.join(app.root_path, app.dir_data,   "set1" ), exist_ok=True )
+os.makedirs(  os.path.join(app.root_path, app.static_dir ), exist_ok=True )
+os.makedirs(  os.path.join(app.root_path, app.static_dir, "img"), exist_ok=True )
+os.makedirs(  os.path.join(app.root_path, app.static_dir, "img", "dynamic"), exist_ok=True )
+
 app.include_router(embeds_endpoints.router)
+app.include_router(completions_endpoints.router)
 app.add_middleware(SessionMiddleware, secret_key="32168")
 
 
@@ -361,8 +365,6 @@ async def serveSlides(fName:str ="doc1" ):
         raise HTTPException(status_code=404, detail=f"File not found {loc}")
 
 
-def mock_EmbeddingsCheckAPIKeyOuter(apiKey):
-    return True, "mock verification success", ""
 
 
 # home, index
@@ -371,11 +373,10 @@ async def readRoot(request: Request):
 
     apiKey = cfg.get('OpenAIKey')
 
-    successMsg = ""
+    successMsg, invalidMsg = "", ""
     referrer = request.headers.get("referer", None)
     if referrer is None:
-        # apiKeyValid, successMsg, invalidMsg = embeddings.checkAPIKeyOuter(apiKey)
-        apiKeyValid, successMsg, invalidMsg = mock_EmbeddingsCheckAPIKeyOuter(apiKey)
+        apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
         if not apiKeyValid:
             url1 = request.url_for("serveSlides", fName="doc2")
             return RedirectResponse( url=url1 )
@@ -387,7 +388,7 @@ async def readRoot(request: Request):
             "request": request,
             "HTMLTitle": "Main page",
             "contentTpl": "main-body",
-            "cntBefore": f"<p>{successMsg}</p>",
+            "cntBefore": f"<p>{successMsg}  {invalidMsg}</p>",
             # "cntAfter":  "<p> after   </p>",
         },
     )
@@ -440,13 +441,16 @@ async def uploadFileGetH(request: Request, msg1: str | None = None):
 @app.post("/upload-file")
 async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = File(...)):
 
+    dir = Path(app.dir_data, cfg.get("dataset"), app.dir_uploads)
+    os.makedirs(dir, exist_ok=True)
+
     msgs = []
     for idx, f in enumerate(uploaded_files):
         if f and f.filename:
             msgs.append( f"processing file {idx+1} of {len(uploaded_files)}. {f.size/1024:.2f} kB  ")
             # cnt.append( f" -{pformat(f.size)}- ")
             fn = util.cleanFileName(f.filename)
-            filepath = os.path.join(app.dir_uploads, fn)
+            filepath = dir / fn
 
             checkExisting = Path(filepath)
             if checkExisting.is_file():
@@ -460,7 +464,7 @@ async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = F
             msgs.append( f"  {idx+1:3} - no file contents in multiple   input  {pformat(f)} ")
 
 
-    request.session["fileUploadMsgs"] = msgs  
+    request.session["fileUploadMsgs"] = msgs
 
 
     msg = r'<br\>n'.join(msgs)
@@ -519,11 +523,12 @@ async def processForm01(request: Request):
 # async def processForm(field1: str = Form(...), field1: int = Form(...),  ):
 
     # key-values, dict() to make it json serializable for session storage
-    kvPst  = await dict(request.form())      
     kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
 
     request.session["frm01Msg"]   = "processing success"
-    request.session["frm01Data1"] = kvPst  
+    request.session["frm01Data1"] = kvPst
     request.session["frm01Data2"] = kvGet
 
     url1 = request.url_for("renderForm01")
@@ -543,7 +548,7 @@ if __name__ == "__main__":
     '''
 taskkill /im  Python.exe  /F
 cls && fastapi dev  app-fa.py
-cls && fastapi prod app-fa.py
+cls && fastapi run  app-fa.py
 
 reload or workers can only be used from the command line:
         uvicorn [module-filename]:[instance-name-of-app]

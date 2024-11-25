@@ -115,7 +115,7 @@ def getLast():
 def getByID(smplID):
     smplID = int(smplID)
     for idx, item in enumerate(c_samples):
-        if (idx+1) == smplID:
+        if (idx+0) == smplID:
             return item
 
     nw = new()
@@ -147,19 +147,15 @@ def selectSingle(selectedStr):
 
 
 
-def PartialUI(req, session, showSelected=True):
+async def PartialUI(request, showSelected=True):
 
-    # GET params
-    args = req.args
-    kvGet = args.to_dict()
-
-    # POST params
-    reqArgs = req.form.to_dict()
-
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
 
     smplID = get("sample_id", len(c_samples)-1) # defaulting to last
-    if "action" in reqArgs and reqArgs["action"] == "select_sample":
-        smplID = int(reqArgs["smplID"]) - 0 # jinja indexes are one-based
+    if "action" in kvPst and kvPst["action"] == "select_sample":
+        smplID = int(kvPst["smplID"]) - 0 # jinja indexes are one-based
         set("sample_id", smplID)
 
 

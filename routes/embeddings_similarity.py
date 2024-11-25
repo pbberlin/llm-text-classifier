@@ -4,7 +4,6 @@ from pprint import pprint, pformat
 import markdown
 import models.samples as samples
 
-from   flask import url_for
 
 
 
@@ -40,6 +39,7 @@ def stripSingleQ(s):
     return s.replace("'", " ")
 
 def renderTable(
+    request,
     t,
     colHdrsSh, colHdrsLg,
     rowCol1Sh, rowCol1Lg,
@@ -139,7 +139,8 @@ def renderTable(
 
 
 
-            frmURL1 = url_for("chatCompletionSynchroneousH")
+            frmURL1 = request.url_for("chatCompletionSynchroneousH")
+
             frm1 = f"""
                 <form action='{frmURL1}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
@@ -149,7 +150,7 @@ def renderTable(
             """
 
 
-            frmURL2 = url_for("chatCompletionJsonH")
+            frmURL2 = request.url_for("chatCompletionJsonH")
             frm2 = f"""
                 <form action='{frmURL2}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
@@ -158,7 +159,7 @@ def renderTable(
                 </form>
             """
 
-            frmURL3 = url_for("chatCompletionJSH")
+            frmURL3 = request.url_for("chatCompletionJSH")
             frm3 = f"""
                 <form action='{frmURL3}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
@@ -187,34 +188,26 @@ def renderTable(
         s += f"<pre>{pformat(t)}</pre> \n"
         s += "\n"
 
-
     return s
 
-def model(ctxs, bmrk, smpl ):
+
+
+def model(request, db, ctxs, bmrk, smpl ):
 
 
     smplSh = [] # sample short keys
     smplLg = [] # sample long  keys
-    for idx, el in enumerate(smpl["statements"]):
-        smplSh.append( el["short"] )
-        smplLg.append( el["long"] )
-
-
-    if False:
-        for idx, el in enumerate(smpls):
-            smplStr += samples.toHTML(el,idx)
-        # add empty sample
-        if smpls[-1]["long"].strip() != "":
-            smplStr += samples.toHTML(samples.new(), idx+len(smpls) )
-            # spSt += samples.toHTML(samples.new(), idx+len(sample) +1 )
-
+    for idx, smpl in enumerate(smpl["statements"]):
+        smplSh.append( smpl["short"] )
+        smplLg.append( smpl["long"] )
 
 
     bmrkSh = [] # benchmark short keys
     bmrkLg = [] # benchmark long  keys
-    for stmt in bmrk["statements"]:
-        bmrkSh.append( stmt["short"] )
-        bmrkLg.append( stmt["long"]  )
+    for idx, bm in  enumerate(bmrk["statements"]):
+        bmrkSh.append( bm["short"] )
+        bmrkLg.append( bm["long"]  )
+
 
     # x-axis labels - appending context
     bmShTmp = []
@@ -224,11 +217,11 @@ def model(ctxs, bmrk, smpl ):
     bmrkSh = bmShTmp
 
 
-    embsBm = embeds.getEmbeddings(bmrkLg, ctxs=ctxs)
+    embsBm = embeds.getEmbeddings(db, bmrkLg, ctxs=ctxs)
     # res += s
 
     # NO CONTEXT here
-    embsSp = embeds.getEmbeddings(smplLg)
+    embsSp = embeds.getEmbeddings(db, smplLg)
     # res += s
 
 
@@ -246,6 +239,7 @@ def model(ctxs, bmrk, smpl ):
 
 
     htmlTable = renderTable(
+        request,
         coeffsMatr,
         bmrkSh, bmrkLg,
         smplSh, smplLg,

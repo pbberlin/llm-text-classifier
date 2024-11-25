@@ -148,21 +148,16 @@ def selectSingle(selectedStr):
 
 
 
-def PartialUI(req, session, showSelected=True):
+async def PartialUI(request, session, showSelected=True):
 
-    # GET params
-    args = req.args
-    kvGet = args.to_dict()
-
-    # POST params
-    reqArgs = req.form.to_dict()
-
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
 
     tplID = get("pipeline_id", len(c_pipelines)-1) # defaulting to last
-    if "action" in reqArgs and reqArgs["action"] == "select_template":
-        tplID = int(reqArgs["tplID"]) - 0  # jinja indexes are one-based
+    if "action" in kvPst and kvPst["action"] == "select_template":
+        tplID = int(kvPst["tplID"]) - 0  # jinja indexes are one-based
         set("pipeline_id", tplID)
-
 
     s  = ""
     s += "<div id='partial-ui-wrapper'>"

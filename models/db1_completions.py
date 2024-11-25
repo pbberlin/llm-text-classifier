@@ -142,6 +142,7 @@ def dummyRecordCompletion(db: Session, idx: int):
         dataset   =cfg.get("dataset"),
         prompt    =prompt,
         hash      =strHash(prompt) ,
+        ident     ="GPT-4o-2200tokens",
         result    =strJson,
         modelmajor="GPT-4o",
         modelminor="-2024-08-06",

@@ -10,7 +10,7 @@
     ],
     "tokens_max": 2000,
     "temperature": 0,
-    "context_id":     0,
+    "context_id":     [0],
     "benchmark_id":   0,
     "sample_id":      0,
     "template_id":    0,

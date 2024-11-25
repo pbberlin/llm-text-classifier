@@ -4,7 +4,8 @@ from   pprint import pprint, pformat
 from   copy     import deepcopy
 
 from lib.util   import saveJson, loadJson 
-from lib.config import get, set
+
+import lib.config as cfg
 
 
 c_benchmarks = []
@@ -72,7 +73,7 @@ def toHTML(bmrk):
 
 def load():
     global c_benchmarks  # in order to _write_ to module variable
-    c_benchmarks = loadJson("benchmarks", subset=get("dataset"))
+    c_benchmarks = loadJson("benchmarks", subset=cfg.get("dataset"))
     if len(c_benchmarks)== 0:
         c_benchmarks = loadJson("benchmarks", "init")
     # pprint(c_benchmarks)
@@ -81,7 +82,7 @@ def save():
     if not cacheDirty:
         print(f"\tbenchmarks are unchanged ({len(c_benchmarks):3} entries). ")
         return
-    saveJson(c_benchmarks, "benchmarks", subset=get("dataset"))
+    saveJson(c_benchmarks, "benchmarks", subset=cfg.get("dataset"))
 
 
 
@@ -115,7 +116,7 @@ def getLast():
 def getByID(bmID):
     bmID = int(bmID)
     for idx, item in enumerate(c_benchmarks):
-        if (idx+1) == bmID:
+        if (idx+0) == bmID:
             return item
 
     nw = new()
@@ -138,36 +139,28 @@ def selectSingle(selectedStr):
         if item["descr"].strip() == "":
             continue
         sel = ""
-        if (idx+1) == selected:
+        if (idx+0) == selected:
             sel = "selected"
-        s += f"\t<option {sel} value='{idx+1}' >{item['descr'].strip()}</option>\n"
+        s += f"\t<option {sel} value='{idx+0}' >{item['descr'].strip()}</option>\n"
 
     s += f"</select>\n"
     return s
 
 
 
-def PartialUI(req, session, showSelected=True):
+async def PartialUI(request, showSelected=True):
 
-    # GET params
-    args = req.args
-    kvGet = args.to_dict()
-
-    # POST params
-    reqArgs = req.form.to_dict()
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
 
 
-    # todo: make this similar to samples and templates
-    bmrkID = f"{len(c_benchmarks)-0}" 
-    if "action" in reqArgs and reqArgs["action"] == "select_benchmark":
-        bmrkID = reqArgs["bmrkID"]
-        # print(f"new benchmark ID is {bmrkID}")
-        session["bmrkID"] = bmrkID
-    else:
-        if "bmrkID" in session:
-            bmrkID = session["bmrkID"]
-            print(f"benchmark ID from session is {bmrkID}")
+    bmrkID = cfg.get("benchmark_id", len(c_benchmarks)-1) # defaulting to last
+    if "action" in kvPst and kvPst["action"] == "select_benchmark":
+        bmrkID = int(kvPst["bmrkID"]) - 0
+        cfg.set("benchmark_id", bmrkID)
 
+    print(f"benchmark PartialUI id {bmrkID=}")
 
 
     s  = ""
@@ -187,6 +180,8 @@ def PartialUI(req, session, showSelected=True):
 
 
     bmrk = getByID(bmrkID)
+
+    print(f"benchmark PartialUI bm {bmrk=}")
 
     if showSelected:
         s += toHTMLShort(bmrk)
