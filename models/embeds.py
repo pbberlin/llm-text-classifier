@@ -569,10 +569,11 @@ def checkAPIKeyInner(newKey):
 
 def createClient():
     # print( f"")
-    print( f"  OpenAI API key is -{get('OpenAIKey')}-   ", end="")
+    openAIKey = get('OpenAIKey')
+    print( f"\tOpenAI API key is -{openAIKey[:10]}...{openAIKey[:-10]}-   ", end="")
     try:
         clientNew = openai.OpenAI(
-            api_key = get('OpenAIKey'),
+            api_key = openAIKey,
             timeout=10,
         )
         print( f" - client created")
@@ -724,9 +725,14 @@ def dbStore(db, stmts):
         try:
             db.bulk_save_objects(recsUpsert)
             db.commit()
-        except IntegrityError:
+        except IntegrityError as exc:
             db.rollback()
-            raise Exception("Error upserting embeds into database")
+            if "UNIQUE constraint failed" in str(exc):
+                print(f"\tupsert error: unique constraint failed")
+            else: 
+                print(f"\terror upserting embeds into database")
+                print(f"\t{exc}")
+                # raise Exception(f"error upserting embeds into database\n{exc}")
 
 
     # ---- retrieval stop
@@ -943,22 +949,32 @@ def correlationsXY(
 
 def designPrompt(beliefStatement, speech):
 
-    tplID = get("pipeline_id", 0)
-    tpl  = getByID(tplID)
+    pipelineID = get("pipeline_id", 0)
+    pipeLine   = getByID(pipelineID)
 
-    role = tpl["role"]
+    role = pipeLine["role"]
 
-    stageTemplate = tpl["stages"][0]["long"]
+    stageTpl = pipeLine["stages"][0]["long"]
 
-    # print(stageTemplate)
+    mustContain = '''Use the following json format for your response'''
+    if not mustContain in stageTpl:
+         stageTpl += '''
+--- 
+Use the json format for your response.
+         '''
 
-    prompt = stageTemplate.format(
+    # print(stageTpl)
+
+    prompt = stageTpl.format(
         role=role, 
         beliefStatement=beliefStatement, 
         speech=speech,
     )
 
     prompt = prompt.strip()
+
+
+    # print(prompt)
 
 
     if len(beliefStatement.strip()) < 5 or len(speech.strip()) < 5:
@@ -984,8 +1000,6 @@ def resDummy():
 @prof
 def chatCompletion(db, model, prompt, role, seed=100):
 
-    # xxxxx
-
     listSeeds = [100,101,102]
     listSeeds = [100] # seeds are only BETA - output should be mostly *deterministic*
 
@@ -1010,20 +1024,19 @@ def chatCompletion(db, model, prompt, role, seed=100):
         strRes = compl.result
         fromCache = True
 
-
     else:
         clnt, errStr = createClient()
         if errStr != "":
             res = {
                 "model":      model,
-                "ident":      "-",
+                "ident":      ident,
                 "jsonResult": resDummy(),
                 "error"     : errStr,
             }
             return res
 
 
-        res = [] # responses
+        res = {} # result
 
         # https://platform.openai.com/docs/api-reference/chat/create
         # https://platform.openai.com/docs/libraries
@@ -1045,20 +1058,33 @@ def chatCompletion(db, model, prompt, role, seed=100):
             ]
         # print(  json.dumps(msgs, indent=4) )
 
-        completion = clnt.chat.completions.create(
-            model=model,
-            response_format= respFmt ,
-            messages=msgs,
-            max_completion_tokens=maxCompletionTokens,    # Limit for response tokens
-            temperature=celsius,
-            n=1,                # Number of completions to generate
-            stop=None,          # Specify stop sequences if needed
-            seed=seed,
-        )
+        try:
+            completion = clnt.chat.completions.create(
+                model=model,
+                response_format=respFmt,
+                messages=msgs,
+                max_completion_tokens=maxCompletionTokens,    # Limit for response tokens
+                temperature=celsius,
+                n=1,                # Number of completions to generate
+                stop=None,          # Specify stop sequences if needed
+                seed=seed,
+            )
 
-        strRes = completion.choices[0].message.content
+            strRes = completion.choices[0].message.content
+
+        except Exception as exc:
+            print(f" {str(exc)} \n\t{respFmt=} -\n\t{prompt=}" )
+            res = {
+                "model":      model,
+                "ident":      ident,
+                "jsonResult": resDummy(),
+                "error"     : f" {str(exc)} \n\t{respFmt=} -\n\t{prompt=}",
+            }
+            return res
+
 
         saveCompletionDB(db, hsh, ident, prompt, strRes, model)
+
 
     # now turn the string result into JSON
 
@@ -1087,36 +1113,11 @@ def chatCompletion(db, model, prompt, role, seed=100):
 
 
     # saveJson(res, f"chat-completion-b-{model}-{hsh}", subset=get("dataset"))
-    if fromCache:
+    if not fromCache:
         ts = f"-{datetime.now():%m-%d-%H-%M}"
         saveJson(res, f"chat-completion-b-{model}-{hsh}-{ts}",  subset=get("dataset"))
 
     return res
 
 
-
-# platform.openai.com/docs/guides/text-generation/conversations-and-context
-#   the chunking is not used
-def generateChatCompletionChunks(db, prompt, role):
-
-    yield prompt
-
-    # xxxxx
-    listSeeds = [100,101,102]
-    listSeeds = [100] # seeds are only BETA - output should be mostly *deterministic*
-
-    models=get("modelNamesChatCompletion")
-    results = [] # responses
-
-
-    for idx1, model in enumerate(models):
-        for idx2, seed in enumerate(listSeeds):
-
-            res = chatCompletion(db, model, prompt, role, seed)
-            yield res
-
-
-
-    yield  "end-of-func"
-    # return results
 

@@ -124,19 +124,15 @@ def completionsWhereDataset(db: Session, dataset: str = "") -> list[Completion]:
 
 def completionsWhereHash(db: Session, hashes: list[str], ) -> list[Completion]:
     completes = db.query(Completion).filter(Completion.hash.in_(hashes)).all()
-    print(f"\tfound {len(completes)} completions for hashes '{hashes[:3]}' ")
+    print(f"\tfound {len(completes)} out of {len(hashes)} completions for hashes '{hashes[:3]}' ")
     return completes
 
 
 
 
-
-
 # we dont save the role yet
-#   we dont 
-#   from openai import ChatCompletion
 def saveCompletionDB(
-    db: Session, 
+    db:      Session, 
     hsh     :str, 
     ident   :str, 
     prompt  :str, 
@@ -161,9 +157,11 @@ def saveCompletionDB(
     try:
         db.bulk_save_objects(recsUpsert)
         db.commit()
-    except IntegrityError:
+    except IntegrityError as exc:
         db.rollback()
-        raise Exception("Error upserting completions into database")
+        print(f"\terror upserting completions into database")
+        print(f"\t{exc}")
+        # raise Exception(f"error upserting completions into database\n{exc}")
 
 
 # Depend is only possible for endpoints

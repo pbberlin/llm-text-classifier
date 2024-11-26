@@ -18,6 +18,7 @@ from models.db5 import get_db
 import models.contexts     as contexts
 import models.benchmarks   as benchmarks
 import models.samples      as samples
+import models.pipelines    as pipelines
 
 
 import routes.embeddings_basics     as embeddings_basics
@@ -98,11 +99,11 @@ async def embeddingsSimilarityH(request: Request, db: Session = Depends(get_db))
     ctxUI,  ctxs     = await contexts.PartialUI(request)
     bmrkUI, bmSel    = await benchmarks.PartialUI(request, showSelected=False)
     smplUI, smplSel  = await samples.PartialUI(request, showSelected=False)
+    pipeUI, pipeSel  = await pipelines.PartialUI(request, showSelected=False)
 
-    print(f"{ctxs=}" )
-    print(f"{bmSel=}" )
+    # print(f"{ctxs=}" )
+    # print(f"{bmSel=}" )
     # print(f"{smplSel=}" )
-
 
     sTable = embeddings_similarity.model(request, db, ctxs, bmSel, smplSel)
 
@@ -114,10 +115,16 @@ async def embeddingsSimilarityH(request: Request, db: Session = Depends(get_db))
             "HTMLTitle":   "Embeddings - Similarity",
             "contentTpl":  "embeddings-similarity",
             "ctxUI":       ctxUI,
+            
             "bmrkUI":      bmrkUI,
+            "bmSel":       benchmarks.toHTML(bmSel),
+
             "smplUI":      smplUI,
-            "cnt1":        benchmarks.toHTML(bmSel),
-            "cnt2":        samples.toHTML(smplSel),
+            "smplSel":     samples.toHTML(smplSel),
+
+            "pipeUI":      pipeUI,
+            "pipeSel":     pipelines.toHTML(pipeSel),
+            
             "cntTable":    sTable,
         },
     )

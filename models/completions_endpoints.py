@@ -14,7 +14,7 @@ from    models.jinja import templates
 import  lib.config          as cfg
 from    models.db5 import get_db
 
-from    models.embeds import designPrompt, chatCompletion, generateChatCompletionChunks
+from    models.embeds import designPrompt, chatCompletion
 
 
 def addPreflightCORS():
@@ -39,28 +39,29 @@ async def extractParams(request: Request):
     kvPst = await request.form()
     kvPst = dict(kvPst) # after async complete
 
+    beliefStatement =  ""
+    speech          =  ""
+
     model  =  ""
     role   =  ""
     prompt =  ""
 
-    beliefStatement =  ""
-    speech          =  ""
 
     try:
         jsn = await request.json()
 
         if "model" in jsn:
-            model =  jsn["model"].strip()
+            model  =  jsn["model"].strip()
 
         if "role" in jsn:
             role   =  jsn["role"]
 
         if "prompt" in jsn:
-            prompt =  jsn["prompt"]
+            prompt = jsn["prompt"]
 
 
     except Exception as exc:
-        print(f"request body was not JSON - probably POST")
+        print(f"\trequest body was not JSON - probably POST")
 
         if "model" in kvPst:
             model =  kvPst["model"].strip()
@@ -90,23 +91,22 @@ async def extractParams(request: Request):
 
 
 
+
+
 async def chatCompletionSynchroneousH(request: Request, db: Session):
 
-    model, prompt, role, beliefStatement, speech = await extractParams(request)
-    
+    _, prompt, role, beliefStatement, speech = await extractParams(request)
 
-    # requestChatCompletion is now a generator
-    # returning various types of returns in a protracted way
-    # we collect all chunks - and then render them in one go
-    results = []
-    idx1 = -1
-    for res in generateChatCompletionChunks(db, beliefStatement, speech):
-        idx1 += 1
-        if idx1 == 0:
-            prompt = res
-        elif res == "end-of-func":
-            pass
-        else:
+    results = [] # responses
+
+    listSeeds = [100,101,102]
+    listSeeds = [100] # seeds are only BETA - output should be mostly *deterministic*
+    models=cfg.get("modelNamesChatCompletion")
+
+    # sequential - generator stuff breaks down in fastapi
+    for idx1, model in enumerate(models):
+        for idx2, seed in enumerate(listSeeds):
+            res = chatCompletion(db, model, prompt, role, seed)
             results.append(res)
 
 
@@ -125,10 +125,7 @@ async def chatCompletionSynchroneousH(request: Request, db: Session):
 
 
 
-# single caveat
-#   we receive a *stream* of responses from OpenAI
-#   we collect all responses and render them at once
-#     compare @app.get("/generate-stream-example", response_class=StreamingResponse)
+# we collect all responses and render them at once
 @router.get( "/completions/sync", response_class=HTMLResponse)
 async def chatCompletionSynchroneousHGet(request: Request, db: Session = Depends(get_db)):
     return await chatCompletionSynchroneousH(request, db)

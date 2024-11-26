@@ -125,10 +125,8 @@ def embeddingsWhereDataset(db: Session, dataset: str = None) -> list[Embedding]:
 
 def embeddingsWhereHash(db: Session, hashes: list[str], ) -> list[Embedding]:
     embeds = db.query(Embedding).filter(Embedding.hash.in_(hashes)).all()
-    print(f"\tfound {len(embeds)} embeddings for hashes '{hashes[:3]}' ")
+    print(f"\tfound {len(embeds)} out of {len(hashes)} embeddings for hashes '{hashes[:3]}' ")
     return embeds
-
-
 
 
 # Depend is only possible for endpoints

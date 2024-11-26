@@ -9,7 +9,7 @@ from lib.config import get, set
 c_pipelines = []
 cacheDirty = False
 
-# new statement - part of new template
+# new stage - part of new pipeline
 def newStage(lg=""):
     st = {
         "short":  "",
@@ -32,8 +32,8 @@ def new():
 
 
 def dummy():
-    st1 = newStage("dummy template 1")
-    st2 = newStage("dummy template 2")
+    st1 = newStage("dummy pipeline 1")
+    st2 = newStage("dummy pipeline 2")
     dmmy = {
         "descr": "",
         "role":  "",
@@ -45,22 +45,22 @@ def dummy():
     return dmmy
 
 
-def toHTMLShort(tpl):
+def toHTMLShort(pipeL):
     s  = ""
     s += f"<div>\n"
-    s += f"    <p>  {tpl['descr']} </p>\n"
-    smtsFlat = f"{tpl['stages']}"
+    s += f"    <p>  {pipeL['descr']} </p>\n"
+    smtsFlat = f"{pipeL['stages']}"
     s += f"    <p style='font-size: 85%; '>{embeds.ell(smtsFlat,x=72)}</p>\n"
     s += f"</div>\n"
     return s
 
 
-def toHTML(tpl):
+def toHTML(pipeL):
     s = ""
     s += f"<div class='item-row'>"
-    s += f"<p style='width: 99%;'>{tpl['descr']}</p>"
-    s += f"<p style='width: 99%;'>{tpl['role']}</p>"
-    for stage in tpl["stages"]:
+    s += f"<p style='width: 99%;'>{pipeL['descr']}</p>"
+    s += f"<p style='width: 99%;'>{pipeL['role']}</p>"
+    for stage in pipeL["stages"]:
         s += f'''   <p class='item-shrt' > {stage["short"]} </p>'''
         s += f'''   <p class='item-long' > {stage["long"]}  </p>'''
     s += f"</div>"
@@ -113,10 +113,10 @@ def getLast():
     return  nw
 
 
-def getByID(tplID):
-    tplID = int(tplID)
+def getByID(pipeID):
+    pipeID = int(pipeID)
     for idx, item in enumerate(c_pipelines):
-        if (idx) == tplID:
+        if (idx) == pipeID:
             return item
 
     nw = new()
@@ -132,8 +132,8 @@ def selectSingle(selectedStr):
     # we cannot use
     #        onchange='this.form.submit()'
     # since it does not convey the
-    #       <button  name='action'  value='select_template' ...
-    s += f"<select  name='tplID'   >\n"
+    #       <button  name='action'  value='select_pipeline' ...
+    s += f"<select  name='pipeID'   >\n"
 
     for idx, item in enumerate(c_pipelines):
         if item["descr"].strip() == "":
@@ -148,41 +148,42 @@ def selectSingle(selectedStr):
 
 
 
-async def PartialUI(request, session, showSelected=True):
+# async def PartialUI(request, session, showSelected=True):
+async def PartialUI(request, showSelected=True):
 
     kvGet = dict(request.query_params)
     kvPst = await request.form()
     kvPst = dict(kvPst) # after async complete
 
-    tplID = get("pipeline_id", len(c_pipelines)-1) # defaulting to last
-    if "action" in kvPst and kvPst["action"] == "select_template":
-        tplID = int(kvPst["tplID"]) - 0  # jinja indexes are one-based
-        set("pipeline_id", tplID)
+    pipeID = get("pipeline_id", len(c_pipelines)-1) # defaulting to last
+    if "action" in kvPst and kvPst["action"] == "select_pipeline":
+        pipeID = int(kvPst["pipeID"]) - 0 
+        set("pipeline_id", pipeID)
 
     s  = ""
     s += "<div id='partial-ui-wrapper'>"
 
     s += "<form id='frmPartial5' class='frmPartial'  method=post>"
-    s += f"<div style='display: inline-block: 20rem'>  {selectSingle(tplID)} </div>"
+    s += f"<div style='display: inline-block: 20rem'>  {selectSingle(pipeID)} </div>"
     s += '''<button
                 name='action'
-                value='select_template'
+                value='select_pipeline'
                 accesskey='s'
             >
-                <u>S</u>witch template 
+                <u>S</u>witch pipeline 
             </button>'''
     s += "</form>"
 
 
-    tpl = getByID(tplID)
+    pipe = getByID(pipeID)
     if showSelected:
-        s += toHTMLShort(tpl)
+        s += toHTMLShort(pipe)
 
 
     s += "</div id='partial-ui-wrapper'>"
 
 
-    return (s, tpl)
+    return (s, pipe)
 
 
 

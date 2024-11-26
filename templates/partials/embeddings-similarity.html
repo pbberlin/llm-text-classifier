@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="toggle-indicator">+</span>
     </p>
     <div class="toggle-body">
-        {{ cnt1  |safe }}
+        {{ bmSel  |safe }}
     </div>
 </div>
 
@@ -73,10 +73,21 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="toggle-indicator">+</span>
     </p>
     <div class="toggle-body">
-        {{ cnt2  |safe }}
+        {{ smplSel  |safe }}
     </div>
 </div>
 
+
+<h3> Pipeline      </h3>
+{{ pipeUI  |safe }}
+<div class="toggle-container" >
+    <p class="toggle-head">Pipelines...
+        <span class="toggle-indicator">+</span>
+    </p>
+    <div class="toggle-body">
+        {{ pipeSel  |safe }}
+    </div>
+</div>
 
 
 
