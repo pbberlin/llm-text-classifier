@@ -164,10 +164,11 @@ async def lifespan(app: FastAPI):
         type=str, 
     )
     parser.add_argument(
-        'app-fa.py',   
+        'app.py',   
         help="capture the fastapi module - just let through",
         type=str, 
     )
+
 
     parser.add_argument(
         "-cntr", "--counter",
