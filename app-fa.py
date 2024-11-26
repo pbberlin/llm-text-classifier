@@ -7,6 +7,7 @@ from   lib.util   import prof
 
 
 
+import argparse
 import time
 import json
 import os
@@ -67,6 +68,7 @@ import models.contexts     as contexts
 import models.benchmarks   as benchmarks
 import models.samples      as samples
 import models.pipelines    as pipelines
+
 import models.embeds       as embeds
 
 
@@ -113,6 +115,11 @@ def loadAll(args, db):
         samples.save()
         quit()
 
+    if False:
+        from lib.util import loadEnglishStopwords
+        from lib.util import loadDomainSpecificWords
+        loadEnglishStopwords()
+        loadDomainSpecificWords()
 
 
     embeds.load(db)
@@ -149,12 +156,46 @@ def saveAll(db, force=False):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
+
+    parser = argparse.ArgumentParser("llm-classifier-app")
+    parser.add_argument(
+        'dev',   
+        help="capture the fastapi mode - just let through",
+        type=str, 
+    )
+    parser.add_argument(
+        'app-fa.py',   
+        help="capture the fastapi module - just let through",
+        type=str, 
+    )
+
+    parser.add_argument(
+        "-cntr", "--counter",
+        help="help for command line arg",
+        default=0      , type=int,
+    )
+    parser.add_argument(
+        "-ecb" , "--ecb",
+        help="import ECB - num sentences - [1, 2, 4, 500]",
+        default=""    , type=str,
+    )
+    parser.add_argument(
+        "-upl" , "--upl",
+        help="import uploaded files",
+        default=False  , type=bool,
+    )
+
+    args = parser.parse_args()
+
+
+
+
     cfg.load(app, isFlaskApp=False)
     await db5.init_db()
     print("\tdb init stop")
 
     db = db5.SessionLocal()
-    loadAll({}, db )
+    loadAll(args, db )
 
 
 
@@ -191,15 +232,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.debug = True
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.static_dir = Path("static")
 if False:
     app.root_path
     app.options
-app.debug = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///embeddings-mostly.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 app.dir_img_slides = Path("./doc/img")
 app.dir_uploads = "uploaded-files"
 app.dir_data    = "data"
+
 
 
 os.makedirs(  os.path.join(app.root_path, app.dir_data), exist_ok=True )
@@ -210,6 +255,9 @@ os.makedirs(  os.path.join(app.root_path, app.static_dir, "img", "dynamic"), exi
 
 
 app.include_router(contexts.router)
+app.include_router(benchmarks.router)
+app.include_router(samples.router)
+app.include_router(pipelines.router)
 app.include_router(embeds_endpoints.router)
 app.include_router(completions_endpoints.router)
 app.add_middleware(SessionMiddleware, secret_key="32168")
@@ -377,7 +425,7 @@ curl -X POST "http://127.0.0.1:8000/upload-file" \
 
 
 '''
-@app.get('/upload-file')
+@app.get('/upload/file')
 async def uploadFileGetH(request: Request, msg1: str | None = None):
 
     content = ""
@@ -410,7 +458,7 @@ async def uploadFileGetH(request: Request, msg1: str | None = None):
 
 
 
-@app.post("/upload-file")
+@app.post("/upload/file")
 async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = File(...)):
 
     dir = Path(app.dir_data, cfg.get("dataset"), app.dir_uploads)
@@ -567,8 +615,17 @@ async def saveAllH(request: Request, db: Session = Depends(db5.get_db)):
 
 
 
-@app.get("/generate-stream-example", response_class=StreamingResponse)
-async def generate_stream_example():
+
+
+
+
+
+
+
+
+# StreamingResponse is useless against browser buffering
+@app.get("/stream-basic", response_class=StreamingResponse)
+async def streamBasicH():
     async def generateChunks():
         yield "Starting stream...\n"
         yield f"{ " " * 2000 }\n"
@@ -577,6 +634,79 @@ async def generate_stream_example():
             await asyncio.sleep(0.5)
         yield "Stream complete!"
     return StreamingResponse(generateChunks(), media_type="text/plain")
+
+
+
+
+def generateStreamInner(modeES=False):
+
+    from lib.util import mainTemplateHeadForChunking, templateSuffix
+
+    pfx = ""
+    if modeES:
+        pfx = "data: "
+
+    if not modeES:
+        yield mainTemplateHeadForChunking("main", "streaming example")
+        yield f"{pfx}<p><a href=/generate-stream?event-stream=1>Switch to event stream</a></p>\n" + " " * 1024
+
+    # force early flush with padding
+    yield f"{pfx}<p>Starting streaming...</p>" + " " * 1024  + "\n\n"
+
+    # force early flush with padding
+    yield f"{pfx}<div style='height: 2px; background-color: grey'> { ' ' * 1024}  &nbsp;</div>\n\n"
+
+    # sending content chunks to client
+    for i in range(12):
+        print(f"\t  yielding chunk {i:2}")
+        yield f"{pfx}<p>Chunk {(i + 1):2}  { ' '  * 512} &nbsp;</p>\n\n"
+        time.sleep(0.15)
+        time.sleep(0.05)
+    yield f"{pfx}<p>response finished</p>\n\n"
+
+    if not modeES:
+        yield templateSuffix()
+
+
+
+@app.get('/generate-stream')
+async def generateStreamH(request: Request):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    asEventStream = False
+    # 'text/plain', 'text/html; charset=UTF-8'
+    mType = 'text/html'
+
+    if ("event-stream" in kvGet) or ("event-stream" in kvPst):
+        asEventStream = True
+        mType = 'text/event-stream'
+
+
+    # content_type=mType if '...charset=UTF-8'
+    rsp = Response( generateStreamInner(modeES=asEventStream), mimetype=mType)
+    # if True:
+    if False:
+        # No need for 'Transfer-Encoding: chunked'; Flask handles it for you
+        rsp.headers['Transfer-Encoding'] = 'chunked'
+        rsp.status_code = 200  # Explicitly set status code (optional)
+    return rsp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

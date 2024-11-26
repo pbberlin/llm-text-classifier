@@ -1,11 +1,17 @@
-import models.embeds as embeds
-from   pprint import pprint, pformat
-
 from   copy     import deepcopy
 
-from lib.util   import saveJson, loadJson 
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses   import RedirectResponse
+from sqlalchemy.orm import Session
 
-import lib.config as cfg
+router = APIRouter()
+
+from    lib.util   import saveJson, loadJson 
+import  lib.config as cfg
+
+from    models.jinja import templates
+from    models.db5 import get_db
+import  models.embeds as embeds
 
 
 c_benchmarks = []
@@ -194,3 +200,102 @@ async def PartialUI(request, showSelected=True):
 
 
 
+
+async def benchmarksEditH(request: Request, db: Session):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+
+    # extract and process POST params
+    reqBenchmarks = []
+    if len(kvPst) > 0:
+        for i1 in range(0,100):
+            descr = f"benchmark{i1+1:d}_descr"  # starts with 1
+            delet = f"benchmark{i1+1:d}_del"
+
+            if descr not in kvPst:
+                break
+
+            if descr in kvPst and delet in kvPst and  kvPst[delet] != "":
+                print(f"  input benchmark '{descr}' to be deleted")
+                continue
+            if kvPst[descr].strip() == "":
+                print(f"  input benchmark '{descr}' is empty")
+                continue
+
+            sts = []
+            for i2 in range(0,100):
+                sh = f"benchmark{i1+1:d}_st{i2+1}_shrt"
+                lg = f"benchmark{i1+1:d}_st{i2+1}_long"
+                if lg not in kvPst:
+                    break
+                if kvPst[lg].strip() == "":
+                    print(f"    bm {i1+1} stmt {i2+1} is empty")
+                    # continue
+                else:
+                    sts.append(
+                        {  "short": kvPst[sh], "long": kvPst[lg]  }
+                    )
+
+            reqBenchmarks.append(
+                {
+                    "descr": kvPst[descr],
+                    "statements": sts,
+                }
+            )
+            print(f"  input benchmark '{descr}' - {len(sts)} stmts - {kvPst[descr]}")
+
+        print(f"post request contained {len(reqBenchmarks)} benchmarks")
+    else:
+        pass
+        # print("post request is empty")
+
+
+    bmrks = update(reqBenchmarks)
+
+    print(f"overall number of benchmarks {len(bmrks) } ")
+    # for i,v in enumerate(bmrks):
+    #     print(f"   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
+
+
+    for bm in bmrks:
+        sts = bm["statements"]
+        if len(sts) == 0  or  sts[-1]["long"].strip() != "":
+            nwSt = newSt()
+            sts.append( nwSt )
+
+
+    if len(bmrks)>0 and bmrks[-1]["descr"].strip() != "" :
+        bmrks.append( dummy() )
+
+
+
+    bmrkUI, bmSel  = await PartialUI(request)
+
+    # benchmarks.toHTML(bmSel)
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":      request,
+            "HTMLTitle":    "Edit Benchmarks",
+            "contentTpl":   "benchmarks",
+            "cntBefore":    f'''
+                            {len(bmrks)} benchmarks found
+                            <br>
+                            {bmrkUI}
+                            ''',
+            "listBenchmarks": bmrks,
+        },
+    )
+
+
+@router.get('/benchmarks/edit')
+async def benchmarksEditHGet(request: Request, db: Session = Depends(get_db)):
+    return await benchmarksEditH(request, db)
+
+@router.post('/benchmarks/edit')
+async def benchmarksEditHPost(request: Request, db: Session = Depends(get_db)):
+    return await benchmarksEditH(request, db)

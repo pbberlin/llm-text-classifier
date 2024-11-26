@@ -89,6 +89,15 @@ ul.main-body li {
 }
 
 
+/* ul - second order */
+ul.main-body  ul li {
+	line-height: 90%;
+}
+ul.main-body  ul li a {
+	font-size:   85%;
+}
+
+
  /*
 	====================================
 */
@@ -324,6 +333,11 @@ table.results .llm-submit {
 
 input {
 	vertical-align: top;
+}
+
+::placeholder { 
+	color:    #aaa  !important;
+	opacity:  60%     !important;
 }
 
 p.inp {

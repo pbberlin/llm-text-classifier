@@ -1,11 +1,11 @@
 <h3>
-    Templates for prompt stages
+    Pipelines - stages of prompts
 </h3>
 
 
 <form action="" method="post">
 
-    {% for    item in listTemplates %}
+    {% for    item in listPipelines %}
 
         <div style="margin-bottom: 1rem;">
 
@@ -13,10 +13,10 @@
                 {{ loop.index }}. &nbsp;
             </span>
 
-            <input    name="template{{loop.index}}_descr"   size="87"  type="text"
-                value="{{ item.descr}}"   >
-            <input    name="template{{loop.index}}_role"    size="87"  type="text"
-                value="{{ item.role}}"   >
+            <input    name="pipeline{{loop.index}}_descr"   size="87"  type="text"
+                value="{{ item.descr}}"   placeholder="description"   >
+            <input    name="pipeline{{loop.index}}_role"    size="87"  type="text"
+                value="{{ item.role}}"    placeholder="role">
                 <br>
                 <!-- {{ item.stages }} -->
             {% set index1 = loop.index %}
@@ -53,6 +53,7 @@
                         name="stage{{index1}}_st{{loop.index}}_shrt"
                         size="72"
                         value="{{ sShrt }}"
+                        placeholder="short"
                     >
                     <br>
 
@@ -60,6 +61,7 @@
                     <textarea name="stage{{index1}}_st{{loop.index}}_rem"
                         rows="3"  cols="110"
                         style="margin-left: 1.4rem;"
+                        placeholder="remark"
                     >{{ sRem }}</textarea>
                     <br>
 
@@ -67,6 +69,7 @@
                     <textarea name="stage{{index1}}_st{{loop.index}}_long"
                         rows="{{ rows*4 }}"  cols="110"
                         style="margin-left: 1.4rem;"
+                        placeholder="prompt w placeholers"
                     >{{ sLong }}</textarea>
 
                 </div>
@@ -75,7 +78,7 @@
 
 
 
-            <input    name="sample{{loop.index}}_del" type="checkbox"   title="delete"
+            <input    name="pipeline{{loop.index}}_del" type="checkbox"   title="delete"
                 style="margin-left: 2.85rem"  >
 
         </div>

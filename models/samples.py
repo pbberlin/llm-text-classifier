@@ -1,12 +1,21 @@
-import models.embeds as embeds
-import pickle
-from   pprint import pprint, pformat
+from    copy   import deepcopy
 
-from   copy     import deepcopy
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses   import RedirectResponse
+from sqlalchemy.orm import Session
 
-from lib.util   import saveJson, loadJson 
-from lib.config import get, set
+router = APIRouter()
 
+from    lib.util   import saveJson, loadJson 
+import  lib.config as cfg
+
+from    models.jinja import templates
+from    models.db5 import get_db
+import  models.embeds as embeds
+
+
+from lib.uploaded2samples import uploadedToSamples
+from lib.ecb2samples      import ecbSpeechesCSV2Json
 
 c_samples = []
 cacheDirty = False
@@ -71,7 +80,7 @@ def toHTML(smpl):
 
 def load():
     global c_samples  # in order to _write_ to module variable
-    c_samples = loadJson("samples", subset=get("dataset"))
+    c_samples = loadJson("samples", subset=cfg.get("dataset"))
     if len(c_samples)== 0:
         c_samples = loadJson("samples", "init")
     # pprint(c_samples)
@@ -80,7 +89,7 @@ def save():
     if not cacheDirty:
         print(f"\tsamples    are unchanged ({len(c_samples):3} entries). ")
         return
-    saveJson(c_samples, "samples", subset=get("dataset"))
+    saveJson(c_samples, "samples", subset=cfg.get("dataset"))
 
 
 
@@ -153,10 +162,10 @@ async def PartialUI(request, showSelected=True):
     kvPst = await request.form()
     kvPst = dict(kvPst) # after async complete
 
-    smplID = get("sample_id", len(c_samples)-1) # defaulting to last
+    smplID = cfg.get("sample_id", len(c_samples)-1) # defaulting to last
     if "action" in kvPst and kvPst["action"] == "select_sample":
         smplID = int(kvPst["smplID"]) - 0 # jinja indexes are one-based
-        set("sample_id", smplID)
+        cfg.set("sample_id", smplID)
 
 
     s  = ""
@@ -216,3 +225,195 @@ def PartialUI_Import(req, session):
     s += "</div id='partial-ui-wrapper'>"
 
     return s
+
+
+
+async def samplesImportH(request: Request):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    # extract and process POST params
+    importedSmpls = []
+    if len(kvPst) > 0:
+
+        if  "action" in kvPst and kvPst["action"] == "import_samples":
+
+            modeX = "none"
+            if  "import-distinct" in kvPst:       # stupid checkbox submits no value if unchecked
+                modeX = kvPst["import-distinct"]
+            print(f"post request => import samples, mode {modeX}")
+
+            filterBy = kvPst["filter"]
+
+            tmp = uploadedToSamples()
+            importedSmpls.extend(tmp)
+
+            print(f"samples imported new samples: {len(importedSmpls) } (not filterd yet) ")
+
+
+    else:
+        pass
+        # print("post request is empty")
+
+
+    existingSmpls = samples.update([])
+    existingKeys = {}
+    for smpl in existingSmpls:
+        existingKeys[smpl["descr"]] = True
+
+
+    importedDistinctAndFiltered = []
+    for idx, smpl in enumerate(importedSmpls):
+        if smpl["descr"] in existingKeys:
+            print(f"  smpl {idx:2} already exists - {smpl['descr']}  ")
+            continue
+        if filterBy not in smpl["descr"]:
+            print(f"  smpl {idx:2} not contains '{filterBy}' - {smpl['descr']}  ")
+            continue
+        importedDistinctAndFiltered.append(smpl)
+    print(f"samples distinct new samples: {len(importedDistinctAndFiltered) } ")
+
+
+    existingSmpls.extend(importedDistinctAndFiltered)
+    effectiveSmpls = samples.update(existingSmpls)
+    print(f"overall number of samples:    {len(effectiveSmpls) } ")
+
+    # for i,v in enumerate(bmrks):
+    #     print(f"   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
+
+
+    importUI  = await samples.PartialUI_Import(request)
+
+    msg = ""
+    if len(importedSmpls)>0:
+        msg = f"{len(importedSmpls)} samples imported"
+
+
+    return render_template(
+        'main.html',
+        HTMLTitle="Import samples",
+        cntBefore=f'''
+            {msg}
+            <br>
+            {importUI}
+            ''',
+        contentTpl="samples",
+        listSamples=effectiveSmpls,
+    )
+
+
+@router.get('/samples/Import')
+async def samplesImportHGet(request: Request, db: Session = Depends(get_db)):
+    return await samplesImportH(request, db)
+
+@router.post('/samples/Import')
+async def samplesImportHPost(request: Request, db: Session = Depends(get_db)):
+    return await samplesEditH(request, db)
+
+
+
+async def samplesEditH(request: Request, db: Session):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+
+    # extract and process POST params
+    reqSamples = []
+    if len(kvPst) > 0:
+
+        for i1 in range(0,100):
+            descr = f"sample{i1+1:d}_descr"  # starts with 1
+            delet = f"sample{i1+1:d}_del"
+
+            if descr not in kvPst:
+                break
+
+            if descr in kvPst and delet in kvPst and  kvPst[delet] != "":
+                print(f"  input sample '{descr}' to be deleted")
+                continue
+            if kvPst[descr].strip() == "":
+                print(f"  input sample '{descr}' is empty")
+                continue
+
+            sts = []
+            for i2 in range(0,100):
+                sh = f"sample{i1+1:d}_st{i2+1}_shrt"
+                lg = f"sample{i1+1:d}_st{i2+1}_long"
+                if lg not in kvPst:
+                    break
+                if kvPst[lg].strip() == "":
+                    print(f"    bm {i1+1} stmt {i2+1} is empty")
+                    # continue
+                else:
+                    sts.append(
+                        {  "short": kvPst[sh], "long": kvPst[lg]  }
+                    )
+
+            reqSamples.append(
+                {
+                    "descr": kvPst[descr],
+                    "statements": sts,
+                }
+            )
+            print(f"  input sample '{descr}' - {len(sts)} stmts - {kvPst[descr]}")
+
+        print(f"post request contained {len(reqSamples)} samples")
+
+
+    else:
+        pass
+        # print("post request is empty")
+
+
+    smpls = update(reqSamples)
+
+    print(f"overall number of samples {len(smpls) } ")
+    # for i,v in enumerate(newSmpls):
+    #     print(f"   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
+
+
+    for smpl in smpls:
+        sts = smpl["statements"]
+        if len(sts) == 0  or  sts[-1]["long"].strip() != "":
+            nwSt = newSt()
+            sts.append( nwSt )
+
+
+    if len(smpls)>0 and smpls[-1]["descr"].strip() != "" :
+        smpls.append( dummy() )
+
+
+
+    smplUI, _  = await PartialUI(request)
+
+    # toHTML(bmSel)
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":      request,
+            "HTMLTitle":    "Edit Samples",
+            "contentTpl":   "samples",
+            "cntBefore":    f'''
+                            {len(smpls)} samples found
+                            <br>
+                            {smplUI}
+                            ''',
+            "listSamples": smpls,
+        },
+    )
+
+
+
+
+@router.get('/samples/edit')
+async def samplesEditHGet(request: Request, db: Session = Depends(get_db)):
+    return await samplesEditH(request, db)
+
+@router.post('/samples/edit')
+async def samplesEditHPost(request: Request, db: Session = Depends(get_db)):
+    return await samplesEditH(request, db)
