@@ -1,4 +1,4 @@
-<p> Compute extended alignment using chat completion... </p>
+<p> LLM pipeline ... </p>
 
 <br>
 
@@ -122,6 +122,7 @@
                 }
                 // console.log(payload);
                 let urlEndpoint = "{{ urlEndpoint }}";
+                console.log(`urlEndpoint: ${urlEndpoint}`);
                 const response = await fetch( urlEndpoint , {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

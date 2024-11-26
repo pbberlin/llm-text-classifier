@@ -35,9 +35,12 @@ def addActualCORS(response):
 
 async def extractParams(request: Request):
 
-    kvGet = dict(request.query_params)
-    kvPst = await request.form()
-    kvPst = dict(kvPst) # after async complete
+    if False:
+        # prevents request.json() below
+        kvGet = dict(request.query_params)
+        kvPst = await request.form()
+        kvPst = dict(kvPst) # after async complete
+
 
     beliefStatement =  ""
     speech          =  ""
@@ -61,7 +64,12 @@ async def extractParams(request: Request):
 
 
     except Exception as exc:
-        print(f"\trequest body was not JSON - probably POST")
+        print(f"\trequest body was not JSON - probably POST {request.url=}")
+        print(f"\t{exc=}")
+
+        kvPst = await request.form()
+        kvPst = dict(kvPst) # after async complete
+
 
         if "model" in kvPst:
             model =  kvPst["model"].strip()

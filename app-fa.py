@@ -173,8 +173,9 @@ async def lifespan(app: FastAPI):
         db5.ifNotExistTable('completions')
 
         for idx in range(3):
-            dummyRecordEmbedding(db, idx)
-            dummyRecordCompletion(db, idx)
+            pass
+            # dummyRecordEmbedding(db, idx)
+            # dummyRecordCompletion(db, idx)
 
 
     # application runs
