@@ -160,7 +160,7 @@ async def PartialUI(request, showSelected=True):
         bmrkID = int(kvPst["bmrkID"]) - 0
         cfg.set("benchmark_id", bmrkID)
 
-    print(f"benchmark PartialUI id {bmrkID=}")
+    # print(f"benchmark PartialUI id {bmrkID=}")
 
 
     s  = ""
@@ -181,7 +181,7 @@ async def PartialUI(request, showSelected=True):
 
     bmrk = getByID(bmrkID)
 
-    print(f"benchmark PartialUI bm {bmrk=}")
+    # print(f"benchmark PartialUI bm {bmrk=}")
 
     if showSelected:
         s += toHTMLShort(bmrk)

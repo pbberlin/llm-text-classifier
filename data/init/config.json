@@ -13,6 +13,6 @@
     "context_id":     [0],
     "benchmark_id":   0,
     "sample_id":      0,
-    "template_id":    0,
+    "pipeline_id":    0,
     "last-item": "no-comma"
 }

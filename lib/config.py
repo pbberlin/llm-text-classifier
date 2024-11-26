@@ -8,52 +8,49 @@ from   copy     import deepcopy
 from flask import current_app
 
 
-cfg = {}
+_cfg = {}
 
 
-def copyToAppState(appInstance):
+# list of subdirectories in ./data as HTMLselect
+def datasetsAsHTMLSelect(app):
 
-    '''
-        intricate: we have to import current_app from flask
-        we have *also* need the app instance
-            either per import or as function parameter
-        => then we can do following
-            config settings being stored in app context
-            possible only once - "staticValue" can never be changed
-            => dynamic stuff needs to be written as function: exampleFunc(...)
+    base_path = app.dir_data
+    dirs = []
 
-        see documentation, esp. the examples that *dont work*
-        https://flask.palletsprojects.com/en/stable/templating/#context-processors
-    '''
-    with appInstance.app_context():
-        @current_app.context_processor
-        def setTemplateVars():
-            def exampleFunc(amount, currency="€"):
-                return f"{amount:.2f}{currency}"
-            def datasetDyn():
-                return get('dataset')
-            return dict(
-                staticValue="alpha",
-                exampleFunc=exampleFunc,
-                datasetDyn =datasetDyn,
-            )
+    exclude = {
+        "cfg": True,
+        "init":True,
+        "old-obsolete":True,
+     }
 
-    if False:
-        sessLifeTime = appInstance.config.get("PERMANENT_SESSION_LIFETIME")
-        print(f" sessLifeTime {sessLifeTime} ")
-        argApp.template_global()
-        argApp.before_first_request()
+    for item in os.listdir(base_path):
+        if os.path.isdir(os.path.join(base_path, item)) and item not in exclude and not item.startswith("tmp-"):
+            dirs.append(item)
+
+    selected = get("dataset")
+
+    s  = '<label for="dataset">Choose a dataset:</label> '
+    s += '<select name="dataset" id="dataset">'
+
+    for dir in dirs:
+        sel = ""
+        if dir == selected:
+            sel = ' selected'
+        s += f'<option value="{dir}" {sel} >{dir}  </option>'
+    s += '</select>'
+    return s
+
 
 
 
 
 def load(argApp, isFlaskApp=True):
 
-    global cfg, appInstance  # in order to _write_ to module variable
+    global _cfg, appInstance  # in order to _write_ to module variable
 
-    cfg = loadJson("config", "cfg", onEmpty="dict")
-    if len(cfg)== 0:
-        cfg = loadJson("config", "init", onEmpty="dict")
+    _cfg = loadJson("config", "cfg", onEmpty="dict")
+    if len(_cfg)== 0:
+        _cfg = loadJson("config", "init", onEmpty="dict")
 
     envOpenAIKey = os.getenv('OPENAI_API_KEY')
     if envOpenAIKey is None or  len(envOpenAIKey) < 2:
@@ -64,33 +61,30 @@ def load(argApp, isFlaskApp=True):
 
     printKeys = ["OpenAIKey", "dataset", "tokens_max"]
 
-    for idx, k in enumerate(cfg):
+    for idx, k in enumerate(_cfg):
         if not k.endswith("_help") and not k.endswith("last-item")  :
             if k in printKeys:
-                print(f"\t  {k:24} {cfg[k]}")
+                print(f"\t  {k:24} {_cfg[k]}")
 
-
-    if isFlaskApp:
-        copyToAppState(argApp)
 
 
 def save():
-    saveJson(cfg, "config", "cfg")
+    saveJson(_cfg, "config", "cfg")
 
 
 
 
 def get(key, default=None):
-    if len(cfg) < 1:
+    if len(_cfg) < 1:
         raise ValueError('config not initialized yet')
 
-    if key in cfg:
-        return cfg[key]
+    if key in _cfg:
+        return _cfg[key]
     return default
 
 
 def set(key, val):
-    global cfg
-    cfg[key] = val
+    global _cfg
+    _cfg[key] = val
 
 

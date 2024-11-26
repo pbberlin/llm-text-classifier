@@ -71,16 +71,6 @@ logTimeSince(f"python script - imports stop")
 
 
 
-def addPreflightCORS():
-    rsp = make_response()
-    rsp.headers.add("Access-Control-Allow-Origin",  "*")
-    rsp.headers.add("Access-Control-Allow-Headers", "*")
-    rsp.headers.add("Access-Control-Allow-Methods", "*")
-    return rsp
-
-def addActualCORS(rsp):
-    rsp.headers.add("Access-Control-Allow-Origin", "*")
-    return rsp
 
 def signalHandler(signal, frame):
     print(f'flask server immediate shutdown - sig {signal}')
@@ -103,161 +93,14 @@ def handle_error(e):
     return jsonify(error=str(e)), code
 
 
-# home
-@app.route('/')
-def indexH():
-
-    session.permanent = True
-
-    apiKey = None
-    if 'api_key' in session:
-        apiKey = session['api_key']
-    else:
-        apiKey = cfg.get('OpenAIKey')
-
-    referrer = request.referrer
-    # print(f"referrer {referrer}")
-    successMsg = ""
-    if referrer is None:
-        apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
-        if not apiKeyValid:
-            return redirect( url_for("configH") )
-
-
-    if "smplID" in session:
-        del session["smplID"]
-    # for k in session:
-    #     print(f"key {k:12}  - {session[k]}")
-
-    return render_template(
-        'main.html',
-        HTMLTitle="Main page",
-        contentTpl="main-body",
-        cntBefore=f"<p>{successMsg}</p>",
-    )
 
 
 
 
 
-# we set a different URL for favicon in main.html
-# this is only for the 'rogue' routes, who generate streams etc.
-@app.route('/favicon.ico')
-def favicon():
-    # following mimetypes made it worse:
-    #  ...', mimetype='image/vnd.microsoft.icon')
-    #  ...', mimetype='image/x-icon')
-    return send_from_directory('static', 'favicon.svg')
-    if False:
-        return '', 204
-
-
-# image handler for doc
-@app.route('/doc/img/<path:fileName>')
-def docImages(fileName):
-    return send_from_directory('doc/img', fileName)
 
 
 
-@app.route('/slides',  defaults={'fileName': "doc1.md"})
-@app.route('/slides/', defaults={'fileName': "doc1.md"})
-@app.route('/slides/<path:fileName>')
-def serveSlides2(fileName):
-
-    dr = os.path.join(".", "doc", "slides")
-    fn = os.path.join(dr, f"{fileName}" )
-    if not fn.lower().endswith(".md"):
-        fn += ".md"
-    with open(fn, encoding="utf-8") as inFile:
-        mdContent = inFile.read()
-        print(f"\tloaded markdown '{fileName}' - {len(mdContent)} bytes - from {dr}")
-
-    htmlContent = renderToRevealHTML(mdContent)
-
-    # dump file for debug
-    fnOut = os.path.join(dr, f"tmp-{fileName}-rendered.html" )
-    with open( fnOut, "w", encoding='utf-8') as outFile:
-        outFile.write(htmlContent)
-
-
-    return render_template(
-        'reveal-js-adapter.html',
-        revealHTML=htmlContent,
-    )
-
-
-
-
-
-@app.route('/upload-file',methods=['GET','POST'])
-def uploadFileH():
-
-    content = ""
-    content += "<br>\n"
-
-
-    if 'uploaded-files' in request.files:
-
-        fs = request.files.getlist('uploaded-files')
-        if (not fs) or len(fs) < 1:
-            content += "No file contents in multiple input  <br>\n"
-        else:
-            # content += f"{len(fs)} multi file(s)<br>\n"
-            for idx, f in enumerate(fs):
-                if f and f.filename:
-                    content += f"Processing multiple file {idx+1}. -{pformat(f)}- <br>\n"
-                    fn = cleanFileName(f.filename)
-                    filepath = os.path.join(UPLOAD_FOLDER, fn)
-
-                    # print(f" fn {f.filename} ")
-                    # print(f" fn {fn} ")
-                    # print(f" fp {filepath} ")
-
-                    checkExisting = Path(filepath)
-                    if checkExisting.is_file():
-                        content += f" &nbsp; {idx+1:3} - '{f.filename}' ('{fn}') already exists. Will overwrite. <br>\n"
-
-                    f.save(filepath)
-                    content += f" &nbsp; {idx+1:3} - '{f.filename}' ('{fn}') uploaded successfully <br>\n"
-
-                else:
-                    content += f" &nbsp; {idx+1:3} - no file contents in multiple   input  {pformat(f)} <br>\n"
-
-    else:
-        content += "No multi files<br>\n"
-
-
-    content += "<br>\n"
-
-
-    if 'uploaded-file-1' in request.files:
-
-        f = request.files['uploaded-file-1']
-        if f.filename == '':
-            content += "No file contents in single input  <br>\n"
-        else:
-            if f and f.filename:
-                fn = cleanFileName(f.filename)
-                filepath = os.path.join(UPLOAD_FOLDER, fn)
-
-                checkExisting = Path(filepath)
-                if checkExisting.is_file():
-                    content += f"'{f.filename}' ('{fn}') already exists. Will overwrite. <br>\n"
-
-                f.save(filepath)
-                content += f"single file '{f.filename}' ('{fn}') uploaded successfully <br>\n"
-
-    else:
-        pass
-        # content += "No single file<br>\n"
-
-
-    return render_template(
-        'main.html',
-        HTMLTitle="Upload file",
-        contentTpl="upload-file",
-        cntAfter=content,
-    )
 
 
 
@@ -342,116 +185,6 @@ def samplesImportH():
 
 
 
-# list of subdirectories in ./data as HTMLselect
-def listBoxDataset():
-
-    base_path = './data'
-    dirs = []
-
-    exclude = {
-        "cfg": True,
-        "init":True,
-        "old-obsolete":True,
-     }
-
-    for item in os.listdir(base_path):
-        if os.path.isdir(os.path.join(base_path, item)) and item not in exclude and not item.startswith("tmp-"):
-            dirs.append(item)
-
-    selected = cfg.get("dataset")
-
-    s  = '<label for="dataset">Choose a dataset:</label> '
-    s += '<select name="dataset" id="dataset">'
-
-    for dir in dirs:
-        sel = ""
-        if dir == selected:
-            sel = ' selected'
-        s += f'<option value="{dir}" {sel} >{dir}  </option>'
-    s += '</select>'
-    return s
-
-
-@app.route('/save-all',methods=['GET','POST'])
-def saveAllH():
-    saveAll(force=True)
-    return "OK"
-
-
-
-@app.route('/config-edit',methods=['GET','POST'])
-def configH():
-
-    # GET + POST params
-    kvGet = request.args.to_dict()
-    kvPst = request.form.to_dict()
-
-    apiKey =  None
-    if 'api_key' in kvPst:
-        apiKey = kvPst['api_key']
-    else:
-        if 'api_key' in session:
-            apiKey = session['api_key']
-        else:
-            apiKey = cfg.get("OpenAIKey")
-
-    apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
-
-    invalidMsgExt = ""
-    if not apiKeyValid:
-        invalidMsgExt = f'''
-            {invalidMsg}
-            <br>
-            API key looks like <span style='font-size:85%'>sk-iliEnLtScLqauJejcpuDT4BlbkFJNTOc16c7E8R0NYVfODh5</span> <br>
-            <br>
-        '''
-
-
-    datasetNew = None
-    if 'dataset' in kvPst:
-        datasetNew = kvPst['dataset']
-        old = cfg.get("dataset")
-
-        if datasetNew != old:
-
-            if "smplID" in session:
-                del session["smplID"]
-
-            saveAll(force=True) # before switching
-
-            # now switch
-            cfg.set("dataset", datasetNew)
-            cfg.save()
-
-            loadAll( {} )
-
-
-    content = f'''
-
-    <form action="" method="post">
-
-        {invalidMsgExt}
-        {successMsg}
-
-        <label for="dataset">Open AI API Key</label>
-        <input    name="api_key" type="input" size="64" value="{apiKey}"  >
-        <br>
-
-        {listBoxDataset()}
-        <br>
-
-        <button accesskey="s" ><u>S</u>ubmit</button>
-    </form>
-
-    '''
-
-    #     <a href="/" {"autofocus" if apiKeyValid else ""}  >   Home        </a>
-
-    return render_template(
-        'main.html',
-        HTMLTitle="API key",
-        cntBefore=content,
-    )
 
 
 
@@ -935,36 +668,38 @@ def chatCompletionJsonH():
     kvGet = request.args.to_dict()
     kvPst = request.form.to_dict()
 
+    role   =  ""
     model  =  ""
     prompt =  ""
-    role   =  ""
 
     try:
-        kvPst = request.get_json(silent=False)
+        kvPst = request.json()
+
+        if "role" in kvPst:
+            role   =  kvPst["role"]
 
         if "prompt" in kvPst:
             prompt =  kvPst["prompt"]
 
-        role          =  ""
-        if "role" in kvPst:
-            role =  kvPst["role"]
 
     except Exception as exc:
+
         print(f"request body was not JSON - probably POST")
 
-        beliefStatement          =  ""
+        if "model" in kvPst:
+            model =  kvPst["model"].strip()
+
+        beliefStatement  =  ""
         if "belief-statement" in kvPst:
             beliefStatement =  kvPst["belief-statement"]
 
-        speech          =  ""
+        speech           =  ""
         if "speech" in kvPst:
             speech =  kvPst["speech"]
 
         prompt, _, _ = embeds.designPrompt(beliefStatement, speech)
 
 
-    if "model" in kvPst:
-        model =  kvPst["model"].strip()
     if model == "":
         models = cfg.get("modelNamesChatCompletion")
         model =  models[0]

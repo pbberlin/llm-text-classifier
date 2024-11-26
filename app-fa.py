@@ -15,6 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.templating  import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
+
 from typing import Any, Dict, List
 
 
@@ -26,7 +27,6 @@ from contextlib import asynccontextmanager
 
 
 
-import markdown
 import time
 import json
 import os
@@ -46,6 +46,7 @@ from models.db1_completions import Completion, dummyRecordCompletion
 
 import  models.db5 as db5
 
+from sqlalchemy.orm import Session
 
 import  models.embeds_endpoints as embeds_endpoints
 import  models.completions_endpoints as completions_endpoints
@@ -233,16 +234,6 @@ app.add_middleware(SessionMiddleware, secret_key="32168")
 
 
 
-def addPreflightCORS():
-    rsp = Response()
-    rsp.headers["Access-Control-Allow-Origin"]  = "*"
-    rsp.headers["Access-Control-Allow-Headers"] = "*"
-    rsp.headers["Access-Control-Allow-Methods"] = "*"
-    return rsp
-
-def addActualCORS(rsp):
-    rsp.headers["Access-Control-Allow-Origin"]  = "*"
-    return rsp
 
 
 
@@ -267,8 +258,7 @@ if True:
     @app.middleware("http")
     async def cors_middleware(request: Request, nextReq):
         response: Response = await nextReq(request)
-        # response = await addActualCORS(response)
-        response = addActualCORS(response)
+        # response = addActualCORS(response)
         return response
 
 
@@ -467,7 +457,7 @@ async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = F
     request.session["fileUploadMsgs"] = msgs
 
 
-    msg = r'<br\>n'.join(msgs)
+    msg = "<br>\n".join(msgs)
     url1 = request.url_for("uploadFileGetH")
     url1 = str(request.url_for("uploadFileGetH")) + f"?msg={msg}"
     '''
@@ -476,6 +466,201 @@ async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = F
     '''
     return RedirectResponse( url=url1, status_code=303 )
 
+
+
+@app.get('/config/edit')
+async def configH(request: Request, db: Session = Depends(db5.get_db)):
+
+
+    apiKey = cfg.get("OpenAIKey", "")
+    apiCheckSuccessMsg   = request.session.pop("config-edit-key-success-msg",   None)
+    apiCheckInvalidMsg   = request.session.pop("config-edit-key-invalid-msg-ext",   None)
+    
+    switchDatasetMsg = cfg.get("config-edit-ds-switch-msg", "")
+
+    content = f'''
+
+    <form action="" method="post">
+
+        {apiCheckInvalidMsg}
+        {apiCheckSuccessMsg}
+
+        <label for="dataset">Open AI API Key</label>
+        <input    name="api_key" type="input" size="64" value="{apiKey}"  >
+        <br>
+
+        
+        {switchDatasetMsg}
+
+        {cfg.datasetsAsHTMLSelect(app)}
+        <br>
+
+        <button accesskey="s" ><u>S</u>ubmit</button>
+    </form>
+
+    '''
+
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":    request,
+            "HTMLTitle":  "Config, api key",
+            "cntBefore":  content,
+        },
+    )
+
+
+
+
+
+@app.post('/config/edit')
+async def configHPost(request: Request, db: Session = Depends(db5.get_db)):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    apiKey = cfg.get("OpenAIKey", None)
+    if "api_key" in kvPst:
+        cfg.set("OpenAIKey", kvPst["api_key"])
+        apiKey = kvPst["api_key"]
+
+    apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
+    invalidMsgExt = ""
+    if not apiKeyValid:
+        invalidMsgExt = f'''
+            {invalidMsg}
+            <br>
+            API key looks like <span style='font-size:85%'>sk-iliEnLtScLqauJejcpuDT4BlbkFJNTOc16c7E8R0NYVfODh5</span> <br>
+            <br>
+        '''
+
+    request.session["config-edit-key-valid"]   = apiKeyValid
+    request.session["config-edit-key-success-msg"] = successMsg
+    request.session["config-edit-key-invalid-msg"] = invalidMsg
+    request.session["config-edit-key-invalid-msg-ext"] = invalidMsgExt
+
+
+    dsOld = cfg.get("dataset")
+    dsNew = None
+    if "dataset" in kvPst:
+        dsNew = kvPst["dataset"]
+
+        if dsNew != dsOld:
+
+            request.session["config-edit-ds-switch-msg"] = f"switching from dataset '{dsOld}' to '{dsNew}' ..."
+
+            # before switching
+            saveAll(db, force=True) 
+
+            # now switch
+            cfg.set("dataset", dsNew)
+            
+            cfg.set("context_id",   [0])
+            cfg.set("benchmark_id",  0)
+            cfg.set("sample_id",     0)
+            cfg.set("pipeline_id",   0)
+
+            cfg.save()
+
+            loadAll(db, {} )
+
+            request.session["config-edit-ds-switch-msg"] += f"<br>\n success"
+
+    url1 = request.url_for("configHGet")
+    return RedirectResponse( url=url1, status_code=303 )
+
+
+
+
+
+@app.get('/data/save-all')
+async def saveAllH(request: Request, db: Session = Depends(db5.get_db)):
+    saveAll(db, force=True)
+    return "OK"
+
+
+
+@app.get('/contexts/edit')
+async def contextsEditHGet(request: Request, db: Session = Depends(db5.get_db)):
+
+    ctxs = contexts.update([])
+
+    msgs   = request.session.pop("context-edit-msg",  [])
+
+    if len(msgs) == 0:
+        msgs.append(f"{len(ctxs)} contexts found")
+
+
+    if len(ctxs)>0 and ctxs[-1]["long"].strip() != "":
+        ctxs.append( contexts.dummy() )
+
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":      request,
+            "HTMLTitle":    "Edit Contexts",
+            "contentTpl":   "contexts",
+            "cntBefore":    "<pre>" +  "\n".join(msgs) + "</pre>",
+            "listContexts": ctxs,
+        },
+    )
+
+
+
+
+@app.post('/contexts/edit')
+async def contextsEditHPost(request: Request, db: Session = Depends(db5.get_db)):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    request.session["context-edit-msg"] = []
+    request.session["context-edit-msg"].append(f"context edit start")
+
+
+    # extract and process POST params
+    reqCtxs = []
+    if len(kvPst) > 0:
+        # for i,k in enumerate(kvPost):
+        #     request.session["context-edit-msg"].appendf"  req key #{i:2d}  '{k}' - {openai.ell(kvPost[k][:20],x=12)}")
+
+        for i in range(0,100):
+            sh = f"ctx{i+1:d}sh"  # starts with 1
+            lg = f"ctx{i+1:d}lg"
+            dl = f"ctx{i+1:d}_del"
+            if lg not in kvPst:
+                # print(f"input '{lg}' is unknown - breaking")
+                break
+            if dl in kvPst and  kvPst[dl] != "":
+                request.session["context-edit-msg"].append(f"   {i} - input '{lg}' to be deleted")
+                continue
+            if kvPst[lg].strip() == "":
+                request.session["context-edit-msg"].append(f"   {i} - input '{lg}' is empty")
+                continue
+            v = {  "short": kvPst[sh], "long": kvPst[lg]  }
+            reqCtxs.append(v)
+            request.session["context-edit-msg"].append(f"   {i} - {v['short'][0:15]} - {v['long'][0:15]}..." )
+            
+        request.session["context-edit-msg"].append(f"post request contained {len(reqCtxs)} contexts")
+    else:
+        request.session["context-edit-msg"].append("post request is empty")
+
+
+    ctxs = contexts.update(reqCtxs)
+
+    request.session["context-edit-msg"].append(f"overall number of contexts {len(ctxs) } ")
+
+    # if len(ctxs) != len(reqCtxs):
+    #     for i,v in enumerate(ctxs):
+    #         request.session["context-edit-msg"].append(f"   {i} - {v['short'][0:15]} {v['long'][0:15]}..." )
+    # request.session["context-edit-msg"].append(f"context edit success")
+
+    url1 = request.url_for("contextsEditHGet")
+    return RedirectResponse( url=url1, status_code=303 )
 
 
 
@@ -548,6 +733,7 @@ if __name__ == "__main__":
     '''
 taskkill /im  Python.exe  /F
 cls && fastapi dev  app-fa.py
+
 cls && fastapi run  app-fa.py
 
 reload or workers can only be used from the command line:

@@ -4,6 +4,8 @@ from models.db5 import get_db
 from models.db1_embeds import Embedding, embeddingsTop3, embeddingsWhereHash
 
 
+from models.jinja import templates
+
 
 
 # in ..[app].py
@@ -14,6 +16,14 @@ from fastapi.responses   import Response, HTMLResponse, JSONResponse
 
 router = APIRouter()
 
+
+import models.contexts     as contexts
+import models.benchmarks   as benchmarks
+import models.samples      as samples
+
+
+import routes.embeddings_basics     as embeddings_basics
+import routes.embeddings_similarity as embeddings_similarity
 
 
 
@@ -53,11 +63,6 @@ def embeddingsTop3ObjDictH(db: Session = Depends(get_db)):
 
 
 
-import routes.embeddings_basics     as embeddings_basics
-import routes.embeddings_similarity as embeddings_similarity
-
-from models.jinja import templates
-
 
 async def embeddingsBasicsH(request: Request, db: Session = Depends(get_db)):
 
@@ -84,12 +89,8 @@ async def embeddingsBasicsHPost(request: Request, db: Session = Depends(get_db))
 
 
 
-import models.contexts     as contexts
-import models.benchmarks   as benchmarks
-import models.samples      as samples
 
 
-@router.get('/embeddings/similarity')
 async def embeddingsSimilarityH(request: Request, db: Session = Depends(get_db)):
 
     kvGet = dict(request.query_params)
@@ -123,3 +124,13 @@ async def embeddingsSimilarityH(request: Request, db: Session = Depends(get_db))
         },
     )
 
+
+
+@router.get('/embeddings/similarity')
+async def embeddingsSimilarityHGet(request: Request, db: Session = Depends(get_db)):
+    return await embeddingsSimilarityH(request, db)
+
+
+@router.post('/embeddings/similarity')
+async def embeddingsSimilarityHPost(request: Request, db: Session = Depends(get_db)):
+    return await embeddingsSimilarityH(request, db)

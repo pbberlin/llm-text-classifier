@@ -330,9 +330,9 @@ def significantsForPlot(embds, band=significantBand, neighbors=globNeighbors):
 
 
 # compute significant data points for a embeddings in the module
-def significantsList():
+def significantsList(db):
     rng, lStr, lIdxVal, idxValByIdx, idxValByVal = {},{},{},{},{}
-    embdsAsList = embeddingsWhereDataset()
+    embdsAsList = embeddingsWhereDataset(db)
     embdsByStmt = {}
     for embd in embdsAsList:
         embdsByStmt[embd.text] = embd.embeddings
@@ -540,7 +540,7 @@ def load(db):
 def save(db):
     print(f"\tembeddings in database    {embeddingsCount(db):3} entries. ")
     if cacheDirty:
-        rng, lStr, _ ,  _ , _ = significantsList()
+        rng, lStr, _ ,  _ , _ = significantsList(db)
         lStr["ranges"] = rng # add as additional info
         saveJson(lStr, "embeddings-significant", subset=get("dataset"), tsGran=1)
 
