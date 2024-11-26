@@ -150,7 +150,7 @@ def renderTable(
             """
 
 
-            frmURL2 = request.url_for("chatCompletionJsonH")
+            frmURL2 = request.url_for("chatCompletionJsonHPost")
             frm2 = f"""
                 <form action='{frmURL2}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />

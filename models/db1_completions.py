@@ -139,7 +139,8 @@ def dummyRecordCompletion(db: Session, idx: int):
     prompt = f"For the {idx}th time. How strong is inflation? - Asked at {datetimeFunc.now()}."
     strJson = {"prompt": "Alice", "response": 30}
     e = Completion(
-        dataset   =cfg.get("dataset"),
+        # dataset   =cfg.get("dataset"),
+        dataset   ="ds-dummy",
         prompt    =prompt,
         hash      =strHash(prompt) ,
         ident     ="GPT-4o-2200tokens",

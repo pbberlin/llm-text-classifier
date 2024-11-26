@@ -11,8 +11,7 @@ from models.db0_base import Base
 
 from fastapi import HTTPException, Depends
 
-
-
+import random
 
 from dataclasses      import dataclass, asdict
 from dataclasses_json import dataclass_json
@@ -20,7 +19,7 @@ from dataclasses_json import Undefined
 
 
 # dataclass with SQLAlchemy table mapping and enhanced JSON support
-# similar to above - but we get better 
+# similar to above - but we get better
 # https://pypi.org/project/dataclasses-json/
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
@@ -55,7 +54,7 @@ class Embedding(Base):
             "modelminor": self.modelminor,
         }
 
-   # serialization generic 
+   # serialization generic
     def asDictInner1(self):
             return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
@@ -70,7 +69,7 @@ class Embedding(Base):
    # serialization using dataclass_json.to_json
     def asDictInner4(self):
         return self.to_json()
-    
+
     # json SCHEMA - to generate edit forms - input for JSONForms
     def schema(self):
         return self.json_schema()
@@ -113,10 +112,14 @@ def embeddingsTop3(db: Session) -> list[Embedding]:
 
 
 
-def embeddingsWhereDataset(db: Session, dataset: str = "") -> list[Embedding]:
-    datasets = [dataset, ""]  # include legacy records
+def embeddingsWhereDataset(db: Session, dataset: str = None) -> list[Embedding]:
+    datasets = []
+    if dataset:
+        datasets = [dataset, ""]  # include legacy records
+    else:
+        datasets = [cfg.get("dataset"), ""]  # include legacy records
     embeds = db.query(Embedding).filter(Embedding.dataset.in_(datasets)).all()
-    print(f"\tfound {len(embeds)} embeddings for dataset '{dataset}' ")
+    print(f"\tfound {len(embeds)} embeddings for datasets '{datasets}' ")
     return embeds
 
 
@@ -135,9 +138,15 @@ import  lib.config          as cfg
 # def dummyRecordEmbedding(idx: int, db: Session = Depends(get_db)):
 def dummyRecordEmbedding(db: Session, idx: int):
     txt = f"For the {idx}th time. How strong is inflation? - Asked at {datetimeFunc.now()}."
-    strJson = {"prompt": "Alice", "response": 30}
+    vectSize = 3078
+    embds = []
+    for i in range(vectSize):
+        embds.append( random.uniform(- 0.5, +0.5) )
+    strJson = embds
+
     e = Embedding(
-        dataset   =cfg.get("dataset"),
+        # dataset   =cfg.get("dataset"),
+        dataset   ="ds-dummy",
         text      =txt,
         hash      =strHash(txt) ,
         embeddings=strJson,
