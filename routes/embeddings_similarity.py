@@ -139,8 +139,7 @@ def renderTable(
 
 
 
-            frmURL1 = request.url_for("chatCompletionSynchroneousH")
-
+            frmURL1 = request.url_for("chatCompletionSynchroneousHPost") 
             frm1 = f"""
                 <form action='{frmURL1}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
@@ -159,7 +158,7 @@ def renderTable(
                 </form>
             """
 
-            frmURL3 = request.url_for("chatCompletionJSH")
+            frmURL3 = str(request.url_for("chatCompletionAsyncHPost")) + f"?useSvelte=False"
             frm3 = f"""
                 <form action='{frmURL3}' target='_chat' method='POST'>
                     <input type=hidden name='belief-statement'  value='{stripSingleQ(colHdrsLg[idxCol])}' />
@@ -175,6 +174,7 @@ def renderTable(
             s += f"     {frm1}"
             s += f"     {frm2}"
             s += f"     {frm3}"
+            # s += f"     {frm3}"
             s += f"  </td>"
 
 

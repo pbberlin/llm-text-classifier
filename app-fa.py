@@ -2,28 +2,8 @@
 # pip install "uvicorn[standard]"
 # pip install jinja2
 
-from fastapi import FastAPI
-from fastapi import Header, Request, Depends, HTTPException, Form, File, UploadFile
-
-
-from fastapi.responses   import Response, HTMLResponse, JSONResponse, StreamingResponse, FileResponse
-from fastapi.responses   import RedirectResponse
-
-from starlette.middleware.sessions import SessionMiddleware
-
-
-from fastapi.templating  import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-
-
-from typing import Any, Dict, List
-
-
-import asyncio
-import functools
-
-from contextlib import asynccontextmanager
-
+from   lib.util   import lg
+from   lib.util   import prof
 
 
 
@@ -33,10 +13,43 @@ import os
 from   pathlib  import Path
 from   pprint   import pformat
 
-import lib.util as util
-from    lib.markdown_ext import renderToRevealHTML
 
-import  lib.config as cfg
+import asyncio
+
+
+from contextlib import asynccontextmanager
+from typing import Any, Dict, List
+
+
+
+from fastapi import FastAPI
+from fastapi import Header, Request, Depends, HTTPException, Form, File, UploadFile
+
+
+from fastapi.responses   import Response, HTMLResponse, JSONResponse, StreamingResponse, FileResponse
+from fastapi.responses   import RedirectResponse
+
+from fastapi.staticfiles import StaticFiles
+
+from starlette.middleware.sessions import SessionMiddleware
+
+
+from sqlalchemy.orm import Session
+
+
+
+
+
+import lib.config as cfg
+import lib.util   as util
+
+from   lib.markdown_ext import renderToRevealHTML
+
+from   lib.uploaded2samples import uploadedToSamples
+from   lib.ecb2samples      import ecbSpeechesCSV2Json
+
+
+from models.jinja import templates
 
 # import  models.db1_embeds      as db1embeds
 from models.db1_embeds import Embedding, dummyRecordEmbedding
@@ -46,10 +59,7 @@ from models.db1_completions import Completion, dummyRecordCompletion
 
 import  models.db5 as db5
 
-from sqlalchemy.orm import Session
 
-import  models.embeds_endpoints as embeds_endpoints
-import  models.completions_endpoints as completions_endpoints
 
 
 # modules with model
@@ -58,50 +68,19 @@ import models.benchmarks   as benchmarks
 import models.samples      as samples
 import models.pipelines    as pipelines
 import models.embeds       as embeds
-import routes.embeddings_basics     as embeddings_basics
-import routes.embeddings_similarity as embeddings_similarity
 
-from lib.uploaded2samples import uploadedToSamples
-from lib.ecb2samples      import ecbSpeechesCSV2Json
 
+import  models.embeds_endpoints      as embeds_endpoints
+import  models.completions_endpoints as completions_endpoints
 
 
 
 
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    # format="%(asctime)s - %(levelname)s - %(message)s",
-    format="%(levelname)s: - %(message)s",
-)
-lg = logging.getLogger(__name__)
-
-
-# profile
-def prof(func):
-    """decorator - for execution time of func"""
-    @functools.wraps(func)
-    async def async_wrapper(*args, **kwargs):
-        strt = time.perf_counter()
-        rslt = await func(*args, **kwargs)
-        stop = time.perf_counter()
-        lg.info(f"func {func.__name__!r} executed in {stop - strt:.4f}s")
-        return rslt
-
-    @functools.wraps(func)
-    def sync_wrapper(*args, **kwargs):
-        strt = time.perf_counter()
-        rslt = func(*args, **kwargs)
-        stop = time.perf_counter()
-        lg.info(f"func {func.__name__!r} executed in {stop - strt:.4f}s")
-        return rslt
-
-    # wrap sync and async - accordingly
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
 
 
-from models.jinja import templates
+
+
 
 
 
@@ -228,6 +207,8 @@ os.makedirs(  os.path.join(app.root_path, app.static_dir ), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, app.static_dir, "img"), exist_ok=True )
 os.makedirs(  os.path.join(app.root_path, app.static_dir, "img", "dynamic"), exist_ok=True )
 
+
+app.include_router(contexts.router)
 app.include_router(embeds_endpoints.router)
 app.include_router(completions_endpoints.router)
 app.add_middleware(SessionMiddleware, secret_key="32168")
@@ -580,87 +561,6 @@ async def saveAllH(request: Request, db: Session = Depends(db5.get_db)):
     saveAll(db, force=True)
     return "OK"
 
-
-
-@app.get('/contexts/edit')
-async def contextsEditHGet(request: Request, db: Session = Depends(db5.get_db)):
-
-    ctxs = contexts.update([])
-
-    msgs   = request.session.pop("context-edit-msg",  [])
-
-    if len(msgs) == 0:
-        msgs.append(f"{len(ctxs)} contexts found")
-
-
-    if len(ctxs)>0 and ctxs[-1]["long"].strip() != "":
-        ctxs.append( contexts.dummy() )
-
-
-    return templates.TemplateResponse(
-        "main.html",
-        {
-            "request":      request,
-            "HTMLTitle":    "Edit Contexts",
-            "contentTpl":   "contexts",
-            "cntBefore":    "<pre>" +  "\n".join(msgs) + "</pre>",
-            "listContexts": ctxs,
-        },
-    )
-
-
-
-
-@app.post('/contexts/edit')
-async def contextsEditHPost(request: Request, db: Session = Depends(db5.get_db)):
-
-    kvGet = dict(request.query_params)
-    kvPst = await request.form()
-    kvPst = dict(kvPst) # after async complete
-
-    request.session["context-edit-msg"] = []
-    request.session["context-edit-msg"].append(f"context edit start")
-
-
-    # extract and process POST params
-    reqCtxs = []
-    if len(kvPst) > 0:
-        # for i,k in enumerate(kvPost):
-        #     request.session["context-edit-msg"].appendf"  req key #{i:2d}  '{k}' - {openai.ell(kvPost[k][:20],x=12)}")
-
-        for i in range(0,100):
-            sh = f"ctx{i+1:d}sh"  # starts with 1
-            lg = f"ctx{i+1:d}lg"
-            dl = f"ctx{i+1:d}_del"
-            if lg not in kvPst:
-                # print(f"input '{lg}' is unknown - breaking")
-                break
-            if dl in kvPst and  kvPst[dl] != "":
-                request.session["context-edit-msg"].append(f"   {i} - input '{lg}' to be deleted")
-                continue
-            if kvPst[lg].strip() == "":
-                request.session["context-edit-msg"].append(f"   {i} - input '{lg}' is empty")
-                continue
-            v = {  "short": kvPst[sh], "long": kvPst[lg]  }
-            reqCtxs.append(v)
-            request.session["context-edit-msg"].append(f"   {i} - {v['short'][0:15]} - {v['long'][0:15]}..." )
-            
-        request.session["context-edit-msg"].append(f"post request contained {len(reqCtxs)} contexts")
-    else:
-        request.session["context-edit-msg"].append("post request is empty")
-
-
-    ctxs = contexts.update(reqCtxs)
-
-    request.session["context-edit-msg"].append(f"overall number of contexts {len(ctxs) } ")
-
-    # if len(ctxs) != len(reqCtxs):
-    #     for i,v in enumerate(ctxs):
-    #         request.session["context-edit-msg"].append(f"   {i} - {v['short'][0:15]} {v['long'][0:15]}..." )
-    # request.session["context-edit-msg"].append(f"context edit success")
-
-    url1 = request.url_for("contextsEditHGet")
-    return RedirectResponse( url=url1, status_code=303 )
 
 
 

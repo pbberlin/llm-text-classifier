@@ -1,18 +1,17 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, desc, Index
+from datetime import datetime as datetimeFunc
+
+
+from sqlalchemy     import Column, Integer, String, Text, DateTime, func, desc, Index
 
 from sqlalchemy.orm import Session
 
 from sqlalchemy.dialects.sqlite import JSON
 
 
-from datetime import datetime as datetimeFunc
 
 from models.db0_base import Base
 
-
-if False:
-    # pure sqlalchemy data class
-    pass
+from sqlalchemy.exc import IntegrityError
 
 
 from dataclasses      import dataclass, asdict
@@ -34,7 +33,8 @@ class Completion(Base):
     hash:       str        = Column(String,   unique=False, nullable=False, index=True)
     ident:      str        = Column(Text,     nullable=False)
     prompt:     str        = Column(Text,     nullable=False)
-    result:     dict       = Column(JSON)   # SQLite > 3.9.
+    # result:     dict       = Column(JSON)   # SQLite > 3.9.
+    result:     str        = Column(Text,     nullable=False)
     error:      str        = Column(Text,     nullable=True)
     modelmajor: str        = Column(String, nullable=False)
     modelminor: str        = Column(String, nullable=False)
@@ -124,10 +124,46 @@ def completionsWhereDataset(db: Session, dataset: str = "") -> list[Completion]:
 
 def completionsWhereHash(db: Session, hashes: list[str], ) -> list[Completion]:
     completes = db.query(Completion).filter(Completion.hash.in_(hashes)).all()
-    print(f"\tfound {len(completes)} completions for hashes '{hashes}' ")
+    print(f"\tfound {len(completes)} completions for hashes '{hashes[:3]}' ")
     return completes
 
 
+
+
+
+
+# we dont save the role yet
+#   we dont 
+#   from openai import ChatCompletion
+def saveCompletionDB(
+    db: Session, 
+    hsh     :str, 
+    ident   :str, 
+    prompt  :str, 
+    result  :str, 
+    model   :str, 
+):
+
+    dataset = cfg.get("dataset")
+    recsUpsert = []
+
+    for idx in range(1):
+        rec = Completion(
+            dataset=dataset,
+            hash=hsh,
+            ident=ident,
+            prompt=prompt,
+            result=result,
+            modelmajor=model,
+            modelminor="v1",
+        )
+        recsUpsert.append(rec)
+    try:
+        db.bulk_save_objects(recsUpsert)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise Exception("Error upserting completions into database")
 
 
 # Depend is only possible for endpoints
@@ -138,6 +174,7 @@ import  lib.config          as cfg
 def dummyRecordCompletion(db: Session, idx: int):
     prompt = f"For the {idx}th time. How strong is inflation? - Asked at {datetimeFunc.now()}."
     strJson = {"prompt": "Alice", "response": 30}
+    strJson = f"My respone is {datetimeFunc.now()}"
     e = Completion(
         # dataset   =cfg.get("dataset"),
         dataset   ="ds-dummy",

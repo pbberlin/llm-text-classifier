@@ -1,11 +1,21 @@
-import models.embeds as embeds
-import pickle
-from pprint import pprint, pformat
+from    copy   import deepcopy
 
-from   copy     import deepcopy
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses   import RedirectResponse
+from sqlalchemy.orm import Session
 
-from lib.util   import saveJson, loadJson 
+router = APIRouter()
+
+from    lib.util   import saveJson, loadJson 
 import  lib.config as cfg
+
+from    models.jinja import templates
+from    models.db5 import get_db
+import  models.embeds as embeds
+
+
+
+
 
 
 c_contexts = []
@@ -167,5 +177,86 @@ async def PartialUI(request):
 
     return (s, ctxs)
 
+
+
+@router.get('/contexts/edit')
+async def contextsEditHGet(request: Request, db: Session = Depends(get_db)):
+
+    ctxs = update([])
+
+    msgs   = request.session.pop("context-edit-msg",  [])
+
+    if len(msgs) == 0:
+        msgs.append(f"{len(ctxs)} contexts found")
+
+
+    if len(ctxs)>0 and ctxs[-1]["long"].strip() != "":
+        ctxs.append( dummy() )
+
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":      request,
+            "HTMLTitle":    "Edit Contexts",
+            "contentTpl":   "contexts",
+            "cntBefore":    "<pre>" +  "\n".join(msgs) + "</pre>",
+            "listContexts": ctxs,
+        },
+    )
+
+
+
+
+@router.post('/contexts/edit')
+async def contextsEditHPost(request: Request, db: Session = Depends(get_db)):
+
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    request.session["context-edit-msg"] = []
+    request.session["context-edit-msg"].append(f"context edit start")
+
+
+    # extract and process POST params
+    reqCtxs = []
+    if len(kvPst) > 0:
+        # for i,k in enumerate(kvPost):
+        #     request.session["context-edit-msg"].appendf"  req key #{i:2d}  '{k}' - {openai.ell(kvPost[k][:20],x=12)}")
+
+        for i in range(0,100):
+            sh = f"ctx{i+1:d}sh"  # starts with 1
+            lg = f"ctx{i+1:d}lg"
+            dl = f"ctx{i+1:d}_del"
+            if lg not in kvPst:
+                # print(f"input '{lg}' is unknown - breaking")
+                break
+            if dl in kvPst and  kvPst[dl] != "":
+                request.session["context-edit-msg"].append(f"   {i} - input '{lg}' to be deleted")
+                continue
+            if kvPst[lg].strip() == "":
+                request.session["context-edit-msg"].append(f"   {i} - input '{lg}' is empty")
+                continue
+            v = {  "short": kvPst[sh], "long": kvPst[lg]  }
+            reqCtxs.append(v)
+            request.session["context-edit-msg"].append(f"   {i} - {v['short'][0:15]} - {v['long'][0:15]}..." )
+            
+        request.session["context-edit-msg"].append(f"post request contained {len(reqCtxs)} contexts")
+    else:
+        request.session["context-edit-msg"].append("post request is empty")
+
+
+    ctxs = update(reqCtxs)
+
+    request.session["context-edit-msg"].append(f"overall number of contexts {len(ctxs) } ")
+
+    # if len(ctxs) != len(reqCtxs):
+    #     for i,v in enumerate(ctxs):
+    #         request.session["context-edit-msg"].append(f"   {i} - {v['short'][0:15]} {v['long'][0:15]}..." )
+    # request.session["context-edit-msg"].append(f"context edit success")
+
+    url1 = request.url_for("contextsEditHGet")
+    return RedirectResponse( url=url1, status_code=303 )
 
 

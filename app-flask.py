@@ -190,58 +190,6 @@ def samplesImportH():
 
 
 
-@app.route('/contexts-edit', methods=['GET','POST'])
-def contextsEditH():
-
-    # GET + POST params
-    kvGet = request.args.to_dict()
-    kvPst = request.form.to_dict()
-
-    # extract and process POST params
-    reqCtxs = []
-    if len(kvPst) > 0:
-        # for i,k in enumerate(kvPost):
-        #     print(f"  req key #{i:2d}  '{k}' - {openai.ell(kvPost[k][:20],x=12)}")
-
-        for i in range(0,100):
-            sh = f"ctx{i+1:d}sh"  # starts with 1
-            lg = f"ctx{i+1:d}lg"
-            dl = f"ctx{i+1:d}_del"
-            if lg not in kvPst:
-                # print(f"input '{lg}' is unknown - breaking")
-                break
-            if dl in kvPst and  kvPst[dl] != "":
-                print(f"  input '{lg}' to be deleted")
-                continue
-            if kvPst[lg].strip() == "":
-                print(f"  input '{lg}' is empty")
-                continue
-            reqCtxs.append( {  "short": kvPst[sh], "long": kvPst[lg]  } )
-            print(f"  input '{lg}' - {kvPst[lg][0:15]}")
-        print(f"post request contained {len(reqCtxs)} contexts")
-    else:
-        print("post request is empty")
-
-
-    ctxs = contexts.update(reqCtxs)
-
-    if len(ctxs)>0 and ctxs[-1]["long"].strip() != "":
-        ctxs.append( contexts.dummy() )
-
-    print(f" overall number of contexts {len(ctxs) } ")
-    for i,v in enumerate(ctxs):
-        print(f"   {i} - {v['short'][0:15]} {v['long'][0:15]}..." )
-
-
-    return render_template(
-        'main.html',
-        HTMLTitle="Edit Contexts",
-        cntBefore=f"{len(ctxs)} contexts found",
-        contentTpl="contexts",
-        listContexts=ctxs,
-    )
-
-
 
 @app.route('/benchmarks-edit', methods=['GET','POST'])
 def benchmarksEditH():
@@ -524,75 +472,6 @@ def templatesEditH():
 
 
 
-
-@app.route('/embeddings-basics', methods=['GET','POST'])
-def embeddingsBasicsH():
-    try:
-
-        content = embeddings_basics.model(request,session)
-
-        return render_template(
-            'main.html',
-            HTMLTitle="Basic Embedding",
-            cntBefore=content,
-        )
-
-
-    except Exception as exc:
-        print( stackTrace(exc) )
-        return app.response_class(response=json.dumps( str(exc) ), status=500, mimetype='application/json')
-
-
-
-
-
-# single caveat
-#   we receive a *stream* of responses from OpenAI
-#   we collect all responses and render them at onece
-@app.route('/chat-completion-synchroneous', methods=['GET','POST'])
-def chatCompletionSynchroneousH():
-
-    # GET + POST params
-    kvGet = request.args.to_dict()
-    kvPst = request.form.to_dict()
-
-    beliefStatement =  ""
-    if "belief-statement" in kvPst:
-        beliefStatement =  kvPst["belief-statement"]
-
-    speech          =  ""
-    if "speech" in kvPst:
-        speech =  kvPst["speech"]
-
-
-    # requestChatCompletion is now a generator
-    # returning various types of returns in a protracted way
-    # we collect all chunks - and then render them in one go
-    prompt = ""
-    results = []
-    idx1 = -1
-    for res in embeds.generateChatCompletionChunks( beliefStatement, speech):
-        idx1 += 1
-        if idx1 == 0:
-            prompt = res
-        elif res == "end-of-func":
-            pass
-        else:
-            results.append(res)
-
-
-
-    return render_template(
-        'main.html',
-        HTMLTitle="Ask ChatGPT",
-        contentTpl="llm-answer-sync",
-        # cnt1=cnt1,
-        # cnt2=cnt2,
-        beliefStatement=beliefStatement,
-        speech=speech,
-        prompt=prompt,
-        results=results,
-    )
 
 
 

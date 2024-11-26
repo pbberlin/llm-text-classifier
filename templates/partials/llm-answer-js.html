@@ -121,7 +121,8 @@
                     prompt: request.prompt,
                 }
                 // console.log(payload);
-                const response = await fetch('/chat-completion-json', {
+                let urlEndpoint = "{{ urlEndpoint }}";
+                const response = await fetch( urlEndpoint , {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

@@ -1,13 +1,27 @@
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    # format="%(asctime)s - %(levelname)s - %(message)s",
+    format="%(levelname)s: - %(message)s",
+)
+lg = logging.getLogger(__name__)
+
+
 import os
 import json
 from datetime import datetime
 
+
+
 import traceback, sys
+import functools
+import time
 
 import re
 from pprint import pprint
 
 import hashlib
+import asyncio
 
 import nltk
 from nltk import sent_tokenize
@@ -619,3 +633,30 @@ def strHashes(texts):
     for txt in texts:
         hshs.append(strHash(txt))
     return hshs
+
+
+
+
+
+
+# profile af function
+def prof(func):
+    """decorator - for execution time of func"""
+    @functools.wraps(func)
+    async def async_wrapper(*args, **kwargs):
+        strt = time.perf_counter()
+        rslt = await func(*args, **kwargs)
+        stop = time.perf_counter()
+        lg.info(f"func {func.__name__!r} executed in {stop - strt:.4f}s")
+        return rslt
+
+    @functools.wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        strt = time.perf_counter()
+        rslt = func(*args, **kwargs)
+        stop = time.perf_counter()
+        lg.info(f"func {func.__name__!r} executed in {stop - strt:.4f}s")
+        return rslt
+
+    # wrap sync and async - accordingly
+    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper

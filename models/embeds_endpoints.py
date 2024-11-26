@@ -1,20 +1,18 @@
-from sqlalchemy.orm import Session
-from models.db5 import get_db
-
-from models.db1_embeds import Embedding, embeddingsTop3, embeddingsWhereHash
-
-
-from models.jinja import templates
-
-
-
 # in ..[app].py
 #    app.include_router(db.router)
 from fastapi import APIRouter, Request
 from fastapi import HTTPException, Depends
 from fastapi.responses   import Response, HTMLResponse, JSONResponse
 
+from sqlalchemy.orm import Session
+
+
 router = APIRouter()
+
+
+from models.jinja import templates
+from models.db1_embeds import Embedding, embeddingsTop3, embeddingsWhereHash
+from models.db5 import get_db
 
 
 import models.contexts     as contexts
