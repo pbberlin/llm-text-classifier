@@ -14,7 +14,9 @@
             </span>
 
             <input    name="sample{{loop.index}}_descr"   size="87"  type="text"
-                value="{{ item.descr}}"   >
+                placeholder="description"
+                value="{{ item.descr}}"   
+            >
                 <br>
                 <!-- {{ item.statements }} -->
             {% set index1 = loop.index %}
@@ -49,6 +51,7 @@
                     <input type="text"
                         name="sample{{index1}}_st{{loop.index}}_shrt"
                         size="72"
+                        placeholder="statement short"
                         value="{{ sShrt }}"
                     >
                     <br>
@@ -57,6 +60,7 @@
                     <textarea name="sample{{index1}}_st{{loop.index}}_long"
                         rows="{{ rows }}"  cols="110"
                         style="margin-left: 1.4rem;"
+                        placeholder="statement long"
                     >{{ sLong }}</textarea>
 
                 </div>
@@ -65,7 +69,7 @@
 
 
 
-            <input    name="sample{{loop.index}}_del" type="checkbox"   title="delete"
+            <input    name="sample{{loop.index}}_del" type="checkbox"   title="delete sample"
                 style="margin-left: 2.85rem"  >
 
         </div>
@@ -74,6 +78,6 @@
     {% endfor %}
 
 
-    <button accesskey="s" autofocus><u>S</u>ubmit</button>
+    <button accesskey="s" xx-autofocus><u>S</u>ubmit</button>
 </form>
 

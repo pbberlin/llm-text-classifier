@@ -197,38 +197,58 @@ async def PartialUI(request, showSelected=True):
 
 
 
-async def PartialUI_Import(request):
+async def PartialUI_Import(request: Request):
 
-    s  = ""
-    s += "<div id='partial-ui-wrapper'>"
-    s += "<form id='frmPartial2' class='frmPartial'  method=post>"
-    s += '''    
-            <label for='import-distinct'>  import distinct </label> 
-            <input name='import-distinct'  type='checkbox'  /> <br>  
-         '''
-    # s += '''    
-    #         <label for='import-all'>       import all      </label> 
-    #         <input name='import-all'       type='checkbox'  /> <br>  
-    #      '''
-    s += '''    
-            <label for='filter'>          filter          </label> 
-            <input name='filter'       type='text' size=30 maxlength=30  placeholder='i.e. Asset purchase'  /> <br>  
-         '''
-    s += '''    
-            <label for='maxrecs'>          max records          </label> 
-            <input name='maxrecs'       type='text' value=10 size=5 maxlength=5  placeholder='10'  /> <br>  
-         '''
-    s += '''
-            <button
-                name='action'
-                value='import_samples'
-                accesskey='i'
-            >
-                <u>I</u>mport 
-            </button>
-         '''
-    s += "</form>"
-    s += "</div id='partial-ui-wrapper'>"
+    kvGet = dict(request.query_params)
+    kvPst = await request.form()
+    kvPst = dict(kvPst) # after async complete
+
+    print(kvPst)
+
+    filterBy = ""
+    if "filter" in kvPst:
+        filterBy = kvPst["filter"]
+
+    maxRecords = 10
+    if "maxrecs" in kvPst:
+        try:
+            maxRecords = int(kvPst["maxrecs"])
+        except Exception as exc:
+            pass
+        
+
+
+    s  = f'''
+    <div id='partial-ui-wrapper'>
+    <form id='frmPartial2' class='frmPartial'  method=post>
+        
+        <label for='import-distinct'>  import distinct </label> 
+        <input name='import-distinct'  type='checkbox'  /> <br>  
+
+        <!--    
+        <label for='import-all'>       import all      </label> 
+        <input name='import-all'       type='checkbox'  /> <br>  
+        -->
+
+
+        <label for='filter'>          filter          </label> 
+        <input name='filter'        type='text' value="{filterBy}"  
+            size=30 maxlength=30  placeholder='i.e. Asset purchase'  /> <br>  
+    
+        <label for='maxrecs'>          max records          </label> 
+        <input name='maxrecs'       type='text' value="{maxRecords}" 
+            size=5 maxlength=5  placeholder='10'  /> <br>  
+
+        <button
+            name='action'
+            value='import_samples'
+            accesskey='i'
+        >
+            <u>I</u>mport 
+        </button>
+    </form>
+    </div id='partial-ui-wrapper'>
+    '''
 
     return s
 
@@ -289,8 +309,15 @@ async def samplesImportH(request: Request, db: Session):
             if smpl["descr"] in existingKeys:
                 msgs.append(f"  smpl {idx:2} already exists - {smpl['descr']}  ")
                 continue
-            if filterBy not in smpl["descr"]:
-                # not needed for ECB ecbSpeechesCSV2Json
+
+            flat = json.dumps(smpl)
+            if filterBy != "":
+                contains1 = (filterBy         in flat)
+                contains2 = (filterBy.title() in flat)
+                contains3 = (filterBy.lower() in flat)
+            if contains1 or contains2 or contains3:
+                pass
+            else:
                 msgs.append(f"  smpl {idx:2} not contains '{filterBy}' - {smpl['descr']}  ")
                 continue
             importedDistinctAndFiltered.append(smpl)
@@ -309,9 +336,9 @@ async def samplesImportH(request: Request, db: Session):
 
     importUI  = await PartialUI_Import(request)
 
-    msgsJ = f""
-    if len(msgs) > 0:
-        msgsJ = f"<pre>{"\n".join(msgs)}</pre>"
+    # msgsJ = f""
+    # if len(msgs) > 0:
+    msgsJ = f"<pre>{"\n".join(msgs)}</pre>"
 
 
     return templates.TemplateResponse(

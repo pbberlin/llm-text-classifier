@@ -6,7 +6,7 @@ import nltk
 from   nltk import sent_tokenize, word_tokenize
 
 
-from lib.util import cleanBodyText, txtsIntoSample
+from lib.util import cleanFileName, cleanBodyText, txtsIntoSample
 from lib.util import loadJson, saveJson
 from lib.util import stackTrace
 
@@ -191,8 +191,7 @@ def ecbSpeechesCSV2Json(numSntcs,  filterBy="", earlyBreakAt=10,  tokenizeWords=
                 else:
                     speeches.append([metaData,raw,sts])
 
-
-            saveJson(speeches,   f"ecb-speeches-{filterBy}"      , "tmp-import")
+            saveJson(speeches,   f"ecb-speeches-{ cleanFileName(filterBy) }"      , "tmp-import")
             # print(f"reading ECB speeches stop")
 
             longwords = {}
@@ -201,7 +200,7 @@ def ecbSpeechesCSV2Json(numSntcs,  filterBy="", earlyBreakAt=10,  tokenizeWords=
             saveJson(longwords,  f"longwords", "tmp-import")
 
             numSStr = "-".join(  map(str, numSntcs) )
-            saveJson(newSamples, f"ecb-speeches-smpls-{filterBy}-{numSStr}stcs", "tmp-import")
+            saveJson(newSamples, f"ecb-speeches-smpls-{ cleanFileName(filterBy) }-{numSStr}stcs", "tmp-import")
 
 
             return newSamples

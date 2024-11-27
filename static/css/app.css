@@ -110,15 +110,21 @@ ul.main-body  {
 
 }
 ul.main-body li {
-	margin: 0.2rem 0;
-	margin: 0.65rem 0;
+	line-height: 85%;
+	margin: 1.25rem 0;
 }
 
+ul.main-body small {
+	display: block;
+	margin-top:  0.2rem;
+	margin-left: 0.4rem;
+}
 
 /* ul - second order */
 ul.main-body  ul {
-	margin-top:    -0.4rem;
-	margin-bottom:  0.4rem;
+	margin-top:    -1.2rem;
+	margin-top:    -0.8rem;
+	margin-bottom:  0.6rem;
 }
 ul.main-body  ul li {
 	margin: 0.12rem 0;

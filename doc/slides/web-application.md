@@ -1,13 +1,16 @@
 # Demo web application
 
 
-Web application on git.zew.de <br> <small> https://git.zew.de/ub-public-finance/llm-text-classifier </small>
+Web application on git.zew.de 
+<br> <small> https://git.zew.de/ub-public-finance/llm-text-classifier </small>
+<br> <small> contains this presentation </small>
+
 
 Web application be run on your notebooks
 
 Written in `Python`
 
-Periphery extendable by researchers <br> and by student workers with IT affinity
+Extendable by researchers <br> and by student workers with IT affinity
 
 <!--pagebreak-->
 
@@ -44,3 +47,33 @@ Expand according to your reserch
 
 Setting `temperature` to zero <br> 
 => hallucinations practically disappear
+
+### Roadmap 1
+
+* Import
+    * Adapter for reading directories of PDF
+    * Adapter for Excel data - column mapping
+* Pipelines
+    * Score-Functions
+    * Branching
+
+### Roadmap 2
+
+* Results into Excel
+    * Pipeline steps
+    * Screenshots 
+* Validation
+    * Create datasets of results and known negatives
+    * Visual datasets (screenshots from PDF, rendered results) 
+    * Submit to `mechanical turk` 
+
+### Roadmap 3
+
+* Long unattended operation
+* Easy review of failures
+* Re-run failures and easy merge
+
+### Roadmap 4
+
+* Your input
+

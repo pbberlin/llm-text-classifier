@@ -35,7 +35,7 @@ Developing details during projects
     <tr>
         <td style="width:33%" >CbCR</td>
         <td style="width:33%" >Business tax</td>
-        <td style="width:33%" > &nbsp; GuW</td>
+        <td style="width:33%" > &nbsp;&nbsp; &nbsp; GuW</td>
     </tr><tr><td colspan="3" style="text-align: center">crawling</td>
     </tr><tr><td colspan="3" style="text-align: center">PDF extraction, cleansing</td>
     </tr><tr><td colspan="3" style="text-align: center">number  extraction</td>
@@ -55,16 +55,28 @@ Developing details during projects
 
 
 
-### Corpus thickness => nodes of faculty
+#### Corpus and faculties
+
+<br>
+
+* LLMs represent all electronic texts
+    * The Corpus
+* Work assumption 
+    * LLMs organize corpus text <br> along various lines of "meaning"
+    * Faculties
+
+### Corpus thickness => faculty nodes
 
 ![clusters of concepts](./img/clusters-a/clusters-concepts-a-10.jpg){: style="width:80%"}  <br>
 
 
 ### Biases and Gaps
 
-* Strong representation  <br>of `established opinion`, `conventional wisdom`
-* Smaller nodes might be influenced <br>   by `ideosyncratic thinking` 
-* Even bigger nodes have `gaps`
+* Faculties for style, locality... are insanely good
+* Faculties for specific concepts
+    * Representation  of  <br> `established opinion`, `conventional wisdom`
+    * Smaller nodes might be skewed, tilted <br>   by `ideosyncratic thinking` from corpus 
+    * Even bigger nodes have `gaps`
 
 <!-- 
 * Take [Hamlet](https://en.wikipedia.org/wiki/Hamlet)
@@ -78,12 +90,11 @@ Developing details during projects
 
 * `Activate` certain faculties
 
-### Demo web application
+### Demos
 
-[Demo CbCR](/slides/cbcr-example)
-
-
-[Demo web application](/slides/web-application.md)
+* [Demo CbCR](/slides/cbcr-example)
+* [Demo web application](/slides/web-application.md)
+* More useful techniques (if time)
 
 
 <!-- todo: role and context -->
@@ -126,8 +137,8 @@ Developing details during projects
 ### Large documents
 
 * Must be broken into overlapping chunks of ~3 pages
-* Academic research proves degrading results for over ~6000 words
-    * Despite claims by companies 
+* Academic research proves degrading results for over ~6.000 words
+    * Despite claims of 120.000 
 
 ### OCR 
 
@@ -154,13 +165,11 @@ Using follow up questions
 * Send the three `results` for voting
 
 
-### Prompt technique sidenotes - Math
+### Sidenotes - Math
 
 * LLMs cannot do math
-
-Instead
-
-* Send question: Are there any things  <br> that need to be computed in `statement`?
+* Instead<br>
+  Send question: Are there any things  <br> that need to be computed in `statement`?
 * Response:  `verbal description` of computation
 * Write me Python code to do that computation
 * Execute Python on _your_ computer
@@ -171,16 +180,16 @@ Instead
 * Tell my the multiplication you want to do
 
 
-### Prompt technique sidenotes - include most recent data
+### Sidenotes - include most recent data
 
 * Articulate `Hypothesis`
-* Programm a search engine for `Hypothesis`
+* Access a search engine and search for `Hypothesis`
 * Concatenate `results` into `list-of-paragraphs`
-* Ask LLM: Is `Hypothesis` confirmed by list of `list of paragraphs`?
+* Ask LLM: Is `Hypothesis` confirmed <br> by list of `list of paragraphs`?
 
 
 
-### General sidenotes - use in academia teaching
+### Sidenotes - use in academia teaching
 
 * Spell check
 * Content of lectures as "Teaching Assistant"
@@ -188,14 +197,18 @@ Instead
     * Not just multiple-choice
 * For generic teaching: [Khan academy](https://www.khanacademy.org/)
 
-### General sidenotes - everyday life
+### Sidenotes - everyday life
 
 * Detection is impossible
 * Awkward prose and idiosyncrasies <br> => not longer a sign for authenticity
     * Rewrite this, so the content is the same, <br> but it does not look like it comes from an LLM
-* Agree on a code word that is <br>  not on the internet to 
-    * Include into your communication
+* Agree on a code word that is <br>  not on the internet to
+<br>include into your communication
 
+### Finally
+
+* The end
+* Thank you
 
 
 
