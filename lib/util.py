@@ -452,7 +452,8 @@ def txtsIntoSample(txts, longwords, numSntcs ):
                 if btch in longwords:
                     shrt = longwords[btch]
                 else:
-                    shrt = longWordsNLTK(btch)
+                    # shrt = longWordsNLTK(btch)
+                    shrt = longWordsByLen(btch)
                     longwords[btch] = shrt
 
                 stmt = {}

@@ -1015,6 +1015,7 @@ def chatCompletion(db, model, prompt, role, seed=100):
 
 
     fromCache = False
+    msgs = []
     strRes = ""
     res    = {}
 
@@ -1115,7 +1116,9 @@ def chatCompletion(db, model, prompt, role, seed=100):
     # saveJson(res, f"chat-completion-b-{model}-{hsh}", subset=get("dataset"))
     if not fromCache:
         ts = f"-{datetime.now():%m-%d-%H-%M}"
-        saveJson(res, f"chat-completion-b-{model}-{hsh}-{ts}",  subset=get("dataset"))
+        resExt = res
+        resExt["msgs"] = msgs
+        saveJson(resExt, f"chat-completion-b-{model}-{hsh}-{ts}",  subset=get("dataset"))
 
     return res
 

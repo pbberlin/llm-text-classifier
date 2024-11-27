@@ -17,6 +17,8 @@ import  models.embeds as embeds
 from lib.uploaded2samples import uploadedToSamples
 from lib.ecb2samples      import ecbSpeechesCSV2Json
 
+import json
+
 c_samples = []
 cacheDirty = False
 
@@ -195,22 +197,26 @@ async def PartialUI(request, showSelected=True):
 
 
 
-def PartialUI_Import(req, session):
+async def PartialUI_Import(request):
 
     s  = ""
     s += "<div id='partial-ui-wrapper'>"
     s += "<form id='frmPartial2' class='frmPartial'  method=post>"
     s += '''    
-            <label for='import-distinct'> import distinct </label> 
+            <label for='import-distinct'>  import distinct </label> 
             <input name='import-distinct'  type='checkbox'  /> <br>  
          '''
-    s += '''    
-            <label for='import-all'>      import all      </label> 
-            <input name='import-all'       type='checkbox'  /> <br>  
-         '''
+    # s += '''    
+    #         <label for='import-all'>       import all      </label> 
+    #         <input name='import-all'       type='checkbox'  /> <br>  
+    #      '''
     s += '''    
             <label for='filter'>          filter          </label> 
-            <input name='filter'       type='text' size=30 maxlength=30  /> <br>  
+            <input name='filter'       type='text' size=30 maxlength=30  placeholder='i.e. Asset purchase'  /> <br>  
+         '''
+    s += '''    
+            <label for='maxrecs'>          max records          </label> 
+            <input name='maxrecs'       type='text' value=10 size=5 maxlength=5  placeholder='10'  /> <br>  
          '''
     s += '''
             <button
@@ -228,89 +234,110 @@ def PartialUI_Import(req, session):
 
 
 
-async def samplesImportH(request: Request):
+async def samplesImportH(request: Request, db: Session):
 
     kvGet = dict(request.query_params)
     kvPst = await request.form()
     kvPst = dict(kvPst) # after async complete
 
-    # extract and process POST params
-    importedSmpls = []
-    if len(kvPst) > 0:
+    smpls = update([])
+    impSmpls = []
+    modeX = "none"
+    filterBy = ""
 
-        if  "action" in kvPst and kvPst["action"] == "import_samples":
+    msgs = []
 
-            modeX = "none"
-            if  "import-distinct" in kvPst:       # stupid checkbox submits no value if unchecked
-                modeX = kvPst["import-distinct"]
-            print(f"post request => import samples, mode {modeX}")
 
-            filterBy = kvPst["filter"]
+    if  "action" in kvPst and kvPst["action"] == "import_samples":
 
+        if  "import-distinct" in kvPst:       # stupid checkbox submits no value if unchecked
+            modeX = kvPst["import-distinct"]
+        
+        msgs.append(f"post request => import samples, mode {modeX}")
+        
+        maxRecords = int(kvPst["maxrecs"])
+
+        filterBy = kvPst["filter"]
+
+
+        if False:
             tmp = uploadedToSamples()
-            importedSmpls.extend(tmp)
-
-            print(f"samples imported new samples: {len(importedSmpls) } (not filterd yet) ")
-
-
-    else:
-        pass
-        # print("post request is empty")
-
-
-    existingSmpls = samples.update([])
-    existingKeys = {}
-    for smpl in existingSmpls:
-        existingKeys[smpl["descr"]] = True
-
-
-    importedDistinctAndFiltered = []
-    for idx, smpl in enumerate(importedSmpls):
-        if smpl["descr"] in existingKeys:
-            print(f"  smpl {idx:2} already exists - {smpl['descr']}  ")
-            continue
-        if filterBy not in smpl["descr"]:
-            print(f"  smpl {idx:2} not contains '{filterBy}' - {smpl['descr']}  ")
-            continue
-        importedDistinctAndFiltered.append(smpl)
-    print(f"samples distinct new samples: {len(importedDistinctAndFiltered) } ")
+            impSmpls.extend(tmp)
+            msgs.append(f"samples newly imported: {len(impSmpls) } (not filterd yet) ")
+        else:
+            numStcs = [1, 2, 4, 8, 500]
+            tmp = ecbSpeechesCSV2Json(
+                numStcs, 
+                # filterBy="Asset purchase",
+                filterBy=filterBy,
+                # earlyBreakAt=3, 
+                earlyBreakAt=maxRecords, 
+            )
+            impSmpls.extend(tmp)
+            msgs.append(f"samples newly imported: {len(impSmpls) } ")
 
 
-    existingSmpls.extend(importedDistinctAndFiltered)
-    effectiveSmpls = samples.update(existingSmpls)
-    print(f"overall number of samples:    {len(effectiveSmpls) } ")
 
-    # for i,v in enumerate(bmrks):
-    #     print(f"   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
+    if len(impSmpls)>0:
+
+        existingKeys = {}
+        for smpl in smpls:
+            existingKeys[smpl["descr"]] = True
+
+        importedDistinctAndFiltered = []
+        for idx, smpl in enumerate(impSmpls):
+            if smpl["descr"] in existingKeys:
+                msgs.append(f"  smpl {idx:2} already exists - {smpl['descr']}  ")
+                continue
+            if filterBy not in smpl["descr"]:
+                # not needed for ECB ecbSpeechesCSV2Json
+                msgs.append(f"  smpl {idx:2} not contains '{filterBy}' - {smpl['descr']}  ")
+                continue
+            importedDistinctAndFiltered.append(smpl)
+        msgs.append(f"distinct new samples: {len(importedDistinctAndFiltered) } ")
 
 
-    importUI  = await samples.PartialUI_Import(request)
+        smpls.extend(importedDistinctAndFiltered)
+        smpls = update(smpls)
+        msgs.append(f"overall number of samples:    {len(smpls) } ")
 
-    msg = ""
-    if len(importedSmpls)>0:
-        msg = f"{len(importedSmpls)} samples imported"
+        # for i,v in enumerate(bmrks):
+        #     msgs.append(f"   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
+
+        msgs.append(f"{len(importedDistinctAndFiltered)} samples imported - {len(smpls) } total")
 
 
-    return render_template(
-        'main.html',
-        HTMLTitle="Import samples",
-        cntBefore=f'''
-            {msg}
-            <br>
-            {importUI}
-            ''',
-        contentTpl="samples",
-        listSamples=effectiveSmpls,
+    importUI  = await PartialUI_Import(request)
+
+    msgsJ = f""
+    if len(msgs) > 0:
+        msgsJ = f"<pre>{"\n".join(msgs)}</pre>"
+
+
+    return templates.TemplateResponse(
+        "main.html",
+        {
+            "request":      request,
+            "HTMLTitle":    "Import samples",
+            "contentTpl":   "samples",
+            "cntBefore":    f'''
+                            {msgsJ}
+                            <br>
+                            {importUI}
+                            ''',
+            "listSamples":  smpls,
+        },
     )
 
 
-@router.get('/samples/Import')
+
+@router.get('/samples/import')
 async def samplesImportHGet(request: Request, db: Session = Depends(get_db)):
     return await samplesImportH(request, db)
 
-@router.post('/samples/Import')
+@router.post('/samples/import')
 async def samplesImportHPost(request: Request, db: Session = Depends(get_db)):
-    return await samplesEditH(request, db)
+    return await samplesImportH(request, db)
 
 
 

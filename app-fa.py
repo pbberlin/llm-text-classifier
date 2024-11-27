@@ -13,7 +13,7 @@ import json
 import os
 from   pathlib  import Path
 from   pprint   import pformat
-
+from   datetime import datetime, timedelta
 
 import asyncio
 
@@ -164,7 +164,7 @@ async def lifespan(app: FastAPI):
         type=str, 
     )
     parser.add_argument(
-        'app.py',   
+        'app-fa.py',   
         help="capture the fastapi module - just let through",
         type=str, 
     )
@@ -386,22 +386,29 @@ async def serveSlides(fName:str ="doc1" ):
         raise HTTPException(status_code=404, detail=f"File not found {loc}")
 
 
-
+lastCheck = datetime.now()
 
 # home, index
 @app.get("/", response_class=HTMLResponse)
 async def readRoot(request: Request):
 
+    global lastCheck
     apiKey = cfg.get('OpenAIKey')
 
     successMsg, invalidMsg = "", ""
     referrer = request.headers.get("referer", None)
-    if referrer is None:
+    referrer = "xx"
+    timeSince = datetime.now() - lastCheck    
+    if (timeSince > timedelta(hours=2)) or (referrer is None):
+        lastCheck = datetime.now()
         apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
         if not apiKeyValid:
             url1 = request.url_for("serveSlides", fName="doc2")
             return RedirectResponse( url=url1 )
 
+    line = ""
+    if successMsg or invalidMsg:
+        line = f"<p class=small>{successMsg}  {invalidMsg}</p>"
 
     return templates.TemplateResponse(
         "main.html",
@@ -409,7 +416,7 @@ async def readRoot(request: Request):
             "request": request,
             "HTMLTitle": "Main page",
             "contentTpl": "main-body",
-            "cntBefore": f"<p>{successMsg}  {invalidMsg}</p>",
+            "cntBefore":  line,
             # "cntAfter":  "<p> after   </p>",
         },
     )
@@ -500,14 +507,14 @@ async def uploadFilePostH(request: Request, uploaded_files: List[UploadFile] = F
 
 
 @app.get('/config/edit')
-async def configH(request: Request, db: Session = Depends(db5.get_db)):
+async def configHGet(request: Request, db: Session = Depends(db5.get_db)):
 
 
     apiKey = cfg.get("OpenAIKey", "")
     apiCheckSuccessMsg   = request.session.pop("config-edit-key-success-msg",   None)
     apiCheckInvalidMsg   = request.session.pop("config-edit-key-invalid-msg-ext",   None)
     
-    switchDatasetMsg = cfg.get("config-edit-ds-switch-msg", "")
+    switchDatasetMsg     = request.session.pop("config-edit-ds-switch-msg", "")
 
     content = f'''
 
@@ -598,6 +605,10 @@ async def configHPost(request: Request, db: Session = Depends(db5.get_db)):
             loadAll(db, {} )
 
             request.session["config-edit-ds-switch-msg"] += f"<br>\n success"
+
+        else:
+            request.session["config-edit-ds-switch-msg"] = f"dataset unchanged"
+
 
     url1 = request.url_for("configHGet")
     return RedirectResponse( url=url1, status_code=303 )

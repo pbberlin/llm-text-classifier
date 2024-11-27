@@ -10,6 +10,7 @@ from lib.util import cleanBodyText, txtsIntoSample
 from lib.util import loadJson, saveJson
 from lib.util import stackTrace
 
+import  lib.config as cfg
 
 
 def headerCols(lineCntr, colByIdx, cols):
@@ -63,7 +64,10 @@ def ecbSpeechesCSV2Json(numSntcs,  filterBy="", earlyBreakAt=10,  tokenizeWords=
 
     speeches = []
 
-    with open('./data/ECB_speeches.csv', mode='r', encoding='UTF8') as file2:
+    ds  = cfg.get("dataset")
+    loc = os.path.join(".", "data", ds, "ECB_speeches.csv")
+
+    with open(loc, mode='r', encoding='UTF8') as file2:
         lineCntr = 0
         impoCntr = 0   # not filtered
         idxByCol = {}

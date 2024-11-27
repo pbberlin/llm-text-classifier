@@ -12,6 +12,7 @@ import pandas as pd
 
 
 from lib.util import cleanBodyText, txtsIntoSample
+import  lib.config as cfg
 
 
 # copy from lib_openai
@@ -93,11 +94,13 @@ def cleanseColOfList(txts1, colIdx=1):
 
 
 # iterate files in directory
-def iterateLocalDir(dir):
+def iterateLocalDir():
+
+    ds  = cfg.get("dataset")
+    dir = os.path.join(".", "data", ds, "uploaded-files")
 
     texts=[]
 
-    dir = os.path.join(".", dir)
     for idx, file in enumerate(os.listdir(dir)):
 
         filePath = os.path.join(dir, file)
@@ -171,7 +174,8 @@ def toCSV(txts, columns= ['fname', 'text'], csvFilePath = os.path.join("data","e
 #   numSntc - the number of sentences in one statement
 def uploadedToSamples():
 
-    textsFromFiles = iterateLocalDir("uploaded-files")
+
+    textsFromFiles = iterateLocalDir()
     if len(textsFromFiles) < 1:
         print("no uploaded files found; returning")
         return

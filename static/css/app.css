@@ -1,10 +1,13 @@
-* {
-	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-	font-size:    14px;
-}
-
-/* https://picocss.com/docs/css-variables */
+ /* https://picocss.com/docs/css-variables */
 :root {
+	--pico-font-family: 'News Cycle', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	--pico-font-family:  Arial;
+	--pico-font-family: 'Segoe UI';
+	--pico-font-family:  Tahoma;
+	--pico-font-family: 'Cascadia Code';
+	--pico-font-family: 'Century Gothic';
+	--pico-font-size:   15px;
+
 	--pico-border-radius: 0.42rem;
 
 	--pico-form-element-spacing-vertical:   0.25rem;
@@ -71,6 +74,10 @@ h1, h2, h3 {
 	margin-right: 2rem;
 }
 
+a {
+	text-decoration: none;
+}
+
 
 p {
 	margin-top:    0.1rem;
@@ -83,18 +90,42 @@ ul {
 
 ul.main-body  {
 	margin-top: 0.8rem;
+	display: inline-block;
+	vertical-align: top;
+
+	border: 1px solid #ccc;
+	border-radius: 1.2rem;
+	padding: 0.6rem 1.5rem;
+	padding-left: 2.5rem;
+
+	min-width: 44%;
+	margin-top:   2rem;
+	margin-right: 4rem;
+
+	min-height: 13rem;
+
+	background-color: #fafafa;
+	box-shadow: #aaa;
+	box-shadow: 4px 4px 2px 1px #eee;
+
 }
 ul.main-body li {
 	margin: 0.2rem 0;
+	margin: 0.65rem 0;
 }
 
 
 /* ul - second order */
+ul.main-body  ul {
+	margin-top:    -0.4rem;
+	margin-bottom:  0.4rem;
+}
 ul.main-body  ul li {
+	margin: 0.12rem 0;
 	line-height: 90%;
 }
 ul.main-body  ul li a {
-	font-size:   85%;
+	font-size:   77% ;
 }
 
 

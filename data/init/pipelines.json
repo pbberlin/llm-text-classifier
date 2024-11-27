@@ -16,6 +16,17 @@
         ]
     },
     {
+        "descr": "sentiment for unknowable concepts",
+        "role": "You are an helpful assisant.",
+        "stages": [
+            {
+                "short": "Step 1",
+                "long": "You are an economic policy analyst.\r\n\r\nThe speech text is: \"ApfeldachSchlüssel wäre für uns alle ein großer Gewinn, \r\n  wenn er die Chromodysterose absolviert hat. \r\n  Davon kann man nur träumen.\"\r\n\r\nMake sure to give an objective analysis based on the content of the speech.\r\n\r\nI need a thorough textual analysis on how much the speech aligns \r\nwith the concept of favorable, beneficial, good and positive.\r\n\r\nDetermine whether the speech agrees, disagrees, or remains neutral on \r\nconcept of favorable, beneficial, good and positive.\r\n\r\nProvide a percentage score for alignment.\r\n\r\nUse the following json format for your response:\r\n\r\n{{\r\n    \"agreement\":        \"<agrees/disagrees/neutral>\",\r\n    \"alignment\":         <percentage_score>\r\n    \"textual_analysis\":  <text>\r\n}}\r\n",
+                "remark": "    agreement: \"neutral\",\r\n    alignment: 50,\r\n    textual_analysis:   The speech text mentions 'ApfeldachSchlüssel' \r\n     as a potential 'big gain' (translated from 'großer Gewinn') \r\n     for everyone, indicating a positive outcome if certain conditions are met. \r\n     Specifically, the phrase 'if he has completed the Chromodysterose' \r\n     implies a conditional state where success or gain \r\n     is contingent upon an unspecified completion of 'Chromodysterose.' \r\n     The phrase 'one can only dream of' ('Davon kann man nur träumen') \r\n     suggests an aspirational but potentially unattainable outcome. \r\n     Thus, while the speech alludes to a positive potential, \r\n     the language remains hypothetical and ambiguous, \r\n     lacking definitive commitment to a positive outcome. \r\n     This suggests a neutral stance on the concepts of favorable, \r\n     beneficial, good, and positive. \r\n     The alignment score is estimated at 50%, reflecting the potential for \r\n     benefit while acknowledging the ambiguity and conditional \r\n     language present in the speech.\r\n"
+            }
+        ]
+    },
+    {
         "descr": "cbcr",
         "role": "You are an helpful accounting assistant.",
         "stages": [
