@@ -1,47 +1,46 @@
 # Demo web application
 
 
-<a href='https://git.zew.de/ub-public-finance/llm-text-classifier' >ZEW git</a>
+Web application on git.zew.de <br> <small> https://git.zew.de/ub-public-finance/llm-text-classifier </small>
 
-https://git.zew.de/ub-public-finance/llm-text-classifier
+Web application be run on your notebooks
 
-It can be executed on your notebooks
+Written in `Python`
 
-The web application is written in `Python`
-
-The core is advanced (web server stuff...)
-
-But periphery is extendable by researchers <br> and by student workers with IT affinity
+Periphery extendable by researchers <br> and by student workers with IT affinity
 
 <!--pagebreak-->
 
-Web application connects to OpenAI ChatGPT 4
+Web application connects to OpenAI <br>
+ (online connection)
 
-It requires an API key from OpenAI inc
+Requires an API key from OpenAI inc
 
-If you make excessive requests, OpenAI may charge you
+OpenAI may charge you for heavy use
 
 Any results are stored locally; <br> 
-openAI is only asked _once_ per prompt
+OpenAI is only asked _once_ per prompt
 
 <!--pagebreak-->
 
-Convenient uploading and arranging  <br> various elements of text classification
+Convenient uploading and arranging of data
 
-* Texts to be classified
+* Texts to be mined
 * Benchmark statements - belief statements 
 * Pipelines of prompts
 
-Some default data is loaded. <br>
-Expand according to your reserch.
+Some default data is provided
+
+Expand according to your reserch
 
 
-### Hallucinations are not a problem
+### Hallucinations not a problem
 
-* _Generative_ AI has some probabilistic element,  
+* Generative AI has some probabilistic element,  
   that can lead to erroneous results
     * Setting temperature to 0
     * Changing seed
-    * => The concept classifications show only tiny variation
+    * => Replies show only tiny variation
 
-Setting `temperature` to zero => hallucinations practically disappear
+Setting `temperature` to zero <br> 
+=> hallucinations practically disappear

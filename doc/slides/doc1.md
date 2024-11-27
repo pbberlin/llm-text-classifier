@@ -1,14 +1,5 @@
 # LLMs as tools for research
 
-<!-- 
-  1,2
-  6
-  10
-  13-16
-  18
-  35
- -->
-
 <!-- ![conquer unknown land](./img/conquer-unkown-land.jpg){: style="width:80%"}  <br> -->
 <!-- Research an unknown land -->
 
@@ -23,7 +14,7 @@
     * Cutoff
     * Illusory
 
-Developed details during projects
+Developing details during projects
 
 
 ### Projects benefitting from LLMs
@@ -42,9 +33,9 @@ Developed details during projects
 
 <table>
     <tr>
-        <td style="width:33%" >GuW</td>
         <td style="width:33%" >CbCR</td>
         <td style="width:33%" >Business tax</td>
+        <td style="width:33%" > &nbsp; GuW</td>
     </tr><tr><td colspan="3" style="text-align: center">crawling</td>
     </tr><tr><td colspan="3" style="text-align: center">PDF extraction, cleansing</td>
     </tr><tr><td colspan="3" style="text-align: center">number  extraction</td>
@@ -74,17 +65,18 @@ Developed details during projects
 * Strong representation  <br>of `established opinion`, `conventional wisdom`
 * Smaller nodes might be influenced <br>   by `ideosyncratic thinking` 
 * Even bigger nodes have `gaps`
+
+<!-- 
 * Take [Hamlet](https://en.wikipedia.org/wiki/Hamlet)
     * Any quirk, any background, <br> 
     such as implied succession, or Interest groups
     * `Joining Fortinbras`: Nothing  
-
+ -->
 
 
 ## Prompt techniques
 
-* Using `nodes` deliberatey
-* `Activating` certain faculties
+* `Activate` certain faculties
 
 ### Demo web application
 
