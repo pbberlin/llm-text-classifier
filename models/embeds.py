@@ -31,12 +31,11 @@ import openai
 from sqlalchemy.exc import IntegrityError
 
 from lib.util   import stackTrace
-from lib.init   import logTimeSince
 from lib.util   import strHash, strHashes
 from lib.util   import saveJson, loadJson
 from lib.config import get, set
 
-from lib.util   import prof
+from lib.logging      import prof
 
 from models.pipelines import getByID
 
@@ -1044,8 +1043,6 @@ def chatCompletion(db, model, prompt, role, seed=100):
         respFmt = { "type": "json_object" }
         if model != "gpt-4o":
             respFmt = openai.NOT_GIVEN  # unsupported  -  platform.openai.com/docs/api-reference/chat/create
-
-        logTimeSince(f"\tchat completion start {ident}", startNew=True)
 
         msgs = [
                 {

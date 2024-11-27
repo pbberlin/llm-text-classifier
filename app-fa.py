@@ -2,10 +2,8 @@
 # pip install "uvicorn[standard]"
 # pip install jinja2
 
-from   lib.util   import lg
-from   lib.util   import prof
-
-
+from   lib.logging   import lg
+from   lib.logging   import prof
 
 import argparse
 import time
@@ -76,12 +74,7 @@ import  models.embeds_endpoints      as embeds_endpoints
 import  models.completions_endpoints as completions_endpoints
 
 
-
-
-
-
-
-
+lg.info("imports stop")
 
 
 
@@ -89,31 +82,36 @@ import  models.completions_endpoints as completions_endpoints
 @prof
 def loadAll(args, db):
 
+
     if "ecb" in args and  len(args.ecb) > 0:
-        default =  [1, 2, 4, 8, 500]
-        numStcs = default
+        numStcsDef =  [1, 2, 4, 8, 500]
+        numStcs = numStcsDef
         try:
             numStcs = json.loads(args.ecb)
             if not type(numStcs) is list:
                 print(f" cannot parse into a list: '{args.ecb}'")
-                numStcs = default
+                numStcs = numStcsDef
         except Exception as exc:
-            numStcs = default
+            numStcs = numStcsDef
             print(f" {exc} - \n\t cannot parse {args.ecb}")
             print(f" assuming default {numStcs} \n")
 
-
-        smplsNew = ecbSpeechesCSV2Json(numStcs, earlyBreakAt=3, filterBy="Asset purchase" )
-        samples.update(smplsNew)
-        samples.save()
+        print("instead call samplesImportH() -  ... ecbSpeechesCSV2Json() ")
+        if False:
+            smplsNew = ecbSpeechesCSV2Json(numStcs, earlyBreakAt=3, filterBy="Asset purchase" )
+            samples.update(smplsNew)
+            samples.save()
         quit()
 
 
     if "upl" in args and args.upl:
-        smplsNew = uploadedToSamples()
-        samples.update(smplsNew)
-        samples.save()
+        if False:
+            smplsNew = uploadedToSamples()
+            samples.update(smplsNew)
+            samples.save()
+        print("instead call samplesImportH() -  ... uploadedToSamples() ")
         quit()
+
 
     if False:
         from lib.util import loadEnglishStopwords

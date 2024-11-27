@@ -1,63 +1,21 @@
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    # format="%(asctime)s - %(levelname)s - %(message)s",
-    format="%(levelname)s:\t%(message)s",
-)
-lg = logging.getLogger(__name__)
-
-
-import functools
-import time
-
-# profile af function
-def prof(func):
-    """decorator - for execution time of func"""
-    @functools.wraps(func)
-    async def async_wrapper(*args, **kwargs):
-        strt = time.perf_counter()
-        rslt = await func(*args, **kwargs)
-        stop = time.perf_counter()
-        lg.info(f"\tfunc {func.__name__!r} executed in {stop - strt:.4f}s")
-        return rslt
-
-    @functools.wraps(func)
-    def sync_wrapper(*args, **kwargs):
-        strt = time.perf_counter()
-        rslt = func(*args, **kwargs)
-        stop = time.perf_counter()
-        lg.info(f"\tfunc {func.__name__!r} executed in {stop - strt:.4f}s")
-        return rslt
-
-    # wrap sync and async - accordingly
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
-
-
 import os
+from   pathlib import Path
 import json
-from datetime import datetime
-
-
+from   datetime import datetime
 
 import traceback, sys
-
 import re
-from pprint import pprint
-
 import hashlib
-import asyncio
 
 import nltk
-from nltk import sent_tokenize
-from nltk import word_tokenize
-from nltk import pos_tag, ne_chunk
+from   nltk import sent_tokenize
+from   nltk import word_tokenize
+from   nltk import pos_tag, ne_chunk
 
+from   nltk.tree import Tree
 
-from nltk.tree import Tree
+from   lib.logging   import prof
 
-from pathlib import Path
-
-from lib.init import logTimeSince
 
 # the only *fast* way to check for nltk files
 def checkNLTKFiles():
@@ -408,10 +366,8 @@ def longWordsByLen(s, greaterThan=7, maxLen=64):
 
     return " ".join(lng)
 
-
+@prof
 def txtsIntoSample(txts, longwords, numSntcs ):
-
-    logTimeSince(f"txtsIntoSample start - numSntc {numSntcs}", startNew=True)
 
     smpls = []  # newly created samples
 
@@ -467,10 +423,6 @@ def txtsIntoSample(txts, longwords, numSntcs ):
 
 
             smpls.append(smpl)
-
-
-    logTimeSince(f"txtsIntoSample stop - numSntc {numSntcs}")
-
 
     return smpls, longwords
 

@@ -387,10 +387,10 @@ async def samplesEditH(request: Request, db: Session):
                 break
 
             if descr in kvPst and delet in kvPst and  kvPst[delet] != "":
-                print(f"  input sample '{descr}' to be deleted")
+                print(f"\t  input sample '{descr}' to be deleted")
                 continue
             if kvPst[descr].strip() == "":
-                print(f"  input sample '{descr}' is empty")
+                print(f"\t  input sample '{descr}' is empty")
                 continue
 
             sts = []
@@ -400,7 +400,7 @@ async def samplesEditH(request: Request, db: Session):
                 if lg not in kvPst:
                     break
                 if kvPst[lg].strip() == "":
-                    print(f"    bm {i1+1} stmt {i2+1} is empty")
+                    print(f"\t    bm {i1+1} stmt {i2+1} is empty")
                     # continue
                 else:
                     sts.append(
@@ -413,9 +413,9 @@ async def samplesEditH(request: Request, db: Session):
                     "statements": sts,
                 }
             )
-            print(f"  input sample '{descr}' - {len(sts)} stmts - {kvPst[descr]}")
+            print(f"\t  input sample '{descr}' - {len(sts)} stmts - {kvPst[descr]}")
 
-        print(f"post request contained {len(reqSamples)} samples")
+        print(f"\tpost request contained {len(reqSamples)} samples")
 
 
     else:
@@ -425,9 +425,9 @@ async def samplesEditH(request: Request, db: Session):
 
     smpls = update(reqSamples)
 
-    print(f"overall number of samples {len(smpls) } ")
+    print(f"\toverall number of samples {len(smpls) } ")
     # for i,v in enumerate(newSmpls):
-    #     print(f"   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
+    #     print(f"\t   {i} - {v['descr'][0:15]} {v['statements'][0][0:15]}..." )
 
 
     for smpl in smpls:
