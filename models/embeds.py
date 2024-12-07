@@ -1040,6 +1040,7 @@ def chatCompletion(db, model, prompt, role, seed=100):
 
         # https://platform.openai.com/docs/api-reference/chat/create
         # https://platform.openai.com/docs/libraries
+        # https://platform.openai.com/playground/chat?models=gpt-4o
         respFmt = { "type": "json_object" }
         if model != "gpt-4o":
             respFmt = openai.NOT_GIVEN  # unsupported  -  platform.openai.com/docs/api-reference/chat/create
@@ -1063,6 +1064,7 @@ def chatCompletion(db, model, prompt, role, seed=100):
                 messages=msgs,
                 max_completion_tokens=maxCompletionTokens,    # Limit for response tokens
                 temperature=celsius,
+                # top_p=
                 n=1,                # Number of completions to generate
                 stop=None,          # Specify stop sequences if needed
                 seed=seed,

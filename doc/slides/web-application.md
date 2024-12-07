@@ -48,8 +48,18 @@ Expand according to your reserch
 Setting `temperature` to zero <br> 
 => hallucinations practically disappear
 
+### Show
+
+* [app](http://127.0.0.1:8000/)
+
+*  sample_id: 83,    
+*  benchmark_id: 2,
+
+
 ### Roadmap 1
 
+* Crawlers
+    * Find muni minutes, tagging, storing
 * Import
     * Adapter for reading directories of PDF
     * Adapter for Excel data - column mapping

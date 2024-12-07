@@ -121,10 +121,10 @@ def loadAll(args, db):
 
 
     embeds.load(db)
-    contexts.load()
-    benchmarks.load()
     samples.load()
+    benchmarks.load()
     pipelines.load()
+    contexts.load()
 
 
 
@@ -141,11 +141,11 @@ def saveAll(db, force=False):
         samples.cacheDirty = True
 
 
-    embeds.save(db)
-    contexts.save()
-    benchmarks.save()
     samples.save()
+    benchmarks.save()
     pipelines.save()
+    contexts.save()
+    embeds.save(db)
 
 
 
@@ -157,14 +157,14 @@ async def lifespan(app: FastAPI):
 
     parser = argparse.ArgumentParser("llm-classifier-app")
     parser.add_argument(
-        'dev',   
+        'dev',
         help="capture the fastapi mode - just let through",
-        type=str, 
+        type=str,
     )
     parser.add_argument(
-        'app-fa.py',   
+        'app-fa.py',
         help="capture the fastapi module - just let through",
-        type=str, 
+        type=str,
     )
 
 
@@ -396,7 +396,7 @@ async def readRoot(request: Request):
     successMsg, invalidMsg = "", ""
     referrer = request.headers.get("referer", None)
     referrer = "xx"
-    timeSince = datetime.now() - lastCheck    
+    timeSince = datetime.now() - lastCheck
     if (timeSince > timedelta(hours=2)) or (referrer is None):
         lastCheck = datetime.now()
         apiKeyValid, successMsg, invalidMsg = embeds.checkAPIKeyOuter(apiKey)
@@ -511,7 +511,7 @@ async def configHGet(request: Request, db: Session = Depends(db5.get_db)):
     apiKey = cfg.get("OpenAIKey", "")
     apiCheckSuccessMsg   = request.session.pop("config-edit-key-success-msg",   None)
     apiCheckInvalidMsg   = request.session.pop("config-edit-key-invalid-msg-ext",   None)
-    
+
     switchDatasetMsg     = request.session.pop("config-edit-ds-switch-msg", "")
 
     content = f'''
@@ -525,7 +525,7 @@ async def configHGet(request: Request, db: Session = Depends(db5.get_db)):
         <input    name="api_key" type="input" size="64" value="{apiKey}"  >
         <br>
 
-        
+
         {switchDatasetMsg}
 
         {cfg.datasetsAsHTMLSelect(app)}
@@ -588,11 +588,11 @@ async def configHPost(request: Request, db: Session = Depends(db5.get_db)):
             request.session["config-edit-ds-switch-msg"] = f"switching from dataset '{dsOld}' to '{dsNew}' ..."
 
             # before switching
-            saveAll(db, force=True) 
+            saveAll(db, force=True)
 
             # now switch
             cfg.set("dataset", dsNew)
-            
+
             cfg.set("context_id",   [0])
             cfg.set("benchmark_id",  0)
             cfg.set("sample_id",     0)

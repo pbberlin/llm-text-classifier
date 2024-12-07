@@ -20,7 +20,7 @@ from dataclasses_json import Undefined
 
 
 # dataclass with SQLAlchemy table mapping and enhanced JSON support
-# similar to above - but we get better 
+# similar to above - but we get better
 # https://pypi.org/project/dataclasses-json/
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
@@ -57,7 +57,7 @@ class Completion(Base):
             # ...
         }
 
-   # serialization generic 
+   # serialization generic
     def asDictInner1(self):
             return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
@@ -72,7 +72,7 @@ class Completion(Base):
    # serialization using dataclass_json.to_json
     def asDictInner4(self):
         return self.to_json()
-    
+
     # json SCHEMA - to generate edit forms - input for JSONForms
     def schema(self):
         return self.json_schema()
@@ -124,7 +124,7 @@ def completionsWhereDataset(db: Session, dataset: str = "") -> list[Completion]:
 
 def completionsWhereHash(db: Session, hashes: list[str], ) -> list[Completion]:
     completes = db.query(Completion).filter(Completion.hash.in_(hashes)).all()
-    print(f"\tfound {len(completes)} out of {len(hashes)} completions for hashes '{hashes[:3]}' ")
+    print(f"\tfound {len(completes)} out of {len(hashes)} completions for hashes '{hashes[:2]}' ")
     return completes
 
 
@@ -132,12 +132,12 @@ def completionsWhereHash(db: Session, hashes: list[str], ) -> list[Completion]:
 
 # we dont save the role yet
 def saveCompletionDB(
-    db:      Session, 
-    hsh     :str, 
-    ident   :str, 
-    prompt  :str, 
-    result  :str, 
-    model   :str, 
+    db:      Session,
+    hsh     :str,
+    ident   :str,
+    prompt  :str,
+    result  :str,
+    model   :str,
 ):
 
     dataset = cfg.get("dataset")
