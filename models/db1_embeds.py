@@ -9,7 +9,6 @@ from datetime import datetime as datetimeFunc
 
 from models.db0_base import Base
 
-from fastapi import HTTPException, Depends
 
 import random
 
