@@ -53,7 +53,7 @@ def lastXDirs(pth: str, tailSize: int) -> str:
 
 
 
-def uniqueColumns(cols):
+def uniqueCols(cols):
     seen = {}
     newCols = []
     for cl in cols:
@@ -75,7 +75,7 @@ def extractTables1(pg, pageNum=0):
 
         df = pd.DataFrame(table[1:], columns=table[0])  # to DataFrame
         # unique column names
-        df.columns = uniqueColumns(df.columns)
+        df.columns = uniqueCols(df.columns)
         
         showDF(df, pageNum, tableNum)
 
