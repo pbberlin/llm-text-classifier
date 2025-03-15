@@ -1,5 +1,5 @@
 '''
-streamlit run pdf-extraction-02.py --logger.level=debug
+streamlit run pdf-extraction-02.py
 
 '''
 
@@ -11,11 +11,10 @@ import pandas as pd
 import streamlit as st
 
 
-
-
-
 import fitz  # PyMuPDF
 import pdfplumber
+
+from collections import defaultdict
 
 
 sr = {
@@ -25,26 +24,14 @@ sr = {
     "Income statement in €m":              "IncStatmt",
 
 }
-
-from collections import defaultdict
-
-def showDF(df: pd.DataFrame, pageNum: int, tableNum: int):
-
-    st.title(f"page{pageNum} - table{tableNum}")
-
-    try:
-        st.dataframe(df)  # interactive table
-    except Exception as exc:
-        # print(exc)
-        st.write(exc)
-        print(exc)
-
-
-
 def replaceMany(s):
     for key, value in sr.items():
         s = s.replace(key, str(value))
     return s
+
+
+
+
 
 def lastXDirs(pth: str, tailSize: int) -> str:
     p1 = Path(pth).resolve()          # ensure absolute path
@@ -66,12 +53,23 @@ def uniqueColumns(cols):
     return newCols
 
 
+def showDF(df: pd.DataFrame, pageNum: int, tableNum: int):
+
+    st.write(f"page{pageNum} - table{tableNum}")
+    try:
+        st.dataframe(df)  # interactive table
+    except Exception as exc:
+        # print(exc)
+        st.write(exc)
+        print(exc)
+
+
 # using pdf plumber
 def extractTables1(pg, pageNum=0):
 
     tables = pg.extract_tables()
     for tableNum, table in enumerate(tables):
-        print(f"\tt{tableNum:3>}  ")
+        # print(f"\tt{tableNum:3>}  ")
 
         df = pd.DataFrame(table[1:], columns=table[0])  # to DataFrame
         # unique column names
@@ -79,31 +77,32 @@ def extractTables1(pg, pageNum=0):
         
         showDF(df, pageNum, tableNum)
 
-        continue
-
-        # print(f"\tt{idx2:3>}  {table}")
-        # nested list representing table rows and columns.
-        for idx3, row in enumerate(table):
-            # print(f"\tr{idx3:3>} {row} ")
-            print(" ", end="")
-            for idx4, cell in enumerate(row):
-                if cell is None:
-                    cell="-"
-                if cell == "":
-                    cell="-"
-                cell = replaceMany(cell)
-                cell = cell.strip()
-                print( f"{cell:>10} ", end="" )
-            print("")
-
+        if False:
+            # print(f"\tt{idx2:3>}  {table}")
+            # nested list representing table rows and columns.
+            for idx3, row in enumerate(table):
+                # print(f"\tr{idx3:3>} {row} ")
+                print(" ", end="")
+                for idx4, cell in enumerate(row):
+                    if cell is None:
+                        cell="-"
+                    if cell == "":
+                        cell="-"
+                    cell = replaceMany(cell)
+                    cell = cell.strip()
+                    print( f"{cell:>10} ", end="" )
+                print("")
 
 
 
-def processFilePlumber(pth: Path, limitPages=10, limitOther=2222):
 
-    lastX1 = lastXDirs(pth, 4)
-    lastX2 = lastXDirs(pth, 1)
-    print(f"pth = ..{os.sep}{lastXDirs}")
+def processFile(pth: Path, limitPages=10, limitOther=2222):
+
+    lastX2 = lastXDirs(pth, 2)
+    lastX4 = lastXDirs(pth, 4)
+
+    print(f"pth = ..{os.sep}{lastX4}")
+    st.write(f"### file ..{os.sep}{lastX2}")
 
     with pdfplumber.open(pth) as pdf:
         
@@ -112,13 +111,12 @@ def processFilePlumber(pth: Path, limitPages=10, limitOther=2222):
                 break
             extractTables1(pg, pgNum)
 
-        # file pdf-extraction-01.py contains more extraction logic - but useless
+        # see pdf-extraction-01.py for more extraction logic - but useless
 
 
 
 
-# using py mu pdf
-def extractTables2(pg, pageNum=0):
+def MuPdfExtractTables2(pg, pageNum=0):
 
     txtDict = pg.get_text("dict")  # text with positions
 
@@ -158,7 +156,7 @@ def extractTables2(pg, pageNum=0):
 
 
 
-def processFileMuPdf(pth: Path, limitPages=10, limitOther=2222):
+def MuPdfProcessFile(pth: Path, limitPages=10, limitOther=2222):
 
     print(f"pth = ..{os.sep}{lastXDirs(pth, 4) }")
 
@@ -191,7 +189,7 @@ def processFileMuPdf(pth: Path, limitPages=10, limitOther=2222):
             lines = txt.split("\n")
             print(f"  {len(txt):4} chars   {len(lines):4} lines")
 
-            extractTables2(pg)
+            MuPdfExtractTables2(pg)
 
             continue
 
@@ -218,5 +216,5 @@ workDir = Path.cwd() / "cbcr"
 
 for fn in files:
     pth = workDir / fn
-    processFilePlumber(pth)
-    # processFileMuPdf(pth)
+    processFile(pth)
+    # MuPdfProcessFile(pth)
