@@ -52,7 +52,6 @@ def uniqueCols(cols):
             newCols.append(cl)
     return newCols
 
-
 def showDF(df: pd.DataFrame, pageNum: int, tableNum: int):
 
     st.write(f"page{pageNum} - table{tableNum}")
@@ -64,8 +63,9 @@ def showDF(df: pd.DataFrame, pageNum: int, tableNum: int):
         print(exc)
 
 
+
 # using pdf plumber
-def extractTables1(pg, pageNum=0):
+def extractTables(pg, pageNum=0):
 
     tables = pg.extract_tables()
     for tableNum, table in enumerate(tables):
@@ -109,94 +109,11 @@ def processFile(pth: Path, limitPages=10, limitOther=2222):
         for pgNum, pg in enumerate(pdf.pages):
             if pgNum > limitPages:
                 break
-            extractTables1(pg, pgNum)
+            extractTables(pg, pgNum)
 
         # see pdf-extraction-01.py for more extraction logic - but useless
 
 
-
-
-def MuPdfExtractTables2(pg, pageNum=0):
-
-    txtDict = pg.get_text("dict")  # text with positions
-
-    numBlocks = len(txtDict["blocks"])
-
-    if numBlocks > 0:
-        print(f"\t  tables found {numBlocks}")
-    else:
-        return
-
-    for idx, block in enumerate(txtDict["blocks"]):  # text blocks
-
-        tblData = []
-
-        blockType = "Text" 
-        if block["type"] == 0:
-            blockType = "Text" 
-        else: 
-            blockType = "Image"
-
-
-        print(f"\tblock type: {blockType}")
-        # print(f"Content: {' '.join(span['text'] for line in block.get('lines', []) for span in line['spans'])}")
-
-        row = []
-        for line in block.get("lines", []):
-            row_text = " ".join(span["text"] for span in line["spans"])
-            row.append(row_text)
-        if row:
-            tblData.append(row)
-
-        # extracted data to DataFrame (if structured properly)
-        df = pd.DataFrame(tblData)
-        showDF(df, pageNum, idx)
-
-
-
-
-
-def MuPdfProcessFile(pth: Path, limitPages=10, limitOther=2222):
-
-    print(f"pth = ..{os.sep}{lastXDirs(pth, 4) }")
-
-    # pdf = fitz.open(pth)
-    with fitz.open(pth) as pdf:  # automatically closes 
- 
-        vs = {}
-        for k in pdf.metadata:
-            v = pdf.metadata[k]
-            if v is None or v.strip() == "":
-                continue
-            # if "Creator"  in k:
-            #     continue
-            if v in vs:
-                continue
-            vs[v] = True
-            print(f"\t{k:12} -{v}-")
-
-
-        for idx0, pg in enumerate(pdf):
-
-            if idx0 > limitPages:
-                print(f"\tp{idx0:3>} ...  p{len(pdf)} - p{pdf.page_count} - skipping ", end="")
-                break
-
-            print(f"\tp{idx0:-2}  ", end="")
-
-            txt = pg.get_text()
-            # print(type(txt))
-            lines = txt.split("\n")
-            print(f"  {len(txt):4} chars   {len(lines):4} lines")
-
-            MuPdfExtractTables2(pg)
-
-            continue
-
-            rtf = pg.get_text("rtf")
-            pRtf = pth.lower().replace(".pdf",".rtf")
-            with open(pRtf, "w", encoding="utf-8") as f:
-                f.write(rtf)
 
 
 
