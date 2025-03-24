@@ -12,7 +12,6 @@ import streamlit as st
 
 
 import fitz  # PyMuPDF
-import pdfplumber
 
 from collections import defaultdict
 
@@ -108,21 +107,8 @@ def processFile(pth: Path, limitPages=10, limitOther=2222):
 
     print(f"pth = ..{os.sep}{lastXDirs(pth, 4) }")
 
-    # pdf = fitz.open(pth)
     with fitz.open(pth) as pdf:  # automatically closes 
  
-        vs = {}
-        for k in pdf.metadata:
-            v = pdf.metadata[k]
-            if v is None or v.strip() == "":
-                continue
-            # if "Creator"  in k:
-            #     continue
-            if v in vs:
-                continue
-            vs[v] = True
-            print(f"\t{k:12} -{v}-")
-
 
         for idx0, pg in enumerate(pdf):
 
